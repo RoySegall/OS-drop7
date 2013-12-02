@@ -1,6 +1,14 @@
 <?php
 
 /**
+ * Sorry to patch core; fixes known APC "cannot redeclare class" bug.
+ *
+ * @see https://drupal.org/node/838744
+ * @see http://goo.gl/JZi05
+ */
+if (!class_exists('insertquery_mysql')) {
+
+/**
  * @file
  * Core systems for the database layer.
  *
@@ -3036,4 +3044,9 @@ function db_ignore_slave() {
     // Set session variable with amount of time to delay before using slave.
     $_SESSION['ignore_slave_server'] = REQUEST_TIME + $duration;
   }
+}
+
+/**
+ * @see top of this file.
+ */
 }
