@@ -1,0 +1,97 @@
+<?php
+
+function cp_enable() {
+
+  $t = get_t();
+
+  // Create a custom menu, if menu module is enabled.
+  // @see devel_modules_installed()
+  if (module_exists('menu')) {
+    $menu = array(
+      'menu_name' => 'cp',
+      'title' => $t('Control Panel'),
+      'description' => $t('Administration links')
+    );
+    menu_save($menu);
+  }
+
+  //update weight so cp is after views and can alter views' menu alterations.
+  $weight = db_select('system', 's')
+    ->fields('s', array('weight'))
+    ->condition('name', 'views', '=')
+    ->execute()->fetchField(0);
+
+  db_update('system')
+    ->fields(array('weight' => $weight + 1))
+    ->condition('name', 'cp', '=')
+    ->condition('type', 'module', '=')
+    ->execute();
+}
+
+/**
+ * Implements hook_install().
+ */
+function cp_install() {
+  // Install additional contact categories for the contact module.
+  if(module_exists('contact')) {
+  	// Check to see if the categories already exist.
+  	// Bug Report
+  	$bug_result = db_query('SELECT cid FROM {contact} WHERE category = :category', array(':category'=>'Bug report'))->fetchField();
+  	if(!$bug_result) {
+  	  db_insert('contact')
+        ->fields(array(
+          'category' => 'Bug report',
+          'recipients' => variable_get('site_mail', ini_get('sendmail_from')),
+          'selected' => 0,
+          'reply' => '',
+      ))
+      ->execute();
+  	}
+  	// Feature Request.
+    $fr_result = db_query('SELECT cid FROM {contact} WHERE category = :category',array(':category'=>'Feature request'))->fetchField();
+  	if(!$fr_result) {
+  	  db_insert('contact')
+        ->fields(array(
+          'category' => 'Feature request',
+          'recipients' => variable_get('site_mail', ini_get('sendmail_from')),
+          'selected' => 0,
+          'reply' => '',
+      ))
+      ->execute();
+  	}
+  }
+}
+
+/**
+ * Implements hook_update_N().
+ */
+function cp_update_7001() {
+  // Install additional contact categories for the contact module.
+  if(module_exists('contact')) {
+  	// Check to see if the categories already exist.
+  	// Bug Report
+  	$bug_result = db_query('SELECT cid FROM {contact} WHERE category = :category', array(':category'=>'Bug report'))->fetchField();
+  	if(!$bug_result) {
+  	  db_insert('contact')
+        ->fields(array(
+          'category' => 'Bug report',
+          'recipients' => variable_get('site_mail', ini_get('sendmail_from')),
+          'selected' => 0,
+          'reply' => '',
+      ))
+      ->execute();
+  	}
+  	// Feature Request.
+    $fr_result = db_query('SELECT cid FROM {contact} WHERE category = :category',array(':category'=>'Feature request'))->fetchField();
+  	if(!$fr_result) {
+  	  db_insert('contact')
+        ->fields(array(
+          'category' => 'Feature request',
+          'recipients' => variable_get('site_mail', ini_get('sendmail_from')),
+          'selected' => 0,
+          'reply' => '',
+      ))
+      ->execute();
+  	}
+  }
+}

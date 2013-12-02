@@ -1,0 +1,4 @@
+ID,Title,Publisher,Year,Publish location,Biblio type name,Biblio type,Site,Terms,UID
+biblio1,The Little Prince,Antoine de Saint-Exupéry,1943,United States,Book,100,personal1,ScienceTerm1|ScienceTerm2|ScienceTerm3,user2
+biblio2,Adventures of Huckleberry Finn,Mark Twain,1885,United States,Book,100,project1,,user2
+biblio3,John F. Kennedy: A Biography,Michael O'Brien,2005,United States,Book,100,personal1,ScienceTerm2,user2

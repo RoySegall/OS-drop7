@@ -1,0 +1,1006 @@
+/**
+ * @file
+ * Page Styling
+ *
+ * Style the markup found in page.tpl.php. Also includes some styling of
+ * miscellaneous Drupal elements that appear in the $content variable, such as
+ * ul.links, .more-link, etc.
+ */
+
+
+/*
+ * Wrappers
+ */
+html {
+}
+
+
+body {
+}
+
+
+#page /* Page wrapper, includes the .container class which sets the overall page or section width. */ {
+	margin-bottom: 30px;
+}
+
+
+#header-container {
+	padding: 0 10px 10px;
+}
+
+
+/* bigscreen three_col_grail */
+
+#columns {
+    min-height:300px;
+}
+
+
+#content-column .content-inner /* Floats the main content column. */ {
+	 position: relative;
+}
+
+.page-node #content-column .content-inner /* Adds a little padding to page node when main-content div is not present */ {
+	 padding: 10px;
+}
+
+
+#main-content /* Wraps the main-content-header, the content region and feed-icons. */ {
+	 padding-top: 20px;
+	 position: relative;
+}
+
+
+#content .contextual-links-region {
+	min-height: 10px;
+}
+
+
+#footer /* Main site footer. */ {
+}
+
+
+.region /* Region wrapper - anything that adds width or positioning can break the layout. */ {
+}
+
+
+.region-inner /* By default this sets up 20px gutters i.e. margin: 0 10px. */ {
+	 padding-top: 15px;
+}
+
+.region-footer .region-inner, /* By default this sets up 20px gutters i.e. margin: 0 10px. */ 
+.region-page-top .region-inner /* Remove ugly space between branding region and toolbar */{
+	 padding-top: 0;
+}
+
+
+
+.region-inner .region-inner /* Strip nested region-inner margins by default. */{
+  margin: 0;
+}
+
+.region-sidebar-first .block, .region-sidebar-second .block {
+    clear: both;
+    margin-bottom: 1.5em;
+}
+
+
+/* Modify gutters */
+
+.block-inner, 
+.pane-inner, 
+.menu-wrapper,  
+.branding-elements, 
+.breadcrumb-wrapper, 
+.attribution, 
+.at-panel .rounded-corner,
+div.messages {
+  margin-left: 8px;
+  margin-right: 8px;
+}
+
+.block-boxes-os_boxes_site_logo .block-inner {
+	margin-left: 0;
+	margin-right: 0;
+}
+
+#main-content {
+  margin-left: 15px;
+  margin-right: 15px;
+}
+
+/*** FRONTPAGE PANELS ***/
+
+.content-left .at-panel .region.region-content-first, 
+.content-right .at-panel .region.region-content-second {
+    width: 100%;
+    float:none;
+}
+	
+.content-left.content-right .at-panel .region.region-content-first, 
+.content-left.content-right .at-panel .region.region-content-second {
+	float:left;
+	clear:none;
+	display:inline;
+    width: 49%;
+    margin:15px 0;
+	}
+	
+.content-left.content-right .at-panel .region.region-content-first {margin-right:2%;border-right:1px solid #CCC;width: 48%;}	
+
+
+.at-panel .region.region-content-top, 
+.at-panel .region.region-content-bottom {
+    width: 100%;
+    clear: both;
+    float:none;
+}
+
+
+  /* Footer panels */
+
+ .footer .region-footer {
+    	width: 100%;
+  	}
+  	
+ .footer .region {
+    	display: inline-block;
+  	} 	  	  	
+ 
+ .footer .region.region-footer-bottom {
+    	display: block !important;
+  	} 
+ 
+ 
+ 
+  .footer.footer-right .region-footer,
+  .footer-left.footer .region-footer {
+    	width: 74%;
+  	}
+  
+  .footer-left.footer.footer-right .region-footer {width: 49%;}
+
+  .footer-left.footer.footer-right .region-footer-first,
+  .footer-left.footer.footer-right .region-footer-third,
+  .footer.footer-right .region-footer-third,
+  .footer-left.footer .region-footer-first,
+  .footer-left.footer-right .region-footer-first,
+  .footer-left.footer-right .region-footer-third,
+  .footer-left .region-footer-first,
+  .footer-right .region-footer-third {
+	width: 25%;
+	}
+
+  .footer-left.footer-right .at-panel .region.region-footer-third,
+  .footer-right .at-panel .region.region-footer-third {float: right;}
+  
+  
+ /* MAKE IT POSSIBLE TO HAVE WIDGETS IN THE LEFT AND RIGHT HEADER REGIONS ONLY */ 
+.header-left.header-main.header-right .region-header-first,
+.header-left.header-main .region-header-first {margin-left:-100%;}
+
+.header-left.header-right .region-header-first {
+    margin-left: 0;
+}
+
+.header-left.header-right .region-header-third {
+	float:right !important;
+}
+
+.header-left .region-header-first {
+    margin-left: 0;
+}
+  
+.header-right .region-header-third {
+	float:right !important;
+}
+  
+/*
+ * Branding
+ */
+
+#powerby-login {
+	float:right;
+	clear:both;
+	margin-right:10px;
+	min-width:165px;
+}
+
+.os-powered-link,
+#os-powered-by {
+    float: right;
+    bottom:-48px;
+    position:relative;
+}
+
+.logged-in .os-powered-link,
+.logged-in #block-os-powered-by {
+    bottom:-29px;
+}
+
+
+#powered-by a {
+    background: url("../images/poweredby.png") no-repeat scroll 0 0 transparent;
+    border: medium none !important;
+    display: block;
+    height: 26px;
+    padding: 0 !important;
+    text-decoration: none !important;
+    text-indent: -999em;
+    width: 85px;
+    margin-right:8px;
+    float:right;
+    display:inline;
+  }
+
+
+
+#logo /* Wrapping link for logo */ {
+  padding: 10px 0;
+}
+
+
+#scholar-shield {
+    margin: 0 auto;
+    text-align: center;
+    width: 75px;
+}
+
+
+#name-and-slogan /* hgroup wrapper for website name and slogan, be careful with display properties as this can be hidden */ {
+}
+
+
+#site-name /* The name of the website */ {
+}
+
+
+#site-name a:link,
+#site-name a:visited {
+  text-decoration: none;
+}
+
+
+#site-name a:hover,
+#site-name a:focus {
+  text-decoration: underline;
+}
+
+#site-slogan /* The slogan (or tagline) of a website. */ {
+}
+
+
+.region-header /* Wrapper for any blocks placed in the header region. */ {
+}
+
+
+.region-highlighted {
+}
+
+
+#main-content-header /* Wraps the page title, tabs and actions links. */ {
+}
+
+
+h1#page-title /* The title of the page. */ {
+	margin-bottom:1em;
+}
+
+div.messages /* Important messages (status, warning, and error) for the user. See also the declarations in messages.css. */ {
+  margin: 1.5em 10px; /* Drupal core uses "6px 0" margin */
+}
+
+
+div.messages ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+
+div.status /* Normal priority messages */ {
+	
+}
+
+div#success-message.status {
+  padding:3px 0  0 25px;
+  border-color: #be7;
+  background-repeat:no-repeat;
+}
+
+
+div.warning,
+tr.warning /* Medium priority messages */ {
+  /* border: 1px solid #f0c020; Drupal core uses: 1px solid #f0c020 */
+ 
+}
+
+
+div.error,
+tr.error /* High priority messages. See also the .error declaration below. */ {
+}
+
+
+.error /* Errors that are separate from div.messages status messages. */ {
+  /* color: #e55; Drupal core uses a #e55 background */
+}
+
+
+.warning /* Warnings that are separate from div.messages status messages. */ {
+  /* color: #e09010; Drupal core uses a #e09010 background */
+ padding: 1.5em 10px;
+}
+
+
+.node-unpublished,
+.comment-unpublished /* Unpublished nodes */ {
+  /* background-color: #fff4f4; Drupal core uses a #fff4f4 background */
+}
+
+
+.node-unpublished p.unpublished,
+.comment-unpublished p.unpublished /* The word "Unpublished" displayed underneath the content. */ {
+  color: #fff;
+  color: rgba(239, 170, 170, 0.4);
+  font-family: Impact,"Arial Narrow",Helvetica,sans-serif;
+  font-size: 75px;
+  font-weight: bold;
+  height: 0;
+  line-height: 1.2;
+  margin: 0;
+  padding: 0;
+  overflow: visible;
+  text-align: center;
+  text-transform: uppercase;
+  word-wrap: break-word;
+}
+
+
+.lt-ie8 .node-unpublished > *,
+.lt-ie8 .comment-unpublished > * {
+  position: relative; /* Otherwise these elements will appear below the "Unpublished" text. */
+}
+
+
+.region-help /* Help text on a page */ {
+}
+
+
+.more-help-link /* Link to more help */ {
+}
+
+
+.region-content /* Wrapper for the actual page content */ {
+}
+
+.region-aside /* Akin to a content-bottom region */ {
+}
+
+
+ul.links /* List of links generated by theme_links(). */ {
+  margin: 0;
+  padding: 0;
+}
+
+
+ul.links.inline {
+  display: block; /* Let the links be inline, but the container be a block. */
+}
+
+
+ul.links li {
+  display: inline;
+  list-style-type: none;
+  padding: 0 10px 0 0; /* LTR */
+}
+
+/* BOOKLET ICONS */
+.node-book .links li a.book_add_child {
+    background: url("../images/scholarbase-sprite.png") 0 -492px no-repeat;
+    color: #3A6A8C;
+    padding-left: 15px;
+
+}
+
+.node-book .links li a.book_printer {
+    background: url("../images/scholarbase-sprite.png") 0 -507px no-repeat;
+    color: #3A6A8C;
+    padding-left: 15px;
+}
+
+.node-book .links li span a {
+    background: url("../images/scholarbase-sprite.png") 0 -524px no-repeat;
+    color: #3A6A8C;
+    padding-left: 15px;
+}
+
+
+/* ADD CLASS ICON */
+ul.class_material_field_class {
+	list-style:none;
+	margin-left:0;
+    }
+
+ul.class_material_field_class a.class_material_field_class_anchor {
+    background: url("../images/scholarbase-sprite.png") 0 -492px no-repeat;
+    padding-left: 15px;
+
+}
+
+/* BLOG COMMENT ICON */
+.links li a.os-add-comment {
+    background: url("../images/scholarbase-sprite.png") 0 -539px no-repeat;
+    padding-left: 15px;
+
+}
+
+
+/* MEDIA WIDGET ICONS */
+
+.media-widget a {margin-right:10px;}
+
+.media-widget a#edit-select,
+.media-widget a.button.launcher {
+    background: url("../images/scholarbase-sprite.png") 0 -492px no-repeat;
+    color: #3A6A8C;
+    padding-left: 16px;
+   }
+
+.media-widget a.ctools-modal-media-file-edit {
+    background: url("../images/scholarbase-sprite.png") 0 -451px no-repeat;
+    color: #3A6A8C;
+    padding-left: 20px;
+   }
+
+.media-widget a.remove {
+    background: url("../images/scholarbase-sprite.png") 0 -471px no-repeat;
+    color: #3A6A8C;
+    padding-left: 17px;
+   }
+
+.media-gallery-collection a.media-gallery-thumb, .media-gallery-media a.media-gallery-thumb, .media-gallery-thumb img {
+    display: block;
+    overflow: hidden;
+    position: relative;
+}
+
+.video-indicator {
+	background: url("../images/movie_file_icon.png") no-repeat;
+ 	bottom: 5px;
+    display: block;
+    height: 13%;
+    left: 5px;
+    height: 48px;
+    width: 48px;
+	position: relative;
+    margin-top: -48px;
+}
+
+/* VIDEO ATTACHED TO A NODE  */
+
+.oembed {
+    background: none repeat scroll 0 0 #EEEEEE;
+    border-color: #ccc;
+    border-radius: 0 0 0 0;
+    border-style: solid;
+    border-width: 1px;
+    color: #555555;
+    text-align:center;
+
+}
+
+.oembed .oembed-title {
+    color:#005C9C;
+    font-size: 12px;
+    font-style: normal;
+    font-weight: 500;
+    text-align: left;
+    text-shadow: none;
+}
+
+.os-files-video-single {
+    max-width: none !important;
+}
+	
+#cboxContent .oembed {
+  float: none !important;
+  text-align: center !important;
+  border: 0;
+  background-color: transparent;
+}
+
+.feed_item {margin-bottom:8px;}
+.feed_item span {font-style:italic;margin-right:4px;}
+
+
+.more-link /* Aggregator, blog, and forum more link */ {
+	float: right;
+}
+
+#content-column ol.search-results /* Search results are an ordered list so we reset the margin */ {
+  list-style-type:none;
+  margin-left:0;
+}
+
+.search-results .search-snippet-info {
+    padding-left: 0;
+}
+
+.views-row {margin-bottom:1.5em;}
+
+
+.block-boxes-os_sv_list_box .item-list ul li,
+.block-boxes block-boxes-os_boxes_manual_list  ul li {margin-bottom:.75em;}
+
+/*
+ * First sidebar (on left in LTR languages, on right in RTL)
+ *
+ * Remember to NOT add padding or margin to your .region-sidebar-first.
+ */
+
+.region-sidebar-first {
+}
+
+
+/*
+ * Second sidebar (on right in LTR languages, on left in RTL)
+ *
+ * Remember to NOT add padding or margin to your .region-sidebar-second.
+ */
+
+.region-sidebar-second {
+}
+
+
+/*
+ * Full Width Wrappers - these are used in the optional page--full-width-wrappers.tpl.php template.
+ */
+
+#page-wrapper {
+}
+
+
+#leaderboard-wrapper {
+}
+
+
+#header-wrapper {
+  background: #ddd; /* Debug style, is this working? */
+}
+
+
+#nav-wrapper {
+}
+
+
+#breadcrumb-wrapper {
+}
+
+
+#messages-help-wrapper {
+}
+
+
+#secondary-content-wrapper {
+}
+
+
+#content-wrapper {
+}
+
+
+#tertiary-content-wrapper {
+}
+
+
+#footer-wrapper {
+  background: #666; /* Debug style, is this working? */
+  color: #fff; /* Debug style, is this working? */
+}
+
+
+/* Devel Module */
+.dev-query {
+  background: #eee;
+  padding: 30px;
+}
+
+/* CTools MODAL OVERRIDES */
+
+#modalContent {
+  top: 0;
+  color: #666;
+  position: fixed !important;
+}
+
+div.ctools-modal-content {
+  color: #555;
+  margin: 0;
+  text-align: left;
+  background: #fff;
+  -moz-box-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
+  -webkit-box-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
+  }
+
+div.ctools-modal-content .modal-title {
+  color: #666;
+  font-size:20px;
+  font-weight: normal;
+  }
+
+#modal-content {
+ padding: 20px 0 20px 25px;
+  }
+
+div.ctools-modal-content {
+  height: 100% !important;
+  border:none;
+  }
+
+div.ctools-modal-content .modal-header {
+  background: #EFEFEF;
+  border-bottom:2px solid #C4C2C2;
+ height:24px;
+ padding:10px;
+  }
+
+div.ctools-modal-content .modal-header a {
+float:right;
+color: transparent;
+background: url('../images/icon-close-window.png') no-repeat;
+width:30px;
+height:30px;
+  }
+
+div.ctools-modal-content .modal-content {
+  padding: 12px 12px 0 12px;
+  overflow: auto;
+  width: 575px;
+  height: 400px;
+  }
+
+#modalContent .spaces-customize-form .buttons input.form-submit {
+  margin-right: 140px;
+  }
+
+div.ctools-modal-content .button-div-wrapper {
+  display: inline;
+  }
+
+div.ctools-modal-content a.close:hover {
+  text-decoration: none;
+}
+
+div.ctools-modal-content a.close img {
+  position: relative;
+  top: 1px;
+  display:none;
+}
+
+div.ctools-modal-content .modal-content .modal-throbber-wrapper {
+  text-align: center;
+}
+
+div.ctools-modal-content .modal-content .modal-throbber-wrapper img {
+  margin-top: 160px;
+}
+
+.contextual-links-region:hover .contextual-links-region a.contextual-links-trigger {
+  display: none;
+}
+
+.contextual-links-region .contextual-links-region:hover a.contextual-links-trigger {
+  display: block;
+}
+
+.region-content-top .contextual-links-region:first-child .contextual-links-wrapper{
+  right: 35px;
+}
+
+.node-type-page .region-content-top .contextual-links-region:first-child .contextual-links-wrapper {
+  right: 150px;
+}
+
+/** OVERLAY MODAL OVERRIDES **/
+	
+#overlay-close, #overlay-close:hover {
+    background: url('../images/icon-close-window.png') no-repeat;
+	width:30px;
+	height:30px;
+	position: relative;
+ 	margin: -38px;   
+}
+	
+#overlay-titlebar {
+    padding: 7px 10px 17px;
+    position: relative;
+    white-space: nowrap;
+    z-index: 100;
+    background: #EFEFEF;
+    border-bottom:2px solid #C4C2C2;
+    height:24px;
+}
+
+#overlay-title {
+    float: left;
+	margin: 0;
+    padding: 0.3em 0;
+    color: #666;
+    font-size:20px;
+    font-weight: normal;
+}
+	
+#overlay-tabs {
+ 	margin: -30px 0 0;
+ 	right: 50px;
+ }	
+ 
+ 
+/** MEDIA BROWSER MODAL OVERRIDES **/
+	
+
+#mediaBrowser {
+  padding: 0;
+  border-radius: 0;
+  background: #FFF;
+  -moz-box-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
+  -webkit-box-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
+}
+ 
+.ui-corner-all {
+    border-radius: 0;
+    border:0;
+} 
+ 
+ #media-browser-tabset .media-browser-tab {
+    border: none;
+}
+
+#media-browser-tabset .ui-tabs-nav {
+    border-bottom: 1px solid #AAAAAA;
+    border-left: none;
+    border-right: none;
+    border-top: none;
+}
+	
+.ui-widget-header {
+    background:none !important;
+}	
+	
+/** OS LOGIN CONTAINER STYLES **/	
+/** SLIDER **/
+.os-slider {
+  display: none;
+  color: black;
+  position: static;
+  width: auto;
+  background: #F1F1F1;
+  border: 1px solid #C0C5CC;
+  padding: 1em;
+}
+
+.node-type-faq .os-slider,
+.page-faq .os-slider {
+  border:none;
+  padding: 0;
+  background: none !important;
+  
+}
+
+
+.field-name-og-vocabulary a.toggle {
+	background:url('../images/scholarbase-sprite.png') -12px -194px no-repeat;
+	padding: 1px 0 3px 14px
+}
+
+.field-name-og-vocabulary .os-slider a {text-decoration:underline !important;}
+
+
+
+.not-logged-in.page-user #footer {
+	width:540px;
+	margin: 0 auto;
+}
+
+
+/**	 QUICK TABS**/
+	
+.block-boxes-os_boxes_tabs .ui-widget-content {
+    background: none;
+}
+	
+.block-boxes-os_boxes_tabs .ui-widget {
+    font-family: inherit !important;
+    font-size: inherit !important;
+}
+	
+.ui-tabs .ui-tabs-panel {
+/* IE10 Consumer Preview */ 
+background-image: -ms-linear-gradient(top, #F5F2F2 0%, #FFFFFF 100%);
+/* Mozilla Firefox */ 
+background-image: -moz-linear-gradient(top, #F5F2F2 0%, #FFFFFF 100%);
+/* Webkit (Safari/Chrome 10) */ 
+background-image: -webkit-gradient(linear, left top, left bottom, color-stop(0, #F5F2F2), color-stop(1, #FFFFFF));
+/* Webkit (Chrome 11+) */ 
+background-image: -webkit-linear-gradient(top, #F5F2F2 0%, #FFFFFF 100%);
+/* W3C Markup, IE10 Release Preview */ 
+background-image: linear-gradient(to bottom, #F5F2F2 0%, #FFFFFF 100%);
+-ms-filter: "progid:DXImageTransform.Microsoft.gradient(startColorstr=#E0F6F2F2,endColorstr=#E0FFFFFF)"; /* IE8 */
+padding:10px;
+-moz-margin-top: 0px;
+margin-top: 1px;
+border-top:1px solid #ccc;
+	}
+	
+	.ui-tabs .ui-tabs-nav {
+  padding: 0;
+}
+	
+.ui-tabs .ui-tabs-nav li a {
+    padding: 0.15em 1em;
+     text-decoration: none !important;
+  }
+
+.page-cp #tabs,
+.page-cp #tabs .links {
+	border:none;
+	border-bottom:none;
+}	
+	
+/* JCAROUSEL OVERRIDE STYLES */
+
+.jcarousel-skin-default {clear:both;}
+
+
+.jcarousel-skin-default .jcarousel-container-horizontal {
+    width: 80%;
+    padding: 10px;
+    margin: 0;
+}
+
+.jcarousel-container {
+background:#efefef;
+border:1px solid #CCC;
+}
+
+.jcarousel-container .jcarousel-clip-horizontal {
+  width: auto;
+}
+
+
+.jcarousel-container a.jcarousel-next,
+.jcarousel-container a.jcarousel-next:hover {
+ 			background-image: url('../images/jcarou-next-horizontal.png'); 
+ 			background-color:none;
+ 			right: -14px; 
+ 			top: 46px;
+ 			width:22px;
+ 			height:22px;
+ 			background-position: -3px -3px;
+ 			}
+
+.jcarousel-container a.jcarousel-prev,
+.jcarousel-container a.jcarousel-prev:hover {
+			background-image: url('../images/jcarou-prev-horizontal.png');
+			left: -15px; 
+			top: 46px;
+			width:22px;
+			height:22px;
+			background-position: -1px -3px;
+	       }
+	       
+	
+/* Recent Images Widget */
+
+.block-boxes-os_sv_list_box .item-list ul.recent-images-list li {list-style-image:none;}
+
+ul.recent-images-list li {
+  list-style: none;
+  padding: 0;
+  float: left;
+  clear: none;
+  margin: 0 5px 5px 0; 
+}
+	
+ul.recent-images-list li img {
+  padding: 4px;	
+  background-color: white;	
+  border: 1px solid #ADADAD;
+}
+
+ul.recent-images-list li a:hover img {
+     background-color: yellow;
+ 
+}
+
+#box-os_image_gallery_latest-page .more-link {clear:both;}
+
+/* Colorbox Slideshow modal - Kill Grey Borders in player */
+.node-type-media-gallery #cboxWrapper #cboxTopLeft, 
+.node-type-media-gallery #cboxWrapper #cboxTopCenter, 
+.node-type-media-gallery #cboxWrapper #cboxTopRight, 
+.node-type-media-gallery #cboxWrapper #cboxMiddleLeft, 
+.node-type-media-gallery #cboxWrapper #cboxMiddleRight, 
+.node-type-media-gallery #cboxWrapper #cboxBottomLeft, 
+.node-type-media-gallery #cboxWrapper #cboxBottomCenter, 
+.node-type-media-gallery #cboxWrapper #cboxBottomRight 
+{
+ background: none;
+}
+
+.file-os-files-large, 
+.file-os-files-xlarge, 
+.file-os-files-xxlarge, 
+.file-os-files-small, 
+.file-os-files-medium {
+	padding-right:10px;
+	}
+
+.lt-ie9	span[style*="FLOAT: RIGHT;"] .file-os-files-large, 
+.lt-ie9	span[style*="FLOAT: RIGHT;"] .file-os-files-xlarge, 
+.lt-ie9	span[style*="FLOAT: RIGHT;"] .file-os-files-xxlarge, 
+.lt-ie9	span[style*="FLOAT: RIGHT;"] .file-os-files-small, 
+.lt-ie9	span[style*="FLOAT: RIGHT;"] .file-os-files-medium,
+span[style*="float: right;"] .file-os-files-large, 
+span[style*="float: right;"] .file-os-files-xlarge, 
+span[style*="float: right;"] .file-os-files-xxlarge, 
+span[style*="float: right;"] .file-os-files-small, 
+span[style*="float: right;"] .file-os-files-medium {
+	padding-left:10px;
+	padding-right:0;
+	}	
+	
+/**
+ * "News" node-type styles.
+ *
+ * @todo These rules SHOULD be stored in the os_news module. 
+ *
+ * The original CSS file intermittently failed to load:
+ * @see /profiles/openscholar/modules/os_features/os_news/os_news.css
+ */
+
+
+.node-news .field-name-field-photo {
+  float: left;
+  margin: 0 1.5em .5em 0;
+}
+
+.page-node.node-type-news .field-name-body .field-name-field-photo {
+  float: right;
+  margin-left: 1em;
+}
+
+/**
+LIST OF POSTS - PERSON TEASER IN SIDEBAR
+ */
+
+.block-boxes-os_sv_list_box h1.node-title {
+    margin-bottom: 0;
+}
+
+.block-boxes-os_sv_list_box .node.node-news.node-promoted .field-type-image.view-mode-sidebar_teaser,
+.block-boxes-os_sv_list_box .node.node-person.article.with-person-photo .pic-bio,
+.block-boxes-os_sv_list_box .node.node-person.article.modified-in-os_profiles_process_node .pic-bio,
+.block-boxes-os_sv_list_box .node.node-person .field-name-field-person-photo {
+ 	float:left;
+     margin-right: 10px;
+}
+
+
+
+.block-boxes-os_sv_list_box .node.node-news.node-promoted.article .field-type-image ~ .node-content {
+	display:block;
+	margin-left: 85px;
+}
+
+
+.block-boxes-os_sv_list_box .node.node-news.node-promoted.article .field-type-image ~ .node-content {
+	 margin-left: 65px;
+	}
+
+.block-boxes-os_sv_list_box .node.node-news.node-promoted.article .node-header ~ .node-content {
+	 margin-left: 0;
+}
+
+

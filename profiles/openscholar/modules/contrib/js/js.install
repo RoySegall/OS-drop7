@@ -1,0 +1,58 @@
+<?php
+/**
+ * @file
+ * Ensures JavaScript callback handler has been setup properly.
+ */
+
+/**
+ * Implements hook_requirements().
+ */
+function js_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+  switch ($phase) {
+    case 'runtime':
+      $title = $t('JavaScript callback handler');
+      // Warn about missing js.php in root directoy.
+      if (!file_exists('js.php')) {
+        $requirements['js'] = array(
+          'title' => $title,
+          'description' => $t('In order for JavaScript callbacks to work correctly, please configure and download the js.php'),
+          'severity' => REQUIREMENT_ERROR,
+          'value' => $t('Please copy js.php'),
+        );
+      }
+      // Warn about missing RewriteRule in .htaccess.
+      elseif (strpos(file_get_contents('.htaccess'), 'js.php') === FALSE) {
+        $requirements['js'] = array(
+          'title' => $title,
+          'description' => $t('In order for increasing performance of JavaScript callbacks, please add the required <a href="!readme">RewriteRule</a>', array('!readme' => url(drupal_get_path('module', 'js') . '/README.txt'))),
+          'severity' => REQUIREMENT_ERROR,
+          'value' => $t('Add Apache RewriteRule to .htaccess'),
+        );
+      }
+      // Return positive status message.
+      else {
+        $requirements['js'] = array(
+          'title' => $title,
+          'description' => t('The JavaScript callback handler has been installed correctly.',
+            array('%core' => 'js.php')
+          ),
+          'severity' => REQUIREMENT_OK,
+          'value' => $t('Installed correctly'),
+        );
+      }
+  }
+  return $requirements;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function js_uninstall() {
+  // Delete used variables
+  variable_del('js_callback_handler_complex_path');
+  variable_del('js_callback_handler_page_arguments');
+  variable_del('js_callback_handler_access_validation');
+  variable_del('js_callback_handler_other_file');
+}

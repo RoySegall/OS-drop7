@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * Renames all "vsite_domain_proccessing" variables in spaces_overrides.
+ */
+function vsite_domain_update_7001($sandbox) {
+  // Renames misspelled variable
+  // "vsite_domain_proccessing" -> "vsite_domain_shared"
+  $query = db_update('spaces_overrides')
+    ->fields(array('object_id' => 'vsite_domain_shared'))
+    ->condition('object_type', 'variable')
+    ->condition('object_id', 'vsite_domain_proccessing')
+    ->execute();
+}

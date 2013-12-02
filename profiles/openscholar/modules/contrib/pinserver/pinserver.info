@@ -1,0 +1,12 @@
+name = Harvard PIN
+description = Provides developer API for the Harvard University PIN system.
+core = 7.x
+configure = admin/config/openscholar/pinserver
+
+
+; Information added by drush on 2013-12-02
+version = "7.x-3.4"
+core = "7.x"
+project = "pinserver"
+datestamp = "1385971718"
+

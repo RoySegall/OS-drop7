@@ -1,0 +1,23 @@
+/* Strawberry*/
+
+body {
+  background:#9F3B3B;
+  }
+
+body.navbar-off #page {
+  background-image:url('images/body-bg-alt-strawberry.png');
+  }
+
+#menu-bar {
+  background: rgb(131, 29, 28);
+background: -moz-linear-gradient(270deg, rgb(131, 29, 28) 30%, rgb(156, 53, 52) 70%);
+background: -webkit-linear-gradient(270deg, rgb(131, 29, 28) 30%, rgb(156, 53, 52) 70%);
+background: -o-linear-gradient(270deg, rgb(131, 29, 28) 30%, rgb(156, 53, 52) 70%);
+background: -ms-linear-gradient(270deg, rgb(131, 29, 28) 30%, rgb(156, 53, 52) 70%);
+background: linear-gradient(0deg, rgb(131, 29, 28) 30%, rgb(156, 53, 52) 70%);
+  }
+
+.biblio-title a, .biblio-title-chicago a,
+a, a:visited {
+  color: #892322;
+  }

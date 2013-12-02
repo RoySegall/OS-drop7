@@ -1,0 +1,155 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Code for the OS Classes feature.
+ */
+
+include_once 'os_classes.features.inc';
+
+/**
+ * Implements hook_os_app_info().
+ */
+function os_classes_os_app_info() {
+  $apps = array();
+
+  $apps['os_classes'] = array(
+    'path' => 'classes',
+  	'nodetypes' => array(
+  	  'class',
+  		'class_material',
+    ),
+    'views tabs' => array(
+      'os_classes' => array('page'),
+    ),
+  );
+
+  return $apps;
+}
+
+/**
+ * Implements hook_field_extra_fields().
+ *
+ * Exposes a draggable widget for our custom fields, to control field weight.
+ *
+ * @see os_classes_node_view()
+ */
+function os_classes_field_extra_fields() {
+  $extra = array();
+  $extra['node']['class'] = array(
+    'form' => array(
+      'add_class_material' => array(
+        'label' => t('Add "class material" link'),
+        'description' => t('Add "Class Material" to this class'),
+        'weight' => 100,
+      ),
+    ),
+  );
+
+  return $extra;
+}
+
+/**
+ * Implements hook_node_view().
+ *
+ * Adds "Add class material" link to the bottom of Class nodes, for admins only.
+ *
+ * @see os_classes_field_extra_fields()
+ */
+function os_classes_node_view($node, $view_mode, $langcode) {
+  // Only proceeds for class nodes, where the current user has update access.
+  if ($node->type !== 'class') {
+    return;
+  }
+  if (!node_access('update', $node)) {
+    return;
+  }
+
+  // Finds the weight of the extra field.
+  $name = 'add_class_material';
+  $node->content[$name] = array();
+  $extra_fields = field_info_extra_fields('node', 'class', 'form');
+  if (isset($extra_fields[$name]['weight'])) {
+    $node->content[$name]['#weight'] = $extra_fields[$name]['weight'];
+  }
+
+  // Populates the render array with the "Add class material" link.
+  $links = array();
+  $links[] = array(
+    'title' => t("Add class material"),
+    'href' => 'node/add/class-material',
+    'query' => array('field_class' => $node->nid),
+    'attributes' => array('class' => array('class_material_field_class_anchor')),
+  );
+  $node->content[$name]['#markup'] = theme('links', array(
+      'links' => $links,
+      'attributes' => array('class' => array('node-reference-node', 'class_material_field_class')),
+    ));
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function os_classes_node_delete($node) {
+  if ($node->type !== 'class') {
+    return;
+  }
+  _os_classes_delete_children($node->nid);
+}
+
+/**
+ * Implements hook_vsite_og_node_type_info().
+ */
+function os_classes_vsite_og_node_type_info() {
+  return array(
+    'class' => 'group content',
+    'class_material' => 'group content',
+  );
+}
+
+/**
+ * Implements hook_context_links_alter().
+ */
+function os_classes_os_add_new_links_alter(&$links) {
+  if (isset($links['class_material'])) {
+    unset($links['class_material']);
+  }
+}
+
+/**
+ * Deletes all Class Material nodes that reference a given deleted Class node.
+ *
+ * @param int $nid
+ */
+function _os_classes_delete_children($nid) {
+  ctools_include('node', 'os');
+  $query = new OSNodeFieldQuery('class_material');
+  $query->fieldCondition('field_class', 'target_id', $nid);
+  $result = $query->execute();
+
+  if (!isset($result['node'])) {
+    return;
+  }
+
+  node_delete_multiple(array_keys($result['node']));
+}
+
+/**
+ * Implements hook_process_HOOK for node.
+ *
+ * Removes EVA field "Related Materials" from Class node teaser.
+ */
+function os_classes_process_node(&$vars) {
+  if ($vars['type'] !== 'class') {
+    return;
+  }
+  if ($vars['view_mode'] !== 'teaser') {
+    return;
+  }
+  // Hides EVA field (attached view) "Related Materials" on /classes.
+  if (isset($vars['content']['os_classes_entity_view_1'])) {
+    unset($vars['content']['os_classes_entity_view_1']);
+  }
+}
+

@@ -1,0 +1,89 @@
+<?php
+/**
+ * Implements hook_menu().
+ */
+function cp_content_menu() {
+  $items = array();
+
+  $items['cp/content/add'] = array(
+    'page callback' => 'cp_content_add_page',
+    'title' => 'Add New Content',
+    'type' => MENU_NORMAL_ITEM,
+    'access callback' => 'cp_content_add_page_access',
+    'file' => 'cp_content.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function cp_content_views_api() {
+  return array(
+    'version' => '3.0',
+    'path' => drupal_get_path('module', 'cp_content') . '/views',
+  );
+}
+
+/**
+ * Same as _node_add_access but just for os bundles
+ * @return boolean
+ */
+function cp_content_add_page_access() {
+  $bundles = os_get_bundles();
+  foreach ($bundles as $type => $name) {
+    if (node_hook($type, 'form') && node_access('create', $type)) {
+      return TRUE;
+    }
+  }
+  if (user_access('administer content types')) {
+    // There are no content types defined that the user has permission to create,
+    // but the user does have the permission to administer the content types, so
+    // grant them access to the page anyway.
+    return TRUE;
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_views_data_alter()
+ */
+function cp_content_views_data_alter(&$data){
+  //Add Origname Field if it has not been added.
+  if(!isset($data['file_managed']['origname'])){
+    // filesize
+    $data['file_managed']['origname'] = array(
+      'title' => t('Original Name'),
+      'help' => t('The original name of the file.'),
+      'field' => array(
+        'handler' => 'views_handler_field_file_size',
+        'click sortable' => TRUE,
+      ),
+      'sort' => array(
+        'handler' => 'views_handler_sort',
+      ),
+      'filter' => array(
+        'handler' => 'views_handler_filter_string',
+      ),
+      'argument' => array(
+        'handler' => 'views_handler_argument_string',
+      ),
+    );
+  }
+}
+
+/**
+ * Implements views_default_views_alter() for altering view settings.
+ */
+function cp_content_views_default_views_alter(&$views) {
+  if(variable_get('file_default_scheme', 'public') != 'private'){
+    return;
+  }
+
+  //Change the default CP Content view to display private files
+  if (isset($views['cp_files']->display->display_options['filters']['schema_type']['schema_type'])) {
+    //Remove the schemea filter all it currently does is exclude private.
+    unset($views['cp_files']->display->display_options['filters']['schema_type']);
+  }
+}

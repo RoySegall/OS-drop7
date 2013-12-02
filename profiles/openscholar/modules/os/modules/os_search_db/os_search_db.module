@@ -1,0 +1,123 @@
+<?php 
+
+/**
+ * Implements hook_block_info().
+ */
+function os_search_db_block_info(){
+  $blocks = array();
+
+  $blocks['site-search'] = array(
+      'info' => t('Site Search'),
+      'weight' => '10',
+      //'cache' => DRUPAL_CACHE_CUSTOM
+  );
+
+  return $blocks;
+}
+
+/**
+ * Implements hook_block_view().
+ *
+ * Generate a block with a promotional link to openscholar.harvard.edu and
+ * all os menu blocks.
+ */
+function os_search_db_block_view($delta = ''){
+  $block = array();
+  switch ($delta) {
+  	case 'site-search' :
+  	  $block['subject'] = NULL;
+  	  $block['content'] = drupal_get_form('search_block_form');
+  	  return $block;
+
+  	default:
+  	  break;
+  }
+}
+
+/**
+ * hook os_widget
+ *
+ * Exposes blocks as OpenScholar widgets.
+ */
+function os_search_db_os_widget(){
+  $items = array();
+
+  // Displays site search box
+  $items['os_search_db-site-search'] = array(
+      'module' => 'os_search_db',
+      'delta' => 'site-search',
+      'weight' => '-10',
+      'info' => 'Search Box'
+  );
+
+  return $items;
+}
+
+/**
+ * Alter the standard node db search query
+ * @param QueryAlterableInterface $query
+ */
+function os_search_db_query_alter(QueryAlterableInterface $query) {
+  if(module_exists('vsite') && ($vsite = spaces_get_space())){
+    // I only want to see items in this site
+    if (!($query instanceof PagerDefault) ) return;
+
+    $tables = $query->getTables();
+    if(isset($tables['i']) && $tables['i']['table'] == 'search_index' && isset($tables['n'])){
+      $query->innerJoin('og_membership', 'ogmem', 'ogmem.etid = n.nid');
+      $query->condition('ogmem.gid', $vsite->id, '=');
+      $query->condition('ogmem.group_type', $vsite->group_type, '=');
+      $query->condition('ogmem.entity_type', "node", '=');
+    }
+  }
+}
+
+/**
+ * Implements hook_facetapi_facet_info_alter().
+ */
+function os_search_db_facetapi_facet_info_alter(array &$facet_info, array $searcher_info) {
+  $facet_info['created']['map callback'] = 'os_search_db_created_facet';
+}
+
+/**
+ * Change the callback function of the created facet.
+ */
+function os_search_db_created_facet(array $values, array $options) {
+  $options['format callback'] = 'os_search_db_facet_time';
+  return facetapi_map_date($values, $options);
+}
+
+/**
+ * Convert the timestamp to string.
+ *
+ * @param $timestamp
+ *  An integer containing the Unix timestamp.
+ * @param $gap
+ *  Determine the format the timestamp need to be converted to.
+ *
+ * @return string
+ *  The timestamp formatted to a string.
+ *
+ * @see facetapi_format_timestamp();
+ */
+function os_search_db_facet_time($timestamp, $gap) {
+  switch ($gap) {
+    case FACETAPI_DATE_MONTH:
+      return format_date($timestamp, 'custom', 'F Y');
+
+    case FACETAPI_DATE_DAY:
+      return format_date($timestamp, 'custom', 'F j, Y');
+
+    case FACETAPI_DATE_HOUR:
+      return format_date($timestamp, 'custom', 'g A');
+
+    case FACETAPI_DATE_MINUTE:
+      return format_date($timestamp, 'custom', 'g:i A');
+
+    case FACETAPI_DATE_SECOND:
+      return format_date($timestamp, 'custom', 'g:i:s A');
+
+    default:
+      return format_date($timestamp, 'custom', 'Y');
+  }
+}

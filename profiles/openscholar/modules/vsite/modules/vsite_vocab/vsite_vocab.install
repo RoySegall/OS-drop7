@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * Implements hook_install().
+ */
+function vsite_vocab_install(){
+  //Get the weight of og_vocab
+  $weight = db_query("SELECT weight FROM {system} WHERE type = 'module' AND name = 'og_vocab' ")->fetchField();
+  $weight ++;
+
+  // Required to alter vocab forms after og_vocab
+  db_update('system')->fields(array(
+    'weight' => $weight
+  ))->condition('type', 'module')->condition('name', 'vsite_vocab')->execute();
+
+  $bundles = og_get_all_group_content_bundle();
+  if (isset($bundles['node']) && is_array($bundles['node'])) {
+    $og_field = og_fields_info(OG_VOCAB_FIELD);
+    $og_field['instance']['display']['default']['label'] = 'hidden';
+    $og_field['instance']['display']['default']['settings']['concatenate'] = TRUE;
+    foreach ($bundles['node'] as $bundle => $name) {
+      // Group content.
+      og_create_field(OG_VOCAB_FIELD, 'node', $bundle, $og_field);
+    }
+  }
+}

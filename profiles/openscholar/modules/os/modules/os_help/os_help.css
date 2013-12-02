@@ -1,0 +1,32 @@
+.os_help-nofloat {
+  float: none;
+}
+
+dd {
+  margin-left: 20px;
+}
+
+.os-blue-button {
+    padding: 5px 10px;
+    border:none;
+    color:#fff;
+    font-size:13px;
+    font-weight:bold;
+    text-shadow: 0px -1px 0px rgba(30, 30, 30, 0.25);
+    -webkit-border-radius: 4px;
+    -moz-border-radius: 4px;
+    border-radius: 4px;
+    background: rgb(58, 114, 171);
+    background: -moz-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
+    background: -webkit-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
+    background: -o-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
+    background: -ms-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
+    background: linear-gradient(0deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
+    -webkit-box-shadow: 0px 1px 1px rgba(50, 50, 50, 0.5);
+    -moz-box-shadow:    0px 1px 1px rgba(50, 50, 50, 0.5);
+    box-shadow:         0px 1px 1px rgba(50, 50, 50, 0.5);
+}
+
+.vsite-welcome-okay {
+    margin: 1em 0;
+}

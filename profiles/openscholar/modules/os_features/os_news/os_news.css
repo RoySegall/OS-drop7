@@ -1,0 +1,10 @@
+.node-news.node-teaser .field-name-field-photo {
+	float: left;
+	margin: 0 1.5em .5em 0;
+}
+
+.page-node.node-type-news .field-name-body .field-name-field-photo {
+	float: right;
+	margin-left: 1em;
+}
+

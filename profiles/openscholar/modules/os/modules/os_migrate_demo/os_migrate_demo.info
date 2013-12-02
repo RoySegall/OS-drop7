@@ -1,0 +1,9 @@
+name = "OS Migrate Demo"
+description = "Os Migrate demo content."
+package = "OpenScholar"
+core = 7.x
+dependencies[] = migrate
+dependencies[] = migrate_extras
+
+files[] = os_migrate_demo.migrate.inc
+files[] = includes/os_migrate_demo.migrate.entity.inc

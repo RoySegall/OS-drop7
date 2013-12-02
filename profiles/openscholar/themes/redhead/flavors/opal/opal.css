@@ -1,0 +1,11 @@
+/*Opal version*/
+#header, 
+#header-container,
+#menu-bar {
+  background: #4c6673;
+  }
+
+.biblio-title a, .biblio-title-chicago a,
+a, a:visited {
+  color: #4c6673;
+  }

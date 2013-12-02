@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * Perform any needed search setup functions
+ */
+function os_search_solr_install(){
+
+  // Set the default search page to search/site
+  variable_set('apachesolr_search_default_search_page', 'core_search');
+
+  // Disable node and user search and enable solr search
+  variable_set('search_active_modules', array(
+      'apachesolr_search'
+  ));
+
+  // Set the default search module to solr
+  variable_set('search_default_module', 'apachesolr_search');
+
+  // Let the solr server parse/extract attachments
+  variable_set('apachesolr_attachments_extract_using', 'solr');
+
+  // Enable the facets
+  if(module_exists('facetapi')) {
+  	$searcher_name = '';
+  	$realm_name = 'block';
+  	$status = 1;
+  	$weight = 0;
+  	$facet_array = array('created' => 'created','bundle' => 'bundle','sm_og_group_ref' => 'sm_og_group_ref');
+	// Get the searcher info.
+    $searcher_array = facetapi_get_searcher_info();
+    foreach($searcher_array as $search) {
+      if(array_key_exists('name', $search)) {
+        $searcher_name = $search['name'];
+      }
+    }
+    // Make sure none of the facets are already enabled.
+    $enabled_facets = facetapi_get_enabled_facets($searcher_name);
+    foreach($facet_array as $facets) {
+	  if(array_key_exists($facets, $enabled_facets)) {
+		unset($facet_array[$facets]);
+	  }
+    }
+    // Load the adapter.
+    $adapter = facetapi_adapter_load($searcher_name);
+    // Load the realm.
+    $realm = facetapi_realm_load($realm_name);
+    // Load all facets
+    $facet_info_array = facetapi_get_facet_info($searcher_name);
+    // Loop the facet array and if they're found in the facet info array, enable them.
+    foreach($facet_array as $facet) {
+      if(array_key_exists($facet, $facet_info_array)) {
+      	// Enable the facet.
+      	facetapi_save_facet_status($adapter, $realm, $facet_info_array[$facet], $status, $weight, TRUE);
+      }
+    }
+  }
+
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function os_search_solr_uninstall(){
+  variable_del('os_search_solr_reindex_by_bundles');
+}

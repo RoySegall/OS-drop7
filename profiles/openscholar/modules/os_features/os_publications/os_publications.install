@@ -1,0 +1,1052 @@
+<?php
+// $Id$
+
+function os_publications_schema() {
+  $schema['cache_biblio_lists'] = drupal_get_schema_unprocessed('system', 'cache');
+  $schema['cache_biblio_lists']['description'] = 'Cache table for biblio lists module.';
+  return $schema;
+}
+
+// Implements hook_install().
+function os_publications_install() {
+   db_add_field('biblio', 'biblio_url_title', array(
+      'type' => 'varchar',
+      'length' => 128,
+      'not null' => FALSE,
+      'description' => 'A title to go with the Relevant URL',
+    ));
+
+  // Insert the biblio_url_title into the biblio_fields table.
+  // Biblio_fields table is not auto increment, grab the last fid and increment it for our insert.
+  $field_id = db_query('SELECT fid FROM {biblio_fields} ORDER BY fid DESC LIMIT 1')->fetchField();
+  if(isset($field_id)) {
+    $field_id = $field_id+1;
+  }
+  db_insert('biblio_fields')
+  ->fields(array(
+    'fid' => $field_id,
+    'name' => 'biblio_url_title',
+    'type' => 'textfield',
+    'size' => 60,
+    'maxsize' => 255,
+  ))
+  ->execute();
+
+  if ($field = field_info_instance('node', 'body', 'biblio')) {
+    $field['display']['teaser'] = array(
+      'label' => 'hidden',
+      'type' => 'hidden',
+    );
+    field_update_instance($field);
+  }
+
+  if(module_exists('biblio_citeproc')){
+    //Remove Line indentation from citeproc styles
+    foreach (biblio_get_styles() as $name => $desc){
+      $csl = db_query('SELECT csl FROM {biblio_citeproc_styles} WHERE filename = :id', array(':id' => $name))->fetchObject();
+      if (isset($csl->csl)) {
+        $csl_file_contents = $csl->csl;
+        if($csl_file_contents = str_replace('<bibliography hanging-indent="true"', '<bibliography hanging-indent="false"', $csl_file_contents) && ($csl_file_contents != $csl->csl)){
+          biblio_citeproc_install_style($name, $csl_file_contents);
+        }
+      }
+    }
+
+    // Remove second biblio_secondary_title field mapping.
+    $field_map = biblio_get_map('field_map','csl');
+    if(isset($field_map['collection-title']) && isset($field_map['container-title'])) {
+      if($field_map['collection-title'] == 'biblio_secondary_title' && $field_map['container-title'] == 'biblio_secondary_title') {
+	    $field_map['collection-title'] = '';
+	    biblio_set_map('field_map', 'csl', $field_map);
+	  }
+    }
+  }
+}
+
+// Implements hook_schema_alter().
+function os_publications_schema_alter(&$schema) {
+  if (isset($schema['biblio'])) {
+    $schema['biblio']['fields']['biblio_url_title'] = array(
+      'type' => 'varchar',
+      'length' => 128,
+      'not null' => FALSE,
+      'description' => 'A title to go with the Relevant URL',
+    );
+  }
+}
+
+// Implements hook_update_N().
+function os_publications_update_7001() {
+  // Insert the biblio_url_title into the biblio_fields table.
+  // Biblio_fields table is not auto increment, grab the last fid and increment it for our insert.
+  $field_id = db_query('SELECT fid FROM {biblio_fields} ORDER BY fid DESC LIMIT 1')->fetchField();
+  if(isset($field_id)) {
+    $field_id = $field_id+1;
+  }
+  db_insert('biblio_fields')
+  ->fields(array(
+    'fid' => $field_id,
+    'name' => 'biblio_url_title',
+    'type' => 'textfield',
+    'size' => 60,
+    'maxsize' => 255,
+  ))
+  ->execute();
+
+  return t('biblio_url_title successfully inserted into the biblio fields table.');
+}
+
+function os_publications_uninstall() {
+  db_drop_field('biblio', 'biblio_url_title');
+}
+
+function os_publications_enable() {
+  _os_publications_update_field_data();
+
+  // place it behind import/export modules
+  db_update('system')
+    ->fields(array('weight' => 50))
+    ->condition('name', 'os_publications', '=')
+    ->condition('type', 'module', '=')
+    ->execute();
+}
+
+/*
+ * Every update in which fields change needs to call this function
+ * All field changes should be exported to the csv using SQL
+ */
+function _os_publications_update_field_data() {
+  static $run_once = FALSE;
+
+  // this only needs to be run once per update
+  if ($run_once) {
+    return;
+  }
+
+  $file = drupal_get_path('module', 'os_publications') . '/misc/biblio_settings.inc';
+  if (!file_exists($file)) {
+    return;
+  }
+
+  list($biblio_field_type, $biblio_field_type_data, $biblio_contributor_type, $biblio_contributor_type_data) = include ($file);
+
+  db_truncate('biblio_field_type')->execute();
+  foreach ($biblio_field_type as $type) {
+    drupal_write_record('biblio_field_type', $type);
+  }
+
+  db_truncate('biblio_field_type_data')->execute();
+  foreach ($biblio_field_type_data as $type_data) {
+    drupal_write_record('biblio_field_type_data', $type_data);
+  }
+
+  db_truncate('biblio_contributor_type')->execute();
+  foreach ($biblio_contributor_type as $contrib_type) {
+    drupal_write_record('biblio_contributor_type', $contrib_type);
+  }
+
+  db_truncate('biblio_contributor_type_data')->execute();
+  foreach ($biblio_contributor_type_data as $contrib_type_data) {
+    //Run the query manually to override the serials
+    drupal_write_record('biblio_contributor_type_data', $contrib_type_data);
+  }
+}
+
+/**
+ * Remove indentation information from the citation styles
+ */
+function os_publications_update_7002(){
+
+  if(module_exists('biblio_citeproc')){
+    //Remove Line indentation from citeproc styles
+    foreach (biblio_get_styles() as $name => $desc){
+      $csl = db_query('SELECT csl FROM {biblio_citeproc_styles} WHERE filename = :id', array(':id' => $name))->fetchObject();
+      if (isset($csl->csl)) {
+        $csl_file_contents = $csl->csl;
+        if(($csl_file_contents = str_replace('<bibliography hanging-indent="true"', '<bibliography hanging-indent="false"', $csl_file_contents)) && ($csl_file_contents != $csl->csl)){
+          biblio_citeproc_install_style($name, $csl_file_contents);
+        }
+      }
+    }
+  }
+
+  return t('Removed inline indents from biblio_citeproc citations.');
+}
+
+/**
+ * Remove the second mapping of biblio_secondary_title which causes duplicate title entries in certain citations.
+ */
+function os_publications_update_7003() {
+  if(!module_exists('biblio_citeproc')){
+  	return t('CiteProc not installed, update not needed.');
+  }
+  $field_map = biblio_get_map('field_map','csl');
+  if(isset($field_map['collection-title']) && isset($field_map['container-title'])) {
+    if($field_map['collection-title'] == 'biblio_secondary_title' && $field_map['container-title'] == 'biblio_secondary_title') {
+	  $field_map['collection-title'] = '';
+	  biblio_set_map('field_map', 'csl', $field_map);
+	  return t('Second biblio_secondary_title field mapping removed.');
+	}
+  }
+}
+
+/**
+ * Remove the migrate related residual "Select Type..." publication type from the biblio_types table.
+ */
+function os_publications_update_7004() {
+  if(!db_table_exists('biblio_types')) {
+  	return;
+  }
+
+  $result = db_select('biblio_types', 'b')
+    ->fields('b', array('tid'))
+    ->condition('name', 'Select Type...','=')
+    ->execute()
+    ->fetchField();
+
+  if(empty($result)) {
+  	return;
+  }
+
+  $delete_type = db_delete('biblio_types')
+    ->condition('tid',$result)
+  	->execute();
+
+  return t('Select Type... has been removed from the biblio_types table.');
+}
+
+/**
+ * Add more biblio years, separate existing one so there's room for more.
+ **/
+function os_publications_update_7005() {
+  $default_bibyears = array(9998 => 'In Press', 9999 => 'Submitted');
+  $scholar_bibyears = array(9999 => 'Submitted', 9998 => 'In Press', 10000 => 'Forthcoming');
+  $new_bibyears = array(10000=>'Forthcoming', 10010=>'Submitted', 10020=>'In Preparation', 10030=>'In Press', 10040=>'Working Paper');
+  $current_bibyears = variable_get('biblio_years_text', $default_bibyears);
+
+  ksort($current_bibyears);
+  ksort($scholar_bibyears);
+  ksort($default_bibyears);
+
+  //Only run this update for sites with the default configuration or our configuration
+  if (($current_bibyears != $default_bibyears) && ($current_bibyears != $scholar_bibyears)) {
+    return t('Biblio years/text settings have been modified.  Did not run update.');
+  }
+
+  $text_to_year = array_flip($new_bibyears);
+  foreach($current_bibyears as $year => $text) {
+    db_update('biblio')
+      ->condition('biblio_year', $year)
+      ->fields(array('biblio_year' => $text_to_year[$text]))
+      ->execute();
+  }
+
+  variable_set('biblio_years_text', $new_bibyears);
+
+  //people used to be able to override this.  those who have won't have the new options.  clear them out, that funcitonality is no longer supported.
+  db_delete('spaces_overrides')
+    ->condition('object_id', 'biblio_years_text')
+    ->condition('object_type', 'variable')
+    ->execute();
+
+  return t('Updated biblio years.');
+}
+
+/**
+ * Replace the newly patched chicago-author-date.csl file in the DB to correct a spacing issue in the citation.
+ */
+function os_publications_update_7006() {
+  if(!module_exists('biblio_citeproc')) {
+  	return;
+  }
+
+  $dir = drupal_get_path('module', 'biblio_citeproc') . '/style';
+  // Update only the chicago-author-date.csl file.
+  $file_name = '/chicago-author-date.csl';
+  $file = $dir . $file_name;
+  // Check for the chicago-author-date.csl.
+  if(!file_exists($file)) {
+    return;
+  }
+
+  $csl = file_get_contents($file);
+  $name = basename($file_name);
+  // Use citeproc's function to update the db.
+  biblio_citeproc_install_style($name, $csl);
+
+  return t('Chicago-author-date.csl file has been replaced');
+}
+
+/**
+ * Remove extra biblio contributors, only Author and Editor should be available to users.
+ */
+function os_publications_update_7007() {
+  if(!module_exists('biblio') || !db_table_exists('biblio_contributor_type_data')) {
+    return;
+  }
+  // Check for the # of contributor types in the DB.
+  $author_count = db_query('SELECT count(auth_type) AS author_count FROM {biblio_contributor_type_data}')->fetchField();
+  // For whatever reason if there are none, return.
+  if(!isset($author_count)) {
+    return;
+  }
+  // We should only have two, if we do, end the update.
+  if($author_count <= 2) {
+    return;
+  }
+  // We want to update the auth_type #2 to be the Editor rather than the Seconday Author.
+  $field_check = db_query('SELECT title FROM {biblio_contributor_type_data} WHERE auth_type = :auth_id', array(':auth_id' => 2))->fetchField();
+  if(!isset($field_check)) {
+    return;
+  }
+  // Update the text.
+  if($field_check != "Editor") {
+    // Update the field text to editor.
+    $field_update = db_update('biblio_contributor_type_data')
+      ->fields(array(
+        'title' => 'Editor',
+      ))
+      ->condition('auth_type', 2, '=')
+      ->execute();
+  }
+  // Before we wipe out all the other contributors, sanity check to make sure there are no rogue contributers attached to biblio nodes.
+  $auth_type_check = db_query('SELECT nid, vid, cid, auth_type FROM {biblio_contributor} WHERE auth_type > :auth_id', array('auth_id' => 2))->fetchAll();
+  if($auth_type_check) {
+  	// Set anything greater than 2 to 2 because they should be editors.
+  	foreach($auth_type_check as $auth => $type) {
+  	  $auth_type_update = db_update('biblio_contributor')
+  	    ->fields(array(
+  	      'auth_type' => 2,
+  	    ))
+  	    ->condition('nid', $type->nid, '=')
+  	    ->condition('vid', $type->vid, '=')
+  	    ->condition('cid', $type->cid, '=')
+  	    ->execute();
+  	}
+  }
+  // Delete all the other contributer types.
+  $contributor_select = db_query('SELECT auth_type FROM {biblio_contributor_type_data} WHERE auth_type > :auth_id', array(':auth_id' => 2))->fetchAll();
+  if(!$contributor_select) {
+    return;
+  }
+  foreach($contributor_select as $contributor => $type) {
+    $auth_delete = db_delete('biblio_contributor_type_data')
+      ->condition('auth_type', $type->auth_type)
+      ->execute();
+  }
+
+  return t('Extra biblio contributors have been removed.');
+}
+
+/**
+ * Set biblio to use views_litepager
+ */
+function os_publications_update_7008() {
+  variable_set('biblio_pager', 'pager_lite'); 
+}
+
+/**
+ * Update the biblio_citeproc_style table with altered csl files to account for proper patent citations.
+ * Also update any existing patents to use the new style, add a default country (US) if one does not exist.
+ */
+function os_publications_update_7009() {
+  if(!module_exists('biblio_citeproc')) {
+    return;
+  }
+  $output = '';
+  $dir = drupal_get_path('module', 'biblio_citeproc') . '/style';
+  // Only update the following CSL files.
+  $csl_file_array = array(
+    'APA' => 'apa.csl',
+    'Chicago' => 'chicago-author-date.csl',
+    'CSE' => 'cse.csl',
+    'IEEE' => 'ieee.csl',
+    'MLA' => 'mla.csl',
+    'NLM' => 'nlm.csl',
+  );
+
+  // Loop the csl file array and update each style.
+  foreach($csl_file_array as $style => $file_name) {
+    $file_path = '/' . $file_name;
+    $file = $dir . $file_path;
+    // Check to make sure the csl file exists.
+    if(!file_exists($file)) {
+      continue;
+    }
+
+    $csl = file_get_contents($file);
+    $name = basename($file_path);
+    // Use citeproc's function to update the db.
+    biblio_citeproc_install_style($name, $csl);
+
+    $output .= $style . ', ';
+  }
+
+  // After the CSL files are updated, check for any existing Patents and add in the Patent Country Support.
+  // Default to US and users can change if not the case.
+  $patent_id = db_query('SELECT tid FROM {biblio_types} WHERE name = :pub_type', array(':pub_type' => 'Patent'))->fetchField();
+  if(!$patent_id) {
+    return t('@files CSL file(s) has been replaced and no existing patents updated.', array('@files' => $output));
+  }
+  // Update each existing patent to include default US patent country.
+  $patent_country_update = db_update('biblio')
+    ->fields(array(
+      'biblio_section' => 'US',
+      'biblio_edition' => 'United States of America',
+    ))
+    ->condition('biblio_type', $patent_id, '=')
+    ->condition(db_or()->condition('biblio_section', '')->condition('biblio_section', NULL))
+    ->execute();
+
+
+  return t('@files CSL file(s) has been replaced and existing patents updated.', array('@files' => $output));
+}
+
+/**
+ * Set biblio to use views_litepager
+ */
+function os_publications_update_7010() {
+  variable_set('biblio_pager', 'views_mini_pager');
+}
+
+/**
+ * Import Data publication type from harvard prod.
+ *
+ * @see biblio_admin_types_add_form_submit().
+ */
+function os_publications_update_7011() {
+  $field_settings = array (
+    0 => array (
+      'vtab' => '1',
+      'autocomplete' => '1',
+      'weight' => '1',
+      'visible' => '1',
+    ),
+    1 => array (
+      'vtab' => '1',
+      'autocomplete' => '0',
+      'weight' => '2',
+      'visible' => '0',
+    ),
+    2 => array (
+      'vtab' => '1',
+      'autocomplete' => '0',
+      'weight' => '3',
+      'visible' => '0',
+    ),
+    3 => array (
+      'vtab' => '1',
+      'autocomplete' => '0',
+      'weight' => '4',
+      'visible' => '0',
+    ),
+    4 => array (
+      'vtab' => '1',
+      'autocomplete' => '0',
+      'weight' => '5',
+      'visible' => '0',
+    ),
+    5 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '6',
+      'visible' => '0',
+    ),
+    6 => array (
+      'vtab' => '8',
+      'autocomplete' => '0',
+      'weight' => '7',
+      'visible' => '0',
+    ),
+    7 => array (
+      'vtab' => '4',
+      'autocomplete' => '0',
+      'weight' => '8',
+      'visible' => '0',
+    ),
+    8 => array (
+      'vtab' => '4',
+      'autocomplete' => '0',
+      'weight' => '9',
+      'visible' => '0',
+    ),
+    9 => array (
+      'vtab' => '4',
+      'autocomplete' => '0',
+      'weight' => '10',
+      'visible' => '0',
+    ),
+    10 => array (
+      'vtab' => '4',
+      'autocomplete' => '0',
+      'weight' => '11',
+      'visible' => '0',
+    ),
+    11 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '12',
+      'visible' => '0',
+    ),
+    12 => array (
+      'vtab' => '3',
+      'autocomplete' => '0',
+      'weight' => '13',
+      'visible' => '1',
+    ),
+    13 => array (
+      'vtab' => '3',
+      'autocomplete' => '0',
+      'weight' => '14',
+      'visible' => '0',
+    ),
+    14 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '-45',
+      'visible' => '1',
+    ),
+    15 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '16',
+      'visible' => '0',
+    ),
+    16 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '17',
+      'visible' => '0',
+    ),
+    17 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '18',
+      'visible' => '0',
+    ),
+    18 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '19',
+      'visible' => '0',
+    ),
+    19 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '20',
+      'visible' => '0',
+    ),
+    20 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '21',
+      'visible' => '0',
+    ),
+    21 => array (
+      'vtab' => '1',
+      'autocomplete' => '0',
+      'weight' => '22',
+      'visible' => '1',
+    ),
+    22 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '23',
+      'visible' => '0',
+    ),
+    23 => array (
+      'vtab' => '6',
+      'autocomplete' => '0',
+      'weight' => '24',
+      'visible' => '0',
+    ),
+    24 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '25',
+      'visible' => '0',
+    ),
+    25 => array (
+      'vtab' => '5',
+      'autocomplete' => '0',
+      'weight' => '26',
+      'visible' => '1',
+    ),
+    26 => array (
+      'vtab' => '7',
+      'autocomplete' => '0',
+      'weight' => '27',
+      'visible' => '1',
+    ),
+    27 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '28',
+      'visible' => '0',
+    ),
+    28 => array (
+      'vtab' => '7',
+      'autocomplete' => '0',
+      'weight' => '29',
+      'visible' => '0',
+    ),
+    29 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '30',
+      'visible' => '0',
+    ),
+    30 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '31',
+      'visible' => '0',
+    ),
+    31 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '32',
+      'visible' => '0',
+    ),
+    32 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '33',
+      'visible' => '0',
+    ),
+    33 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '34',
+      'visible' => '0',
+    ),
+    34 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '35',
+      'visible' => '0',
+    ),
+    35 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '36',
+      'visible' => '0',
+    ),
+    36 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '37',
+      'visible' => '0',
+    ),
+    37 => array (
+      'vtab' => '8',
+      'autocomplete' => '0',
+      'weight' => '38',
+      'visible' => '0',
+    ),
+    38 => array (
+      'vtab' => '8',
+      'autocomplete' => '0',
+      'weight' => '39',
+      'visible' => '0',
+    ),
+    39 => array (
+      'vtab' => '8',
+      'autocomplete' => '0',
+      'weight' => '40',
+      'visible' => '0',
+    ),
+    40 => array (
+      'vtab' => '8',
+      'autocomplete' => '0',
+      'weight' => '41',
+      'visible' => '0',
+    ),
+    41 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '42',
+      'visible' => '0',
+    ),
+    42 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '43',
+      'visible' => '0',
+    ),
+    43 => array (
+      'vtab' => '4',
+      'autocomplete' => '0',
+      'weight' => '44',
+      'visible' => '0',
+    ),
+    44 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '45',
+      'visible' => '0',
+    ),
+    45 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '28',
+      'visible' => '1',
+    ),
+    46 => array (
+      'vtab' => '5',
+      'autocomplete' => '0',
+      'weight' => '29',
+      'visible' => '1',
+    ),
+    47 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '48',
+      'visible' => '0',
+    ),
+    48 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '49',
+      'visible' => '0',
+    ),
+    49 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '50',
+      'visible' => '0',
+    ),
+    50 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '51',
+      'visible' => '0',
+    ),
+  );
+
+  os_publications_import_type('Data', $field_settings);
+}
+
+/**
+ * Import Working Paper publication type from harvard prod.
+ *
+ * @see biblio_admin_types_add_form_submit().
+ */
+function os_publications_update_7012() {
+  $field_settings = array (
+    0 => array (
+      'vtab' => '1',
+      'autocomplete' => '1',
+      'weight' => '1',
+      'visible' => '1',
+    ),
+    1 => array (
+      'vtab' => '1',
+      'autocomplete' => '0',
+      'weight' => '2',
+      'visible' => '0',
+    ),
+    2 => array (
+      'vtab' => '1',
+      'autocomplete' => '0',
+      'weight' => '3',
+      'visible' => '0',
+    ),
+    3 => array (
+      'vtab' => '1',
+      'autocomplete' => '0',
+      'weight' => '4',
+      'visible' => '0',
+    ),
+    4 => array (
+      'vtab' => '1',
+      'autocomplete' => '0',
+      'weight' => '5',
+      'visible' => '0',
+    ),
+    5 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '6',
+      'visible' => '0',
+    ),
+    6 => array (
+      'vtab' => '8',
+      'autocomplete' => '0',
+      'weight' => '7',
+      'visible' => '0',
+    ),
+    7 => array (
+      'vtab' => '4',
+      'autocomplete' => '0',
+      'weight' => '8',
+      'visible' => '0',
+    ),
+    8 => array (
+      'vtab' => '4',
+      'autocomplete' => '0',
+      'weight' => '9',
+      'visible' => '0',
+    ),
+    9 => array (
+      'vtab' => '4',
+      'autocomplete' => '0',
+      'weight' => '10',
+      'visible' => '0',
+    ),
+    10 => array (
+      'vtab' => '4',
+      'autocomplete' => '0',
+      'weight' => '11',
+      'visible' => '0',
+    ),
+    11 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '12',
+      'visible' => '0',
+    ),
+    12 => array (
+      'vtab' => '3',
+      'autocomplete' => '0',
+      'weight' => '13',
+      'visible' => '0',
+    ),
+    13 => array (
+      'vtab' => '3',
+      'autocomplete' => '0',
+      'weight' => '14',
+      'visible' => '0',
+    ),
+    14 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '-45',
+      'visible' => '1',
+    ),
+    15 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '16',
+      'visible' => '0',
+    ),
+    16 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '17',
+      'visible' => '0',
+    ),
+    17 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '18',
+      'visible' => '0',
+    ),
+    18 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '19',
+      'visible' => '0',
+    ),
+    19 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '20',
+      'visible' => '0',
+    ),
+    20 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '21',
+      'visible' => '0',
+    ),
+    21 => array (
+      'vtab' => '1',
+      'autocomplete' => '0',
+      'weight' => '22',
+      'visible' => '1',
+    ),
+    22 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '23',
+      'visible' => '0',
+    ),
+    23 => array (
+      'vtab' => '6',
+      'autocomplete' => '0',
+      'weight' => '24',
+      'visible' => '0',
+    ),
+    24 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '25',
+      'visible' => '0',
+    ),
+    25 => array (
+      'vtab' => '5',
+      'autocomplete' => '0',
+      'weight' => '26',
+      'visible' => '1',
+    ),
+    26 => array (
+      'vtab' => '7',
+      'autocomplete' => '0',
+      'weight' => '27',
+      'visible' => '1',
+    ),
+    27 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '28',
+      'visible' => '0',
+    ),
+    28 => array (
+      'vtab' => '7',
+      'autocomplete' => '0',
+      'weight' => '29',
+      'visible' => '0',
+    ),
+    29 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '30',
+      'visible' => '0',
+    ),
+    30 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '31',
+      'visible' => '0',
+    ),
+    31 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '32',
+      'visible' => '0',
+    ),
+    32 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '33',
+      'visible' => '0',
+    ),
+    33 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '34',
+      'visible' => '0',
+    ),
+    34 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '35',
+      'visible' => '0',
+    ),
+    35 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '36',
+      'visible' => '0',
+    ),
+    36 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '37',
+      'visible' => '0',
+    ),
+    37 => array (
+      'vtab' => '8',
+      'autocomplete' => '0',
+      'weight' => '38',
+      'visible' => '0',
+    ),
+    38 => array (
+      'vtab' => '8',
+      'autocomplete' => '0',
+      'weight' => '39',
+      'visible' => '0',
+    ),
+    39 => array (
+      'vtab' => '8',
+      'autocomplete' => '0',
+      'weight' => '40',
+      'visible' => '0',
+    ),
+    40 => array (
+      'vtab' => '8',
+      'autocomplete' => '0',
+      'weight' => '41',
+      'visible' => '0',
+    ),
+    41 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '42',
+      'visible' => '0',
+    ),
+    42 => array (
+      'vtab' => '2',
+      'autocomplete' => '0',
+      'weight' => '43',
+      'visible' => '0',
+    ),
+    43 =>  array (
+      'vtab' => '4',
+      'autocomplete' => '0',
+      'weight' => '44',
+      'visible' => '0',
+    ),
+    44 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '45',
+      'visible' => '0',
+    ),
+    45 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '46',
+      'visible' => '0',
+    ),
+    46 => array (
+      'vtab' => '5',
+      'autocomplete' => '0',
+      'weight' => '47',
+      'visible' => '0',
+    ),
+    47 =>array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '48',
+      'visible' => '0',
+    ),
+    48 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '49',
+      'visible' => '0',
+    ),
+    49 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '50',
+      'visible' => '0',
+    ),
+    50 => array (
+      'vtab' => '9',
+      'autocomplete' => '0',
+      'weight' => '51',
+      'visible' => '0',
+    ),
+  );
+  os_publications_import_type('Working Paper', $field_settings);
+}
+
+/**
+ * Set publication image style os_square_50_50.
+ */
+function os_publications_update_7013() {
+  features_revert(array('os_publications' => array('field')));
+}

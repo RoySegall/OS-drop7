@@ -1,0 +1,320 @@
+<?php
+
+/**
+ * @file
+ * OpenScholar User Management UI.
+ */
+
+/**
+ * Defines the three vsite role names.
+ */
+define('OS_USER_ROLE_ADMIN', 'vsite admin');
+define('OS_USER_ROLE_EDITOR', 'content editor');
+define('OS_USER_ROLE_BASIC', 'vsite user');
+
+/**
+ * Implements hook_menu().
+ */
+function cp_user_menu() {
+  $items = array();
+
+  $items['cp/users'] = array(
+    'title' => t('Manage Members'),
+    'description' => 'Find and manage site members.',
+    'page callback' => 'cp_user_admin',
+    'access callback' => 'cp_user_admin_access',
+    'file' => 'cp_user.pages.inc',
+    'weight' => 50,
+    'menu_name' => 'cp',
+  );
+
+  $items['cp/users/add'] = array(
+    'title' => t('Add a User to Your Website'),
+    'page arguments' => array('add'),
+    'access callback' => 'cp_user_admin_access',
+    'file' => 'cp_user.pages.inc',
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['cp/users/delete_membership/%user'] = array(
+    'type' => MENU_CALLBACK,
+    'title' => t('Remove Membership'),
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cp_user_remove_membership_confirm', 3),
+    'access callback' => 'cp_user_admin_access',
+    'file' => 'cp_user.pages.inc',
+  );
+
+  $items['cp/users/edit_membership/%user'] = array(
+    'type' => MENU_CALLBACK,
+    'title' => 'Edit Member',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cp_user_edit_membership_form', 3),
+    'access callback' => 'cp_user_admin_access',
+    'file' => 'cp_user.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Menu access; Return TRUE if user can access user admin page.
+ */
+function cp_user_admin_access() {
+  return user_access('administer users') && spaces_get_space();
+}
+
+/**
+ * Implements hook_admin_paths().
+ */
+function cp_user_admin_paths() {
+  $paths = array(
+    'cp/users/edit_membership/*' => TRUE,
+    'cp/users/delete_membership/*' => TRUE,
+    'cp/users/add' => TRUE,
+  );
+
+  return $paths;
+}
+
+/**
+ * Page callback; CP user admin delegator.
+ *
+ * @param $op
+ *   The operation needed. Defaults to "members".
+ */
+function cp_user_admin($op = 'list') {
+  $vsite = spaces_get_space();
+  switch ($op) {
+    case 'add':
+      module_load_include('inc', 'og_ui', 'og_ui.admin');
+      $build['user_add'] = drupal_get_form('og_ui_add_users', 'node', $vsite->id);
+      // Move up the user_register_form from "create" as we're removing that option.
+      // Both forms should display and be controlled by jQuery to hide one or the other depending
+      // on the action the user wants to take.
+      $build['user_register'] = drupal_get_form('user_register_form');
+      break;
+
+    case 'list':
+    default:
+      $build = cp_user_user_management_page($vsite->id);
+  }
+  return $build;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Change the title and set default values for adding user to group.
+ */
+function cp_user_form_og_ui_add_users_alter(&$form, $form_state) {
+  $item = menu_get_item();
+
+  $form['og_user']['#title'] = t('Add an existing user to this website');
+
+  // Create and add a link for the user to click on to create a new user.
+  $ajax_link = '<a href="javascript:void(0)" id="new-user-link">' . t('Create a new user') . '</a>';
+  // Added the link onto the form as just text and set the weight higher to bump it down the add user form.
+  $form['og_user']['name']['#title'] = t('User');
+  // The new autocomplete is for vsites, only switch the autocomplete if vsite is enabled.
+  if (module_exists('vsite')) {
+    $form['og_user']['name']['#description'] = t('Type in a person\'s name, username, or e-mail address to search for their existing account.');
+    // Add the new user autocomplete function.
+    $form['og_user']['name']['#autocomplete_path'] = 'vsite/autocomplete/user';
+  }
+  $form['og_user']['link_text'] = array(
+    '#type' => 'item',
+    '#markup' => '<div id="cp-user-create-new">' . t('Can\'t find their account above? !create_new.',
+      array('!create_new' => $ajax_link)
+    ) . '</div>',
+    '#weight' => 2,
+  );
+
+  $field_names = og_get_group_audience_fields('user', 'user');
+
+  // Attach the custom js file to control the toggle of the two forms.
+  $form['og_user']['#attached'] = array('js' => array(drupal_get_path('module', 'cp_user') . '/cp_user.js'));
+
+  $form['og_user']['state'] = array(
+    '#type' => 'value',
+    '#value' => OG_STATE_ACTIVE,
+  );
+  $form['og_user']['field_name'] = array(
+    '#type' => 'value',
+    '#value' => key($field_names),
+  );
+
+  // Hide the option to select a user role for now.
+  if (isset($form['og_user']['roles'])) {
+    $form['og_user']['roles']['#access'] = FALSE;
+  }
+
+  // Add a secondary submit function that redirects the users out of the
+  // admin overlay
+  $form['#submit'][] = 'cp_user_og_ui_add_users_submit';
+}
+
+/**
+ * Submit handler; maybe grants a role, then redirects user back to "cp/users".
+ */
+function cp_user_og_ui_add_users_submit(&$form, &$form_state) {
+
+  $state = $form_state['values']['state'];
+  $account = user_load_by_name($form_state['values']['name']);
+
+  if ($state) {
+    $og_roles = og_roles('node', FALSE, $form_state['values']['gid']);
+    $vsite_user_role = array_search('vsite user', $og_roles);
+
+    // Grant them the vsite user role
+    og_role_grant('node', $form_state['values']['gid'], $account->uid, $vsite_user_role);
+  }
+
+  $form_state['redirect'] = 'cp/users';
+}
+
+/**
+ * Implements hook_field_access().
+ */
+function cp_user_field_access($op, $field, $entity_type, $entity, $account) {
+  $field_names = array(
+    OG_MEMBERSHIP_REQUEST_FIELD,
+    'field_message',
+  );
+
+  if ($op == 'edit' && in_array($field['field_name'], $field_names)) {
+    return FALSE;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for user_register_form.
+ *
+ * Altering the user_register_form to add a secondary submit function
+ * that will also add a user to the site
+ */
+function cp_user_form_user_register_form_alter(&$form, &$form_state, $form_id) {
+  // The only time we want to alter this form is when the user is in their "cp",
+  // other than that the form should not get altered.
+  $item = menu_get_item();
+
+  if (strpos($item['path'], 'cp') === 0) {
+    // Create a hidden field to control our JS
+    $form['switch'] = array(
+      '#title' => t('switch'),
+      '#default_value' => 1,
+      '#type' => 'hidden',
+      '#attributes' => array('id' => 'switch'),
+    );
+    // Remove the password field, we don't want users setting passwords for other users.
+    if (isset($form['account']) && isset($form['account']['pass'])) {
+      unset($form['account']['pass']);
+      // Remove the notify option as we will force notify all new users.
+      if (isset($form['account']['notify'])) {
+        unset($form['account']['notify']);
+      }
+      // Add a new validation function to update the password.
+      $form['#validate'][] = 'cp_user_no_password_validate';
+    }
+    // Add a secondary submit function that also submits the user add
+    // function.
+    $form['#submit'][] = 'cp_user_user_register_submit';
+    // Remove the 'status' and 'role' elements from the form.
+    $form['account']['status']['#access'] = FALSE;
+    $form['account']['roles']['#access'] = FALSE;
+    // Change the submit button text to let the user know they will also
+    // be adding to their site as well as creating the user, in one step.
+    $form['actions']['submit']['#value'] = t('Create and add member');
+  }
+}
+
+/**
+ * Custom form validation for the user_register_form.
+ * Uses the user_password function in the user module to auto-create a password.
+ * Also forces the notify users variable to be set.
+ */
+function cp_user_no_password_validate($form, &$form_state) {
+  // Now we need to set a password so the user_register_submit handler does not bomb out.
+  $form_state['values']['pass'] = user_password();
+  // Also need to notify the user of their new account.
+  $form_state['values']['notify'] = TRUE;
+}
+
+/**
+ * Submit handler; Add the newly created user to the current site.
+ */
+function cp_user_user_register_submit($form, &$form_state) {
+  $space = spaces_get_space();
+  if (!empty($form_state['user']->uid)) {
+    og_group('node', $space->id, array('entity' => $form_state['user']->uid));
+
+    $og_roles = og_roles('node', FALSE, $space->id);
+    $vsite_user_role = array_search('vsite user', $og_roles);
+
+    // Grant them the vsite user role
+    og_role_grant('node', $space->id, $form_state['user']->uid, $vsite_user_role);
+
+    // drupal_set_message to inform the user has been added to the group.
+    drupal_set_message(t('!user has been added to the website: !website', array('!user' => $form_state['user']->name, '!website' => $space->group->title)));
+    // Redirect the user after they add/create someone.
+    $form_state['redirect'] = 'cp/users';
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for cp_settings_form.
+ */
+function cp_user_form_cp_settings_form_alter(&$form, &$form_state) {
+  if (isset($form['admin-menu'])) {
+    $form['admin-menu']['#access'] = FALSE;
+  }
+}
+
+/**
+ * Returns an associative array mapping role names to human readable names.
+ *
+ * @param bool $verbose
+ *   If TRUE, formats a 2-line label with descriptive help text for each role.
+ *
+ * @return array $roles
+ */
+function _cp_user_list_roles($mode = 'names', $bundle = NULL) {
+  $roles = array();
+
+  $machine_names = array(
+    OS_USER_ROLE_BASIC,
+    OS_USER_ROLE_EDITOR,
+    OS_USER_ROLE_ADMIN,
+  );
+  $human_names = array(
+    t('Basic member'),
+    t('Content editor'),
+    t('Administrator'),
+  );
+
+  switch ($mode) {
+    case 'names':
+      $roles = array_combine($machine_names, $human_names);
+      break;
+
+    case 'options':
+      $descriptions = array(
+        t('<em>Basic members</em> may only add new posts and edit their own posts.'),
+        t('<em>Content editors</em> may add and edit posts, and also edit others\' posts.'),
+        t('<em>Administrators</em> may add, edit or delete any post, and change site settings.'),
+      );
+      for ($i = 0; $i < sizeof($machine_names); $i++) {
+        $roles[$machine_names[$i]] = _cp_user_role_option($human_names[$i], $descriptions[$i]);
+      }
+      break;
+
+    case 'rids':
+      $og_roles = og_roles('node', $bundle);
+      for ($i = 0; $i < sizeof($machine_names); $i++) {
+        $roles[$machine_names[$i]] = array_search($machine_names[$i], $og_roles);
+      }
+      break;
+  }
+
+  return $roles;
+}

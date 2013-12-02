@@ -1,0 +1,12 @@
+name = "Pinserver Authentication"
+core = 7.x
+description = "Allows users to log in using only their PIN"
+
+dependencies[] = pinserver
+
+; Information added by drush on 2013-12-02
+version = "7.x-3.4"
+core = "7.x"
+project = "pinserver"
+datestamp = "1385971718"
+

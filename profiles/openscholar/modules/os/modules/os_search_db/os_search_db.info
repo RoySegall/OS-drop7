@@ -1,0 +1,10 @@
+name = OpenScholar: DB Search
+description = Provides OpenScholar Database Search support
+core = 7.x
+package = OpenScholar
+php = 5.2.4
+dependencies[] = node
+dependencies[] = ctools
+dependencies[] = features
+features[context][] = core_search
+features[features_api][] = api:1

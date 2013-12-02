@@ -1,0 +1,317 @@
+<?php
+/**
+ * Functions and APIs for logging in a user via pinserver
+ *
+ * PIN workflow:
+ * anonymous user visits user -> user/pin -> pinserver -> PIN has user account -> redirect to $destination
+ *                                                     -> PIN has no account
+ *                                                            V
+ *                                    -----------------------------------------------------------------
+ *                                   V                                      V                         V
+ *                              User wants to link account      User wants to create site        User wants to cancel
+ *                                   V                                     V                           V
+ *                             user/login                        site/register                user/pin/cancel
+ *                                   V                                    V                            V
+ *                              User logs in                     User creates site                Clear pin session
+ *                                   V                                    V                            V
+ *                              Link PIN with UID               Link PIN with new UID              Redirect to $destination
+ *                                   V                                    V                            |
+ *                           Redirect to $destination           Redirect to site                       |
+ *                                   |                                    |                            |
+ *                                   --------------------------------|  Done  |-------------------------
+ *
+ * Authenticated users cannot access user/pin.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function pinserver_authenticate_menu() {
+  $items = array();
+
+  $items['user/pin'] = array(
+    'title' => 'Log in via PIN',
+    'page callback' => 'pinserver_authenticate_pin_user_login',
+    'access callback' => 'pinserver_authenticate_user_login_access',
+    'type' => MENU_CALLBACK,
+    'file' => 'pinserver_authenticate.pages.inc',
+  );
+
+  $items['user/pin/create'] = array(
+    'title' => 'Create user from PIN',
+    'page callback' => 'pinserver_authenticate_user_create',
+    'access callback' => 'pinserver_authenticate_user_login_access',
+    'file' => 'pinserver_authenticate.pages.inc',
+  );
+
+  $items['user/pin/cancel'] = array(
+    'title' => 'Cancel op',
+    'page callback' => 'pinserver_authenticate_cancel',
+    'access callback' => TRUE,
+    'file' => 'pinserver_authenticate.pages.inc'
+  );
+
+  return $items;
+}
+
+/**
+ * Impleemnts hook_menu_alter().
+ */
+function pinserver_authenticate_menu_alter(&$items) {
+  $items['user']['title'] = 'Sign In';
+  $items['user']['page callback'] = 'pinserver_authenticate_default_user_login';
+  $items['user']['file'] = 'pinserver_authenticate.pages.inc';
+  $items['user']['file path'] = drupal_get_path('module', 'pinserver_authenticate');
+
+  $items['user/password']['type'] = MENU_CALLBACK;
+}
+
+/**
+ * Refuse access to users that have authenticated.
+ * Because that makes no sense.
+ * @return bool
+ */
+function pinserver_authenticate_user_login_access() {
+  if (user_is_logged_in()) {
+    return false;
+  }
+
+  return true;
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ *
+ * Removes the PIN login button if they've already logged in to PIN.
+ * They are redirected to user/login after authing with PIN if they've elected
+ * to link an existing account to this PIN. We don't present them with the
+ * Login via PIN link in this case
+ */
+function pinserver_authenticate_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  if ($root_path == 'user') {
+    $tabs = &$data['tabs'][0]['output'];
+    foreach ($tabs as $k => $t) {
+      if ($t['#link']['path'] == 'user/login') {
+        $tabs[$k]['#link']['localized_options']['query'] = drupal_get_destination();
+        if (pinserver_get_user_huid()) {
+          drupal_set_message(t('Log in with your existing account to associate it with your Harvard University ID (HUID)!'));
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Given a PIN, get the user's UID or false
+ */
+function pinserver_authenticate_get_uid_from_huid($huid = NULL) {
+  if (!$huid){
+    $huid = pinserver_get_user_huid();
+  }
+
+  if ($huid) {
+    $or = db_or()
+      ->condition('huid', $huid)
+      ->condition('hashID', $huid);
+    return db_select('pinserver_users', 'pu')
+      ->fields('pu', array('uid'))
+      ->condition($or)
+      ->execute()
+      ->fetchField();
+  }
+
+  return FALSE;
+}
+
+/**
+ * Links a PIN and UID together
+ */
+function pinserver_authenticate_set_user_huid($uid, $huid) {
+  $fields = array(
+    'reg_time' => REQUEST_TIME
+  );
+  if (strlen($huid) > 10) {
+    $fields['hashID'] = $huid;
+    $fields['huid'] = null;
+  }
+  else {
+    $fields['huid'] = $huid;
+    $fields['hashID'] = null;
+  }
+
+  try {
+    db_merge('pinserver_users')
+      ->key(array('uid' => $uid))
+      ->fields($fields)
+      ->execute();
+    return true;
+  }
+  catch (Exception $e) {
+    drupal_set_message('Error linking HUID with OpenScholar account', 'error');
+    error_log($e->getMessage());
+    return false;
+  }
+}
+
+/**
+ * Implements hook_user_login().
+ *
+ * Associates the active PIN user with the Drupal user that was just logged in to.
+ * Only does this is there is a PIN user and no linkage has been established already
+ */
+function pinserver_authenticate_user_login(&$user, $account) {
+  if ($huid = pinserver_get_user_huid()) {
+    $pin_user = pinserver_authenticate_get_uid_from_huid($huid);
+    if (!$pin_user) {
+      pinserver_authenticate_set_user_huid($account->uid, $huid);
+    }
+    elseif ($pin_user != $account->uid) {
+      drupal_set_message('Your HUID has been linked with another account. You may not link it with another.', 'error');
+      pinserver_remove_session();
+    }
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Adds customizations to user login form
+ */
+function pinserver_authenticate_form_user_login_alter(&$form, &$form_state) {
+  $form['pass']['#description'] .= t(' <br />!request', array('!request' => l('Forgot your password?', 'user/password')));
+
+  if (pinserver_get_user_huid()) return;
+
+  $query = array(
+    'destination' => 'user'
+  );
+  if (isset($_GET['destination'])) {
+    $query['destination'] = $_GET['destination'];
+  }
+
+  $form['pin'] = array(
+    '#prefix' => '<span id="pin-login" class="pin-button">',
+    '#markup' => l('Login via Harvard University ID (HUID).', 'user/pin', array('query' => $query)),
+    '#suffix' => '</span>',
+    '#weight' => -1,
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'pinserver_authenticate').'/css/pinserver_authenticate.create.css'
+      )
+    )
+  );
+
+  if (!variable_get('login_via_pin_by_default', FALSE)) {
+    $form['pin-fieldset'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Login with your OpenScholar account'),
+      '#collapsible' => TRUE,
+      '#collapsed' => TRUE,
+      'name' => $form['name'],
+      'pass' => $form['pass'],
+      'actions' => $form['actions']
+    );
+    unset($form['name'], $form['pass'], $form['actions']);
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * Overrides the login theme function for our own.
+ */
+function pinserver_authenticate_theme_registry_alter(&$reg) {
+  if (isset($reg['openscholar_login'])) {
+    $reg['openscholar_login']['function'] = 'theme_pinserver_authenticate_openscholar_login';
+  }
+}
+
+/**
+ * Points users to the user/pin page if the by default variable is true
+ */
+function theme_pinserver_authenticate_openscholar_login($vars) {
+  global $user;
+
+  // Do not print the login link if you are logged in.
+  if ($user->uid) {
+    return "";
+  }
+
+  $path = variable_get('login_via_pin_by_default', FALSE)?'user/pin':'user';
+
+  return l($vars['link_text'], $path, array(
+    'purl' => array(
+      'disabled' => TRUE,
+    ),
+    'attributes' => $vars['attributes'],
+    //'query' => drupal_get_destination(),
+    'alias' => TRUE,
+  ));
+}
+
+/**
+ * Implements hook_cp_settings().
+ *
+ * Adds ability for a vsite to make PIN authentication the default
+ */
+function pinserver_authenticate_cp_settings() {
+  $setting = array();
+  $setting['login_via_pin_by_default'] = array(
+    'group' => array(
+      '#title' => t('HUID Authentication'),
+      '#id' => 'pin-auth',
+    ),
+    'form' => array(
+      '#type' => 'checkbox',
+      '#default_value' => variable_get('login_via_pin_by_default', 0),
+      '#title' => t('User must login with HUID'),
+      '#description' => t('Checking this will force any users of your site to login using their Harvard University ID (HUID) instead of their OpenScholar account'),
+    ),
+  );
+
+  return $setting;
+}
+
+/**
+ * Implements hook_form_{FORM_ID}_alter().
+ *
+ * Adds setting to make all login attempts go through PIN
+ */
+function pinserver_authenticate_form_pinserver_config_alter(&$form, &$form_state) {
+  $form['pinserver_authenticate'] = array(
+    '#type' => 'fieldset',
+    '#title' => 'Harvard Pinserver Authentication',
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+    'login_via_pin_by_default' => array(
+      '#type' => 'checkbox',
+      '#default_value' => variable_get('login_via_pin_by_default', 0),
+      '#title' => t('User must login with PIN'),
+      '#description' => t('Checking this will force any users of your site to login using their PIN instead of their OpenScholar account'),
+    )
+  );
+}
+
+/**
+ * Change the title of sign on page
+ */
+function pinserver_authenticate_process_page(&$vars) {
+  if (arg(0) == 'user' && (arg(1) === 'login' || (arg(1) == '' && user_is_anonymous()))) {
+    $vars['title'] = t('Sign In');
+  }
+}
+
+/**
+ * Implements hook_vsite_access_denied().
+ *
+ * Sets the variable on access denied pages so the login link will be correct for private sites
+ */
+function pinserver_authenticate_vsite_access_denied($vsite) {
+  $var = db_select('spaces_overrides', 'so')
+        ->fields('so', array('value'))
+        ->condition('id', $vsite->group->nid)
+        ->condition('object_id', 'login_via_pin_by_default')
+        ->execute()
+        ->fetchField();
+  $GLOBALS['conf']['login_via_pin_by_default'] = unserialize($var);
+}

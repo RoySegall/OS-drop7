@@ -1,0 +1,14 @@
+name = Feeds Tamper
+description = Modify feeds data before it gets saved.
+package = Feeds
+dependencies[] = feeds
+files[] = tests/feeds_tamper.test
+files[] = tests/feeds_tamper_plugins.test
+core = 7.x
+
+
+; Information added by drush on 2013-12-02
+version = "unknown"
+project = "feeds_tamper‏"
+datestamp = "1385971798"
+

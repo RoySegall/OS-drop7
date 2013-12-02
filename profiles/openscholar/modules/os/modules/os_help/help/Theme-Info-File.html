@@ -1,0 +1,49 @@
+<p><strong>NOTE: This help article is out of date! It conatins information for Drupal 6 only. This version of OpenScholar uses Drupal 7.</strong></p>
+<p>.info files have several distinct keys that are unique to scholar
+themes they all begin with the "scholar" keyword</p>
+<ul>
+	<li>
+	<h3>scholar[widgets] (array)</h3>
+	<p>Widgets are what scholar calls the display blocks on any given
+	page. For a good representation of what widgets are and where they are
+	located take a look at the "/cp/build/layout" page.</p>
+	<p>"scholar[widgets]" is an array that allows the theme developer
+	to override the default location of a block. Where the array key is the
+	widget id and the value is the region you would rather it be in by
+	default. For example the block that prints the main menu has an id of
+	"vsite_menus_0" and is by default in the "navbar" region. To override
+	this value and put the block into the left region by default the
+	following entry would be used: <strong>scholar[widgets][vsite_menus_0]
+	= left</strong></p>
+	<h4>An example of some block id's are: (all block id's can be seen
+	by looking at the html source)</h4>
+	<ul>
+		<li>vsite_menus-features: Primary Menu</li>
+		<li>vsite_menus-scholar_secondary_menu: Secondary Menu</li>
+		<li>scholar_1: Main Info Block</li>
+		<li>scholar_0: Site Logo</li>
+		<li>vsite_widgets-1: Search Box</li>
+	</ul>
+	</li>
+	<li>
+	<h3>os[cp_layout_css] (string)</h3>
+	<p>This should be set to the path to a css file that modifies the
+	layout of the regions on "/cp/build/layout". If your theme does not
+	rearrange the regions from the default locations then this is not
+	needed. The css properties you are overriding can be found in the
+	vsite_layout module under "/theme/cp-layout-map.css"</p>
+	</li>
+	<li>
+	<h3>os[theme_type](string)</h3>
+	<p>Setting this to "vsite" lets the application know that your
+	theme is available for use on vsites. Without this set your theme will
+	not be available to users.</p>
+	</li>
+	<li>
+	<h3>os[theme_access](string)</h3>
+	<p>Setting this to "public" allows any user to set this as their
+	theme. If it is set to "private" then only administrators with special
+	privileges can apply this theme. It can be useful if you wish to
+	restrict the use of your theme</p>
+	</li>
+</ul>

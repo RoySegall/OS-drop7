@@ -1,0 +1,45 @@
+<?php
+
+/**
+ * @file
+ * Main module file for OG Taks example.
+ */
+
+/**
+ * Implements hook_default_message_type().
+ */
+function og_tasks_example_default_message_type() {
+  $items = array();
+  $items['group_tasks_executed'] = entity_import('message_type', '{
+    "name" : "group_tasks_executed",
+    "description" : "Group tasks executed",
+    "argument_keys" : [],
+    "argument" : [],
+    "category" : "message_type",
+    "data" : { "purge" : { "override" : 0, "enabled" : 0, "quota" : "", "days" : "" } },
+    "language" : "",
+    "arguments" : null,
+    "message_text" : { "und" : [
+        {
+          "value" : "Dear group admin,\r\nthe tasks for your group were executed.",
+          "format" : "filtered_html",
+          "safe_value" : "\u003Cp\u003EDear group admin,\u003Cbr \/\u003E\nthe tasks for your group were executed.\u003C\/p\u003E\n"
+        }
+      ]
+    },
+    "rdf_mapping" : []
+  }');
+
+  return $items;
+}
+
+/**
+ * Implements hook_og_tasks_info().
+ */
+function og_tasks_example_og_tasks_info($entity_type, $entity) {
+  $tasks = array();
+
+  $tasks['tasks_executed'] = new ogTasksExample($entity_type, $entity);
+
+  return $tasks;
+}

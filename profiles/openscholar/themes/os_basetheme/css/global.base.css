@@ -1,0 +1,789 @@
+/**
+ * global.base.css
+ * This is basically a big reset for html elements to set up global defaults.
+ */
+
+/*
+ * Fonts
+ *
+ * By default there is no global font size reset. A common
+ * method is to reset it to 62.5%, or 10px. This makes it very
+ * easy to calculate the required font sizes in em, for example:
+ *
+ * 1.6em = 16px
+ * 2.4em = 24px
+ *
+ * In Adaptivetheme this should be applied to the HTML element,
+ * so it will play nicely with the theme settings. If you use
+ * the body element or #page wrapper you will get unpredictable
+ * font scaling issues.
+ *
+ * Font size chart from http://pxtoem.com/
+ *
+ * 6px	 0.6em	 60%	 5pt
+ * 7px	 0.7em	 70%	 5pt
+ * 8px	 0.8em	 80%	 6pt
+ * 9px	 0.9em	 90%	 7pt
+ * 10px	 1em	   100%	 8pt
+ * 11px	 1.1em	 110%	 8pt
+ * 12px	 1.2em	 120%	 9pt
+ * 13px	 1.3em	 130%	 10pt
+ * 14px	 1.4em	 140%	 11pt
+ * 15px	 1.5em	 150%	 11pt
+ * 16px	 1.6em	 160%	 12pt
+ * 17px	 1.7em	 170%	 13pt
+ * 18px	 1.8em	 180%	 14pt
+ * 19px	 1.9em	 190%	 14pt
+ * 20px	 2em	   200%	 15pt
+ * 21px	 2.1em	 210%	 16pt
+ * 22px	 2.2em	 220%	 17pt
+ * 23px	 2.3em	 230%	 17pt
+ * 24px	 2.4em	 240%	 18pt
+ *
+ *
+ * Font Theme Settings
+ *
+ * Adaptivetheme includes powerful theme settings for adding
+ * webfonts and setting font sizes - you can enable these
+ * under "Site Tweaks", simply enable the Fonts setting and
+ * start using them. You can choose from standard websafe font
+ * stacks, Google fonts, add your own custom stacks, and if you
+ * have @font-your-face module installed just set the font to
+ * "-- add selector in theme CSS --" and the font will automatically
+ * be available to you in theme settings.
+ * @see http://drupal.org/project/fontyourface
+ *
+ *
+ * Font Stacks
+ *
+ * These are the font stacks that used for the websafe fonts
+ * in theme settings (if you enabled the Fonts feature). They are
+ * included here for easy reference if you prefer to set your fonts
+ * in CSS.
+ *
+ * font-family: 'Trebuchet MS', 'Helvetica Neue', Arial, Helvetica, sans-serif;
+ * font-family: Verdana, Geneva, 'DejaVu Sans', Arial, Helvetica, sans-serif;
+ * font-family: Arial, Helvetica, sans-serif;
+ * font-family: Calibri, Candara, Arial, Helvetica, sans-serif;
+ * font-family: 'Segoe UI', 'Myriad Pro', Myriad, Arial, Helvetica, sans-serif;
+ * font-family: 'Lucida Sans Unicode', 'Lucida Sans', 'Lucida Grande', Verdana, Geneva, sans-serif;
+ * font-family: Impact, Haettenschweiler, 'Franklin Gothic Bold', Charcoal, 'Helvetica Inserat', 'Bitstream Vera Sans Bold', 'Arial Black', sans-serif;
+ * font-family: Garamond, Perpetua, 'Times New Roman', serif;
+ * font-family: Georgia, Baskerville, Palatino, 'Palatino Linotype', 'Book Antiqua', 'Times New Roman', serif;
+ * font-family: Consolas, Monaco, 'Courier New', Courier, monospace, sans-serif;
+ */
+
+
+html /* Always apply your global font size the the HTML element, not body or #page */ {
+	 font-size: 13px;
+  line-height: 1.5; /* Unitless line-heights scale */
+  height: 100%;
+  overflow-y: scroll;
+  -webkit-text-size-adjust: 100%;
+  -ms-text-size-adjust: 100%;
+}
+
+body {
+  font-family: helvetica,arial,verdana,sans-serif;
+  min-height: 100%;
+  -webkit-font-smoothing: antialiased;
+  font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+  margin: 0;
+
+}
+
+h1,h2,h3,h4,h5,h6,
+h1 img,h2 img,h3 img,h4 img,h5 img,h6 img,
+em,dfn,del,ins,
+a,
+tbody,tfoot,thead,tr,
+ul,li,
+label,legend,
+figure,figcaption {
+  margin: 0;
+  padding: 0;
+}
+
+/* Reset HTML5 elements */
+article,
+aside,
+details,
+figcaption,
+figure,
+footer,
+header,
+hgroup,
+menu,
+nav,
+section {
+  display: block;
+}
+
+
+.lt-ie9 img,
+.lt-ie9 object,
+.lt-ie9 embed,
+.lt-ie9 video {
+  max-width: 100%;
+  border:none;
+}
+
+
+/* Default font sizes for headings, can be overridden in theme settings or set them here */
+
+h1 {
+}
+
+h1.node-title {
+	font-size:1.15em;
+}
+
+.sub_title {
+	display:block;
+	font-size:.75em;
+}
+
+
+h2 {
+	font-size:1.3em;
+}
+
+h3 {
+}
+
+h4 {
+}
+
+h5,
+h6 {
+}
+
+h1 a,
+h2 a,
+h3 a,
+h4 a {
+    text-decoration: none;
+}
+
+
+.profile h3 {
+    border-bottom: none;
+}
+
+#boxes-box-site_info {
+	line-height:1.2;
+}
+
+.view .date-nav-wrapper .date-heading h3 {
+    font-size: 1.3em;
+}
+
+.field-type-file img,
+img,
+a img {
+  border: 0;
+}
+
+p {
+     margin: 0px 0px 1.5em;
+     padding: 0px;
+}
+
+
+#columns p:only-child,
+#columns p:nth-last-of-type(1) {
+     margin: 0 0px .4em;
+}
+
+a, a:visited {
+    text-decoration: none;
+    color: #005C9C;
+}
+
+/* INFINITE SCROLL BUTTON */
+#autopager-load-more, #autopager-load-prev {
+     text-align: center;
+}
+
+#autopager-load-more:hover, #autopager-load-prev:hover {
+     background-color: #FFFFFF;
+}
+
+#autopager-load-prev a,
+#autopager-load-more a {
+     background: #f1f1f1;
+     border-radius: 4px 4px 4px 4px;
+     border: 1px solid #CCCCCC;
+     color: #215990;
+     display: block;
+     font-size: 13px;
+     font-weight: bold;
+     margin: 0px auto;
+     padding: 3px;
+     width: 25%;
+}
+
+#autopager-load-prev a:hover,
+#autopager-load-more a:hover {
+    text-decoration:none !important;
+    cursor: pointer;
+}
+
+em,
+dfn {
+  font-style: italic;
+}
+
+ins {
+  border-bottom: none;
+  text-decoration: none;
+}
+
+pre,
+code,
+tt,
+samp,
+kbd,
+var {
+  font-size: 1em;
+  font-family: Consolas, "Lucida Console", Menlo, Monaco, "DejaVu Sans Mono", monospace, sans-serif; /* sans-serif Safari hack */
+}
+
+blockquote,
+q {
+  font-style: italic;
+  quotes: "" "";
+}
+
+blockquote {
+  margin: 0 0 1.5em;
+  padding: 0 0 0 40px;
+}
+
+blockquote:before,
+blockquote:after,
+q:before,
+q:after {
+  content: "";
+}
+
+blockquote p {
+  margin: 0;
+}
+
+blockquote {
+border-left: 2px solid #807E6D;
+    font-style: italic;
+    margin: 1em 3em;
+    padding-left: 1em;
+   }
+
+strong,
+dfn,
+caption,
+th {
+  font-weight: 700;
+}
+
+ul,
+ol {
+  margin: 0 0 1.5em 17px;
+  padding: 0;
+}
+
+.item-list ul,
+.item-list ol {
+  margin: 0;
+  padding: 0;
+}
+
+.page-help .item-list ul,
+.page-help .item-list ol {
+margin: 0 0 1.5em 17px;
+}
+
+.item-list ul li {
+  margin: 0;
+  padding: 0;
+}
+
+.block ul {
+    padding-left: 0;
+    list-style: none;
+}
+
+.block.block-boxes-os_boxes_html ul,
+.block .field-name-body ul {
+     list-style: disc;
+
+}
+
+ul ul,
+ul ol,
+ol ol,
+ol ul,
+.block ul ul,
+.block ul ol,
+.block ol ol,
+.block ol ul,
+.item-list ul ul,
+.item-list ul ol,
+.item-list ol ol,
+.item-list ol ul {
+  margin-bottom: 0;
+}
+
+/** 1 A a (1) **/
+
+.mceContentBody ol,
+#content-column ol {
+ list-style-type:decimal;
+}
+
+.mceContentBody ol ol,
+#content-column ol ol {
+ list-style-type: upper-alpha;
+ margin-left:25px;
+}
+
+.mceContentBody ol ol ol,
+#content-column ol ol ol {
+ list-style-type: lower-alpha;
+}
+
+.mceContentBody ol ol ol ol,
+#content-column ol ol ol ol {
+ list-style-type: decimal;
+}
+
+
+ul ul ul {
+  list-style-type: square;
+}
+
+ol {
+  list-style-type: decimal;
+}
+
+ol ol {
+  list-style-type: lower-alpha;
+}
+
+ol ol ol {
+  list-style-type: lower-roman;
+}
+
+ul ul,
+ul ul ul ul {
+  list-style-type: circle;
+}
+
+.view-os-image-gallery {
+	margin-bottom:15px;
+}
+
+.view-os-image-gallery ul li,
+.views-field-media-gallery-media ul {
+	list-style-type: none;
+
+}
+
+.view-id-os_image_gallery li.views-row {
+	margin-bottom:15px;
+}
+
+.view-id-os_image_gallery .views-field-title .field-content a {
+	font-weight:bold;
+	}
+
+.view-os-events {
+	margin-bottom:15px;
+	}
+
+.page-user .profile .item-list li {list-style:none !important;}
+
+
+.tweets-pulled-listing ul {
+	margin-left:0;
+}
+
+.sidebar .block-boxes-os_taxonomy_fbt ul ul {margin: 0 10px;}
+
+.boxes-box ul.featured-links {
+
+    margin-left: 0;
+}
+
+.boxes-box ul.featured-links li {
+    margin-bottom: 15px;
+
+}
+
+
+/* CALENDAR - UPCOMING LI'S */
+
+.view-os-events ul li {list-style-type:none;border-bottom: 1px solid #D9D9D9;}
+
+.view-os-events ul li .node {
+    margin:20px 0 0 0;
+}
+
+.calendar-calendar .week-view div.single-day .view-item {
+  position: relative;
+  float: left;
+}
+
+.view-os-events .field-items{
+    display: inline-block;
+}
+
+.lt-ie9 .view-os-events .field-items{
+    display: block;
+}
+
+.view-os-events.view-id-os_events {
+  position: relative;
+}
+
+.view-display-id-page_4 .view-content,
+.view-display-id-page_5 .view-content {
+  padding-top: 10px;
+}
+
+.view-os-events.view-id-os_events .view-header {
+  padding-top: 30px;
+}
+
+.node-event {
+  position: relative;
+}
+
+.attachment.attachment-before ul li {
+  border-bottom: none;
+}
+
+/* Don't display the ical link in the floating box. */
+#cboxWrapper .node-event .links {
+  display: none;
+}
+
+.view-os-events.view-id-os_events .attachment-before {
+  position: absolute;
+  top: -10px;
+  right: 0px;
+}
+
+.node-event.article .node-content .links,
+.view-os-events.view-id-os_events .attachment-before .links {
+ display:inline-block;
+ margin-left:8px;
+}
+
+.ical {
+  background:url('../images/ical_icon.gif') no-repeat !important;
+  padding:3px 0 3px 25px !important;
+  border-bottom:none !important;
+ 
+}
+
+.webcal {
+  background:url('../images/ical_icon.gif') no-repeat !important;
+  padding:3px 0 3px 25px !important;
+  border-bottom:none !important;
+
+}
+
+.subscribe {
+  background:url('../images/calendar_icon.gif') no-repeat !important;
+  padding:3px 0 3px 25px !important;
+  border-bottom:none !important;
+
+}
+
+
+.rss {
+background:url('../images/rss_icon.gif') no-repeat !important;
+padding:3px 0 3px 25px !important;
+ border-bottom:none !important;
+
+}
+
+.page-node.node-type-event .rss,
+.page-node.node-type-event .subscribe {
+    display: inline-block;
+    margin-top: 7px;
+}
+
+
+/* BOOK NAVS */
+.book-menu {
+  width: 33%;
+  float: right;
+  margin: 0 0 1em 1.5em;
+  font-size: .95em;
+  }
+
+.book-menu h3 {
+  margin: .3em 0;
+  }
+
+#block-book-navigation ul.menu,
+.block-boxes-os_boxes_booktoc ul.menu {
+  padding: 0;
+  margin: 0;
+  }
+
+.book-menu ul.menu li,
+#block-book-navigation ul.menu li,
+.block-boxes-os_boxes_booktoc ul.menu li {
+  list-style: none;
+  padding: 0;
+  margin-bottom: 1em;
+  font-weight: bold;
+  }
+
+.book-menu ul.menu li {
+  list-style: disc;
+}
+
+.book-menu ul.menu li ul li {
+  list-style: circle;
+}
+
+.book-menu ul.menu li li,
+#block-book-navigation ul.menu li li,
+.block-boxes-os_boxes_booktoc ul.menu li li {
+  margin-bottom: 0;
+  font-weight: normal;
+  }
+
+.book-menu ul.menu li a,
+#block-book-navigation ul.menu li a,
+.block-boxes-os_boxes_booktoc ul.menu li a {
+  display:block;
+  border-bottom: 1px dotted #ccc;
+  padding-top: .3em;
+  padding-bottom: .1em;
+  }
+
+.sidebar .book-menu ul.menu li a,
+.sidebar #block-book-navigation ul.menu li a,
+.sidebar .block-boxes-os_boxes_booktoc ul.menu li a {
+  border-bottom: none;
+  }
+
+.book-menu ul.menu ul a,
+#block-book-navigation ul.menu ul a,
+.block-boxes-os_boxes_booktoc ul.menu ul a {
+  padding:0 0 0 .5em;
+  }
+
+.book-menu ul.menu ul ul a,
+#block-book-navigation ul.menu ul ul a,
+.block-boxes-os_boxes_booktoc ul.menu ul ul a {
+  padding:0 0 0 1.5em;
+  }
+
+.book-menu ul.menu ul ul ul a,
+#block-book-navigation ul.menu ul ul ul a,
+.block-boxes-os_boxes_booktoc ul.menu ul ul ul a {
+  padding:0 0 0 2em;
+  }
+
+.book-menu ul.menu ul ul ul ul a,
+#block-book-navigation ul.menu ul ul ul ul a,
+.block-boxes-os_boxes_booktoc ul.menu ul ul ul ul a {
+  padding:0 0 0 2.5em;
+  }
+
+
+#boxes-box-scholar_book_recent_docs a.active,
+#boxes-box-scholar_book_current_toc a.active,
+#block-book-navigation a.active,
+.block-boxes-os_boxes_booktoc a.active,
+.book-menu .active {
+    font-weight: bolder;
+    font-style: italic;
+     }
+
+
+
+dt {
+  font-weight: 700;
+}
+
+dd {
+  margin: 0 0 1.5em 40px;
+}
+
+
+
+/**
+ * Flexible Media and Cross browser improvements
+ * - This can cause issues in table cells where no width is set on the column,
+ *   only in some versions of webkit and IE 7/8.
+ * - declaring the width attribute on image elements and using max-width causes
+ *   the "dissappering images" bug in IE8.
+ * - Google maps break also, see below for fixes.
+ */
+
+img {
+  max-width: 100%;
+  height: auto;
+  -ms-interpolation-mode: bicubic;
+}
+
+/* /ht Ethan Marcotte - http://front.ie/l8rJaA */
+img,
+embed,
+object,
+video {
+  max-width: 100%;
+}
+
+/* Disable flexiblity for IE8 and below or these tags in tables*/
+.lt-ie9 table img,
+.lt-ie9 table object,
+.lt-ie9 table embed,
+.lt-ie9 table video,
+table img,
+table embed,
+table object,
+table video {
+  max-width: none;
+}
+
+.lt-ie9 div img,
+.lt-ie9 div object,
+.lt-ie9 div embed,
+.lt-ie9 div video,
+.lt-ie9 table img,
+.lt-ie9 table object,
+.lt-ie9 table embed,
+.lt-ie9 table video {
+  max-width: 100%;
+  border:none;
+  width:auto;
+  height:auto;
+}
+
+/* Override max-width 100% for map displays, as much as possible anyway... */
+#map img,
+.gmap img,
+.view-gmap img,
+.openlayers-map img,
+#getlocations_map_canvas img,
+#locationmap_map img,
+.geofieldMap img {
+  max-width: none !important;
+}
+
+/* Improve IE's resizing of images */
+svg:not(:root) {
+  overflow: hidden;
+}
+
+/* Corrects inline-block display not defined in IE6/7/8/9 & FF3 */
+audio,
+canvas,
+video {
+  display: inline-block;
+  *display: inline;
+  *zoom: 1;
+}
+
+/* Prevents modern browsers from displaying 'audio' without controls */
+audio:not([controls]) {
+  display: none;
+}
+
+/* Prevent overflowing content */
+header[role=banner],
+.content-inner,
+.nav,
+.region-sidebar-first,
+.region-sidebar-second,
+.region-secondary-content,
+.region-tertiary-content,
+.region-footer {
+  overflow: visible;
+  word-wrap: break-word;
+}
+
+/* iframe padding when its floated left or right*/
+.lt-ie9 span[style*="FLOAT: LEFT;"] iframe,
+span[style*="float: left;"] iframe {
+	padding-right:15px;
+	}
+.lt-ie9	span[style*="FLOAT: RIGHT;"] iframe,
+span[style*="float: right;"] iframe {
+	padding-left:15px;
+	}
+
+/* Helpful classes for hiding content */
+.element-invisible {
+  border: 0;
+  clip: rect(1px 1px 1px 1px); /* IE6, IE7 */
+  clip: rect(1px, 1px, 1px, 1px);
+  height: 1px;
+  margin: -1px;
+  overflow: hidden;
+  padding: 0;
+  position: absolute !important;
+  width: 1px;
+}
+
+.element-invisible.element-focusable:active,
+.element-invisible.element-focusable:focus {
+  clip: auto;
+  height: auto;
+  margin: 0;
+  overflow: visible;
+  position: static !important;
+  width: auto;
+}
+
+.offscreen {
+  position: absolute;
+  top: -99999em;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  outline: 0;
+}
+
+.element-hidden {
+  display: none;
+}
+
+/** TABLES **/
+
+tbody {
+border-top: none;
+}
+
+th, td {
+    color: #4A4A4A;
+    padding: 0.6em;
+    vertical-align: top;
+}
+
+td img {
+     max-width: none !important;
+}
+
+/* Hides empty header container from displaying on CP forms. */
+.overlay #header-container {
+  display: none;
+}
+
+/** Floats and spaces the publication image properly **/
+.publication-cover-container {
+  float:left;
+  margin: 0 1.5em .5em 0;
+}
+
+.entity-registration .field-label {
+  padding-right: 5px;
+}

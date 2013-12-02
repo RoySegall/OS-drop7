@@ -1,0 +1,493 @@
+
+body {
+  font: 13px/17px 'helvetica neue', helvetica, arial,sans-serif;
+  padding-bottom:30px;
+  background:#e1e1e1;
+  }
+
+#columns {
+  background: #fff;
+}
+
+
+
+h2 {
+  font-size: 18px;
+  font-weight: normal;
+  margin: 0 0 .5em 0;
+  }
+
+#menu-bar {
+	margin-bottom:10px;
+}
+
+#menu-bar ul li a {
+	font-size:15px;
+}
+
+/* HEADER ELEMENTS */
+
+
+#header-container h1 a,
+#header-container h1 a:visited {
+    color:#282828;
+    font-size: 35px;
+    }
+
+
+#header-container h2 {
+  margin: 0;
+  }
+  
+  
+/*  Search PAGE */  
+  
+.page-search .search-form {width:400px; padding:0 8px;background:#F1F0F0;}
+
+.page-search .search-form input.form-text {
+    padding: 8px !important;
+    width: 250px;
+}
+  
+.page-search .search-results li {
+    border-bottom: 1px solid #EEE;
+    margin-bottom: 2em;
+}  
+
+
+.page-search  #content-column h1#page-title {
+    margin-top: 0;
+}
+
+.page-search h2 {
+    background: none repeat scroll 0 0 #F1F0F0;
+    font-size: 15px;
+    padding: 6px;
+}
+
+/* LOG IN and USER ACCOUNT PAGES */
+
+.denied #footer,
+.page-site-register #footer,
+.logged-in.no-sidebars.page-user #footer,
+.not-logged-in.page-user #footer {
+	float:none;
+}
+
+.denied,
+.maintenance-page,
+body.page-site-register,
+body.logged-in.no-sidebars.page-user,
+body.not-logged-in.page-user {
+	background: #fff;
+	/*background-image:none #f6f5ed !important;*/
+	background-image:none #fff !important;
+	font-family: 'Helvetica neue', sans-serif;
+	line-height:1em;
+}
+
+.denied #columns,
+.maintenance-page #page,
+.page-site-register #columns,
+.logged-in.no-sidebars.page-user #columns,
+.not-logged-in.page-user #columns {
+	width:573px;
+	margin: 100px auto 7px;
+	border:1px solid #e1e1e1;
+	border-bottom:4px solid #e1e1e1;
+	background:#FFF;
+	 -moz-border-radius: 0;
+  -webkit-border-radius: 0;
+  border-radius: 0;
+  -moz-box-shadow: none;
+  -webkit-box-shadow: none;
+  box-shadow: none;
+   min-height: 100px;
+}
+
+.page-site-register #columns,
+.logged-in.no-sidebars.page-user #columns {
+	width:700px;
+}
+
+.denied #content-column,
+.page-site-register #content-column,
+body.logged-in.no-sidebars.page-user #content-column,
+body.not-logged-in.page-user.no-sidebars #content-column {
+    padding: 0;
+}
+
+.denied #columns h1,
+.maintenance-page h1#site-name,
+.page-site-register #columns h1,
+.logged-in.no-sidebars.page-user #columns h1,
+.not-logged-in.page-user #columns h1 {
+	font-size:1.7em;
+	margin:0 !important;
+	font-family: 'Helvetica neue', sans-serif;
+	color:#555;
+}
+
+.page-site-register #columns h1 {
+	margin:0 0 20px 0 !important;
+}
+
+.page-user-password #columns h1 {margin: 0 0 1em !important;}
+
+.denied #powerby-login,
+.page-site-register #powerby-login,
+.logged-in.no-sidebars.page-user #powerby-login,
+.not-logged-in.page-user #powerby-login {
+    clear: both;
+    float: right;
+     margin-right: 0;
+    min-width: 165px;
+}
+
+
+.logged-in.no-sidebars.page-user .description,
+.not-logged-in.page-user .description {
+font-size: .9em;
+}
+
+.page-site-register .description {
+font-size: .75em;
+}
+
+
+.page-site-register #edit-actions #edit-submit,
+.not-logged-in.page-user #edit-actions #edit-submit {
+	padding: 5px 10px;
+    border:none;
+	color:#fff;
+	font-size:13px;
+	font-weight:bold;
+text-shadow: 0px -1px 0px rgba(30, 30, 30, 0.25);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+background: rgb(58, 114, 171);
+background: -moz-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
+background: -webkit-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
+background: -o-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
+background: -ms-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
+background: linear-gradient(0deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
+-webkit-box-shadow: 0px 1px 1px rgba(50, 50, 50, 0.5);
+-moz-box-shadow:    0px 1px 1px rgba(50, 50, 50, 0.5);
+box-shadow:         0px 1px 1px rgba(50, 50, 50, 0.5);
+
+
+}
+
+.denied #content,
+.maintenance-page #main-content,
+.page-site-register #content,
+.logged-in.no-sidebars.page-user #content,
+.not-logged-in.page-user #content {
+	background:#f7f7f7;
+	padding:1px 12px;
+	margin-bottom:15px;
+	border:1px solid #e1e1e1;
+		font-size:15px;
+	color:#555;
+	line-height:25px;
+}
+
+.page-site-register #content {
+	padding-bottom:12px;
+}
+
+.logged-in.no-sidebars.page-user ul.primary,
+ul.primary {
+	border-bottom-color: #FFF;
+    margin: 2em 0 -10px;
+    padding: 0 0 0.2em;
+}
+
+
+.logged-in.no-sidebars.page-user ul.primary li,
+ul.primary li {
+     border-radius:5px 5px 0 0;
+	-moz-border-radius:5px 5px 0 0;
+	border-radius:5px 5px 0 0;
+}
+
+.logged-in.no-sidebars.page-user ul.primary li a,
+.not-logged-in.page-user ul.primary li a {
+ background-color: #FFF;
+    border-color: #e1e1e1;
+     border-width: 1px;
+    margin-right: 0;
+    padding: 0.5em 15px;
+ font-family: sans-serif;
+ border-radius:5px 5px 0 0;
+	-moz-border-radius:5px 5px 0 0;
+	border-radius:5px 5px 0 0;
+	color:#3A72AB;
+	font-size:14px;
+}
+
+.logged-in.no-sidebars.page-user ul.primary li a:hover,
+.not-logged-in.page-user ul.primary li a:hover {
+text-decoration:underline;
+}
+
+.logged-in.no-sidebars.page-user ul.primary li.active a,
+.not-logged-in.page-user ul.primary li.active a {
+    background-color: #f7f7f7;
+    border-bottom:1px solid #f7f7f7;
+}
+
+.logged-in.no-sidebars.page-user ul.primary li.active a:hover,
+.not-logged-in.page-user ul.primary li.active a:hover {
+text-decoration:none;
+}
+
+/* USER ACCOUNT PAGE */
+
+.page-site-register #footer,
+.logged-in.no-sidebars.page-user #footer {
+	width:850px;
+}
+
+
+.logged-in.no-sidebars.page-user #content a {
+	color:#3A72AB;
+}
+
+.add-full-name-wrapper {
+	position:absolute;
+	right:0px;
+	top:20px;
+	font-size: 14px;
+	}
+	
+	
+.logged-in.no-sidebars.page-user.page-user-edit #content-column input.form-text {
+width: 48%;
+}
+
+.user-add-name {
+	text-decoration:underline;
+}
+
+.logged-in.no-sidebars.page-user #content a.field_first_name_anchor {
+	color: #555555;
+}
+
+.page-site-register #preset-wrapper .form-item,
+.page-site-register .form-item-domain,
+.page-site-register .form-item-bundle,
+.page-site-register .form-item-vsite-private,
+.page-site-register .form-item-vicarious-user,
+.logged-in.no-sidebars.page-user #content .item-list {
+	border-radius:5px;
+	-moz-border-radius:5px;
+	border-radius:5px;
+	padding:7px;
+	background:#fff;
+	border:1px solid #e1e1e1;
+	margin-bottom:10px;
+}
+
+.logged-in.no-sidebars.page-user #content li .item-list {
+	border-radius:0;
+	-moz-border-radius:0;
+	border-radius:0;
+	padding:0;
+	border:none;
+}
+
+
+.logged-in.no-sidebars.page-user #content ul.plural li .item-list {
+	border-bottom:1px solid #e9e7e7;
+	padding-bottom:10px;
+}
+
+
+.logged-in.no-sidebars.page-user #content .user-add-site-block,
+.logged-in.no-sidebars.page-user #content .delete-link {
+	float:right;
+	clear:both;
+}
+
+.logged-in.no-sidebars.page-user #content .user-add-site-block {
+	margin: 8px 5px -10px;
+	
+}
+
+
+
+.logged-in.no-sidebars.page-user #content .delete-link {
+margin-right:-3px;
+}
+
+.logged-in.no-sidebars.page-user #content .delete-link a {
+	padding: 5px 10px;
+    border:none;
+	color:#fff;
+	font-size:13px;
+	font-weight:bold;
+color: rgb(230, 230, 230);
+text-shadow: 0px -1px 0px rgba(30, 30, 30, 0.25);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+background: rgb(210, 20, 20);
+background: -moz-linear-gradient(90deg, rgb(210, 20, 20) 30%, rgb(255, 123, 0) 100%);
+background: -webkit-linear-gradient(90deg, rgb(210, 20, 20) 30%, rgb(255, 123, 0) 100%);
+background: -o-linear-gradient(90deg, rgb(210, 20, 20) 30%, rgb(255, 123, 0) 100%);
+background: -ms-linear-gradient(90deg, rgb(210, 20, 20) 30%, rgb(255, 123, 0) 100%);
+background: linear-gradient(0deg, rgb(210, 20, 20) 30%, rgb(255, 123, 0) 100%);
+-webkit-box-shadow: 0px 1px 1px rgba(50, 50, 50, 0.5);
+-moz-box-shadow:    0px 1px 1px rgba(50, 50, 50, 0.5);
+box-shadow:         0px 1px 1px rgba(50, 50, 50, 0.5);
+}
+
+.page-site-register .form-submit,
+.logged-in.no-sidebars.page-user #content .user-add-website,
+.os-green-button {
+	padding: 5px 10px;
+    border:none;
+	font-size:13px;
+	font-weight:bold;
+color: rgb(230, 230, 230);
+text-shadow: 0px -1px 0px rgba(30, 30, 30, 0.25);
+-webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+background: rgb(61, 155, 19);
+background: -moz-linear-gradient(90deg, rgb(61, 155, 19) 30%, rgb(61, 132, 19) 70%);
+background: -webkit-linear-gradient(90deg, rgb(61, 155, 19) 30%, rgb(61, 132, 19) 70%);
+background: -o-linear-gradient(90deg, rgb(61, 155, 19) 30%, rgb(61, 132, 19) 70%);
+background: -ms-linear-gradient(90deg, rgb(61, 155, 19) 30%, rgb(61, 132, 19) 70%);
+background: linear-gradient(180deg, rgb(61, 155, 19) 30%, rgb(61, 132, 19) 70%);
+-webkit-box-shadow: 0px 1px 1px rgba(50, 50, 50, 0.5);
+-moz-box-shadow:    0px 1px 1px rgba(50, 50, 50, 0.5);
+box-shadow:         0px 1px 1px rgba(50, 50, 50, 0.5);
+}
+
+
+.profile h3 {
+	margin: -5px -5px 15px;
+	padding:5px;
+
+}
+
+.page-site-register ul.error {
+    margin-left: 15px;
+}
+
+
+/* SITE MAINTENANCE PAGE */
+.maintenance-page #page {
+	padding-top: 20px;
+}
+
+.maintenance-page #main-content{
+	margin-top: 20px;
+	padding-top: 15px;
+}
+
+.maintenance-page a {
+	color:#3A72AB;
+}
+
+.maintenance-page #logo {
+	display:none;
+}
+
+.maintenance-page h1#page-title {
+	margin-bottom: 0.5em;
+	font-size: 1.5em;
+	background:url('../images/warning.png') no-repeat;
+	padding-left:40px;
+	height:30px;
+}
+
+.maintenance-page h1#site-name {
+	padding-left: 10px;
+}
+
+/* Override the PIN Button styles coming from a conrtib css file */
+.pin-button, #user-login fieldset legend {
+     background: #FFFFFF;
+    -webkit-border-radius: 4px;
+-moz-border-radius: 4px;
+border-radius: 4px;
+     border: 1px solid #E1E1E1;
+     font-size: 13px;
+     font-weight: bold;
+     padding-left: 10px;
+     width: 90%;
+}
+
+.pin-button {
+     display: block;
+     margin: 20px 0px 5px 10px;
+}
+
+#user-login fieldset {
+     background: none repeat scroll 0% 0% #F7F7F7;
+     margin: 0px;
+}
+
+
+#edit-pin-fieldset {margin: 20px 0 0 10px !important;}
+
+@-moz-document url-prefix() { 
+#edit-pin-fieldset {margin: 10px 0 0 0 !important;}
+}
+
+
+.pin-button a, #user-login fieldset legend a {
+     color: #3A72AB ! important;
+     font-size: 14px;
+     font-weight: normal;
+     padding: 2px 5px;
+}
+
+
+
+
+.pin-button:hover, #user-login fieldset legend:hover {
+    background-color: #FFF;
+}
+.pin-button a, #user-login fieldset legend a {
+    color: #3A72AB !important;
+    display: block;
+    padding: 2px;
+}
+.pin-button:hover a, #user-login fieldset legend:hover a {
+    color: #3A72AB !important;
+}
+
+
+
+/* ACCESS DENIED PAGE */
+
+.denied #footer {
+    margin: 0 auto;
+    width: 540px;
+}
+
+.denied h1#page-title {
+	margin-bottom: 0.5em;
+	font-size: 2em;
+	background:url('../images/denied.png') no-repeat;
+	padding: 8px 40px;
+	height:30px;
+}
+
+/* ROADMAP PAGE STYLES */
+
+.roadmap td {
+     padding: 12px 10px;
+}
+
+.roadmap span.status {
+     -webkit-border-radius: 3px;
+	-moz-border-radius: 3px;
+	border-radius: 3px;
+     padding: 5px 7px;
+}

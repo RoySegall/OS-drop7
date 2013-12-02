@@ -1,0 +1,23 @@
+/* Pale Blue*/
+
+body {
+  background:#AAB7C5;
+  }
+
+body.navbar-off #page {
+  background-image:url('images/body-bg-alt-paleblue.png');
+  }
+
+#menu-bar {
+  background: rgb(146, 158, 173);
+background: -moz-linear-gradient(270deg, rgb(146, 158, 173) 30%, rgb(169, 181, 196) 70%);
+background: -webkit-linear-gradient(270deg, rgb(146, 158, 173) 30%, rgb(169, 181, 196) 70%);
+background: -o-linear-gradient(270deg, rgb(146, 158, 173) 30%, rgb(169, 181, 196) 70%);
+background: -ms-linear-gradient(270deg, rgb(146, 158, 173) 30%, rgb(169, 181, 196) 70%);
+background: linear-gradient(0deg, rgb(146, 158, 173) 30%, rgb(169, 181, 196) 70%);
+  }
+
+.biblio-title a, .biblio-title-chicago a,
+a, a:visited {
+  color: #658ab2;
+  }

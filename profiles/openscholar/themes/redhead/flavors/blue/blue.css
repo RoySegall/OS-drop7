@@ -1,0 +1,11 @@
+/*Blue version*/
+#header, 
+#header-container,
+#menu-bar {
+  background: #416f9d;
+  }
+
+.biblio-title a, .biblio-title-chicago a,
+a, a:visited {
+  color: #416f9d;
+  }

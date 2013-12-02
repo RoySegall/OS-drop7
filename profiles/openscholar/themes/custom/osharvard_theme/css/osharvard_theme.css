@@ -1,0 +1,341 @@
+@import url(http://fonts.googleapis.com/css?family=Roboto);
+
+#branding_footer, #branding_header {
+    display:none;
+}
+
+body  {
+	font-family: 'Roboto',Baskerville,Palatino,'Palatino Linotype','Book Antiqua','Times New Roman',serif;
+    font-size: 14px;
+    background: #F6F6F6;
+ 
+}
+
+
+.hg-container {
+    width: 100%;
+}
+
+#footer {
+    background: #202020 !important;
+    height:900px;
+}
+
+
+
+.front #content-panels .region {
+    clear: both !important;
+    float: none !important;
+    width:100% !important;
+    display: block !important;
+}
+
+.front #content-panels .region .region-inner,
+.front #content-panels .region .region-inner[style] {
+    min-height: 200px !important;
+    position: relative;
+}
+
+
+
+#menu-bar .block-boxes-os_boxes_html,
+body.front.no-sidebars #content-panels .region-inner {
+    margin: 0 auto;
+    width: 980px;
+}
+
+.front.no-sidebars .region-content-top:after {
+    background: #373737;
+    bottom: auto;
+    content: "";
+    display: block;
+    height: 100%;
+    left: -1000px;
+    position: absolute;
+    right: auto;
+    top: 0;
+    width: 3000px;
+    z-index: 0;
+}
+
+#header,
+#menu-bar,
+#columns {
+    background:#F6F6F6;
+    background-image: none;
+}
+
+
+#header-container h1 {
+  width:292px;
+  height: 78px;
+  text-indent: -999em;
+  background: url('../images/osatharvardlogo.png') no-repeat 0 0 transparent;
+  margin: -20px 0 0 5px;
+  }
+  
+#header-container h1 a, #header-container h1 a:visited {
+  display:block;
+  width:279px;
+  height: 31px;
+  }
+
+#header-container h2, #header-container p {
+  display:none;
+  }  
+  
+  
+.region-header-third ul.nice-menu a {
+    font: normal 16px 'Roboto',sans-serif;
+    text-transform: none;
+}  
+
+.region-header-third ul.nice-menu li a {
+  background:url('../images/mainnav_sidearrow.png') no-repeat 283px 7px transparent;
+  padding-right: 23px;
+  }
+  
+#menu-bar {
+    padding: 0 0 10px;
+}  
+  
+#menu-bar nav {
+    background: none;
+    border-radius: 0;
+    box-shadow: none;
+}  
+
+#menu-bar ul a, #menu-bar ul.nice-menu a, #menu-bar ul.nice-menu .menuparent a {
+    font-family: 'Roboto',Baskerville,Palatino,'Palatino Linotype','Book Antiqua','Times New Roman',serif;
+   padding: 8px 15px;
+   font-size: 18px;
+}
+
+
+#search-block-form input.form-submit, 
+#search-block-form #edit-submit, 
+#search-form #edit-submit {
+    background-position: 2px -373px;
+}
+
+
+.front #content-panels .block {
+    -moz-box-sizing: none;
+    background: none;
+    border: none;
+    border-radius: 0;
+    box-shadow: none !important;
+}
+
+.front #content-panels .block-content, 
+.sidebar .block-content {
+border-top: none;
+}
+
+
+/* SLIDESHOW OVERRIDES */
+#layout_16_9_side .slide {
+    background: #373737 !important;
+}
+
+#layout_16_9_side .slide-copy h2 {
+    font: bold 25px arial,sans-serif;
+}
+
+/*
+body.no-sidebars .content-top-slideshow-enabled #content-panels .region-content-top .block {
+    padding: 15px 0;
+}
+*/
+
+#layout_16_9_side .slide-copy {
+    padding-top: 25px;
+}
+
+/* SPECIAL CSS FOR CUSTOM BLOCKS FOR OSHARVARD SITE */
+
+
+.custhtml h3.custheader {
+    text-align: center;
+    margin-bottom: 20px;
+}
+.custhtml h3.custheader a {
+    color: #000000;
+    font: 25px/1.4em "Helvetica","Arial","sans-serif";
+}
+
+.custhtml.sample h3.custheader a {
+    color: #FFF;
+}
+
+
+.getsite {
+	z-index:2;
+	position:relative;
+	color:#FFF;
+}
+
+.getsite a {
+	color:#FFF;
+	text-decoration:underline;
+}
+
+.getsite .slideside,
+.getsite .textside {width:48%;display:inline-block;}
+
+.getsite .textside {margin:-15px 0 0 20px;}
+
+.getsite h3 {
+	font: bold 25px arial,sans-serif;
+    margin-bottom: 12px;
+    text-shadow: 0 1px 0 rgba(37, 37, 37, 0.75);
+}
+
+.getsite p {
+	font:18px arial,sans-serif;
+    margin-bottom: 12px;
+    text-shadow: 0 1px 0 rgba(37, 37, 37, 0.75);
+}
+
+.stats .sitecount {
+	font: bold 22px arial,sans-serif;
+	 text-shadow: 0 1px 0 rgba(37, 37, 37, 0.75);
+
+}
+
+.custhtml h4.benefheader {
+	color: #000000;
+    font: 18px/1.2em "Helvetica","Arial","sans-serif";
+}
+
+.region-content-first {
+	background:#F6F6F6 !important;
+	margin-top:-20px !important;}
+	
+.region-content-second {
+	background:#3973ac !important;
+	margin-top:-20px !important;
+	color:#FFF;
+	}
+
+/* COMMENTING OUT UNTIL THIS BE USED. ITS A THIN GREY RULE USED
+ * AS A DIVIDER IN THE WHYUSE SECTION
+ 
+.whyuse {
+	background:url('../images/uploads/whydivider.png') no-repeat 678px 450px !important;
+}	
+	*/
+
+.whyuse .benef2colwrapper,
+.whyuse .activitywrapper {
+	display: inline-block;
+	text-align:center;
+	}
+.whyuse .benef2colwrapper {
+	padding-right: 15px;
+    width: 66%;
+	}
+	
+.whyuse .activitywrapper {
+	 margin-left: 18px;
+    width: 30%;
+	}
+	
+.whyuse .benef2colwrapper .twocolleft,
+.whyuse .benef2colwrapper .twocolright {
+	display: inline-block;
+	width:48%;
+}
+
+.whyuse .benef2colwrapper .twocolright {
+	margin-left:15px;
+	top:7px;
+	position:relative;
+}
+
+.whyuse .whynotech,
+.whyuse .drag {height:270px;}
+.whyuse .drag {top:-45px;position:relative;}
+
+
+.whyuse .apps,
+.whyuse .custdomains,
+.activitywrapper .search {height:270px;}
+.whyuse .custdomains {top:-52px;position:relative;}
+
+.activitywrapper .search {top:-30px;position:relative;}
+.activitywrapper .analytics {top:-24px;position:relative;}
+
+.whyuse .themes,
+.whyuse .social {height:230px;}
+.whyuse .social {top:-53px;position:relative;}
+
+.whyuse .support {
+	top:-49px;
+	position:relative;
+	border:1px solid #ccc;
+	background:#EFEFEF;
+	padding:6px;
+	}
+
+.whyuse .block-content {
+	padding-top:35px !important;
+}
+
+.sample img {
+	margin:0 20px;
+}
+
+
+.sample .sitesheader {
+	margin-left:22px;
+	font-size:16px;
+}
+
+
+
+.stats {
+ 	color:#fff;
+	position: absolute;
+    right: 378px;
+    top: 132px;
+    z-index: 20;
+}
+
+/* COMMENTING OUT UNTIL THIS BLOCK IS USED
+.block-boxes-os_boxes_twitterfeed {
+ 	color:#000;
+	position: absolute;
+    right: 17px;
+    top: 357px;
+    width: 200px;
+}
+
+
+div.tweets-pulled-listing div.tweet-divider {
+    border-bottom: 1px solid #ccc;
+}
+
+.block-boxes-os_boxes_twitterfeed img{
+    display:none;
+}
+
+.block-boxes-os_boxes_twitterfeed .block-content {
+     margin-left: -90px;
+     padding-top:0 !important;
+}
+
+.block-boxes-os_boxes_twitterfeed a {
+     color: #215990 !important;
+font-weight:normal !important;
+}
+
+
+.block-boxes-os_boxes_twitterfeed h2.block-title {
+	background:url('../images/uploads/whytwittericon.png') no-repeat !important;
+	padding: 90px 5px 0 5px !important;
+	color: #000000 !important;
+    font: 18px/1.2em "Helvetica","Arial","sans-serif" !important;
+    border-bottom: none !important;
+}
+*/

@@ -1,0 +1,11 @@
+/*Grey version*/
+#header, 
+#header-container,
+#menu-bar {
+  background: #888;
+  }
+
+.biblio-title a, .biblio-title-chicago a,
+a, a:visited {
+  color: #888;
+  }

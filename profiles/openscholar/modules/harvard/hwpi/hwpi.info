@@ -1,0 +1,3 @@
+name = "HWPI"
+core = 7.x
+description = "Module to provide functionality specific to Harvard Web Publishing Initiative sites."

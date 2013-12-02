@@ -1,0 +1,126 @@
+<?php
+// $Id$
+
+/**
+ * Applies a set of blocks as reactions in a vsite's context
+ *
+ * @param string $context_name
+ * @param array $blocks
+ *
+ * @see os_layout_set()
+ */
+function vsite_layout_context_set($context_name, $blocks) {
+  $vsite = spaces_get_space();
+
+  if ($vsite && isset($vsite->controllers->context)) {
+    $vsite->controllers->context->set($context_name . ":reaction:block", array(
+        'blocks' => $blocks,
+      ));
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Reverts an individual context back to defaults
+ *
+ * @param string $context
+ *
+ * @return boolean Success
+ */
+function vsite_layout_context_revert($context) {
+  $vsite = spaces_get_space();
+
+  if ($vsite && isset($vsite->controllers->context)) {
+    $vsite->controllers->context->del($context . ":reaction:block");
+    return TRUE;
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_form_alter().
+ *
+ * Adds "Reset to Default" and "Save to Preset" controls to the cp layout form.
+ */
+function vsite_layout_form_cp_layout_full_form_alter(&$form, &$form_state, $form_id) {
+  // For administrators, let them save to either the space or the preset
+  if (($vsite = spaces_get_space()) && user_access('administer spaces')) {
+
+    if (!empty($form['#submit'])) {
+      $position = array_search('cp_layout_full_submit', $form['#submit'], TRUE);
+      if ($position !== FALSE) {
+        // Add our submit handler to the cp_layout settings forms
+        $form['#submit'][$position] = 'vsite_layout_cp_layout_form_submit';
+
+        if ($preset = $vsite->controllers->variable->get('spaces_preset_' . $vsite->type)) {
+          $preset = spaces_preset_load($preset, $vsite->type);
+          $form['actions']['preset'] = array(
+            '#type' => 'submit',
+            '#value' => t('Save to @title', array(
+                '@title' => $preset->title,
+              )),
+          );
+          $form['actions']['reset'] = array(
+            '#type' => 'submit',
+            '#value' => t('Reset to defaults'),
+          );
+          $form['actions']['submit']['#value'] = t('Save for @name', array(
+              '@name' => $vsite->title(),
+            ));
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Form submit handler for layout settings form.
+ * Similar to cp_layout_full_submit() but provides revert and save to preset.
+ */
+function vsite_layout_cp_layout_form_submit($form, &$form_state) {
+  if ($space = spaces_get_space()) {
+    $op = isset($form_state['values']['op']) ? $form_state['values']['op'] : '';
+
+    if ($preset = $space->controllers->variable->get('spaces_preset_' . $space->type)) {
+      $preset = spaces_preset_load($preset, $space->type);
+    }
+
+    // Reset, Save to preset, or call standard submit handler
+    switch ($op) {
+      case t('Reset to defaults'):
+        foreach ($form_state['values']['context'] as $context){
+          os_layout_revert($context);
+        }
+        if (count($form_state['values']['context'])) {
+          drupal_set_message(t('This layout has been reset to its default values.'));
+        }
+        break;
+
+      case t('Save to @title', array('@title' => $preset->title)):
+        //Standard Submit, run the default submit handler to save context data before saving to preset
+        cp_layout_full_submit($form, $form_state);
+
+        if ($preset) {
+          // Loop through all the contexts
+          foreach (os_layout_get_contexts(array(0, 1, 2)) as $context => $name) {
+            $preset->value['context'][$context . ":reaction:block"] = array(
+              'blocks' => os_layout_get($context),
+            );
+          }
+
+          drupal_set_message(t('The layout settings have been saved to %title.', array('%title' => $preset->title)));
+          spaces_preset_save($preset);
+        }
+        break;
+
+      default:
+        // Standard Submit, run the default submit handler
+        cp_layout_full_submit($form, $form_state);
+        break;
+    }
+  }
+}
+

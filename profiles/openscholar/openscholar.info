@@ -1,0 +1,131 @@
+name = OpenScholar
+description = A full-featured site-creation package designed for the academic community. A single OpenScholar installation can host thousands of personal or project sites.
+version = VERSION
+core = 7.x
+os_version = 7.x-3.9
+
+files[] = openscholar.profile
+files[] = openscholar.install
+files[] = tests/openscholar.test
+
+; Core
+dependencies[] = color
+dependencies[] = comment
+dependencies[] = contextual
+dependencies[] = filter
+dependencies[] = help
+dependencies[] = image
+dependencies[] = list
+dependencies[] = menu
+dependencies[] = number
+dependencies[] = options
+dependencies[] = path
+dependencies[] = taxonomy
+dependencies[] = search
+dependencies[] = shortcut
+dependencies[] = toolbar
+dependencies[] = overlay
+dependencies[] = file
+dependencies[] = rdf
+dependencies[] = dblog
+
+; Contrib - core
+dependencies[] = ctools
+dependencies[] = context
+dependencies[] = features
+dependencies[] = boxes
+dependencies[] = views
+dependencies[] = strongarm
+dependencies[] = date
+dependencies[] = date_ical
+dependencies[] = entity
+dependencies[] = feeds
+dependencies[] = token
+dependencies[] = pathauto
+dependencies[] = biblio
+dependencies[] = advanced_help
+dependencies[] = jquery_update
+
+; media / files / wysiwyg
+dependencies[] = imagefield_crop
+dependencies[] = jcarousel
+dependencies[] = media
+dependencies[] = oembed
+dependencies[] = file_entity
+dependencies[] = wysiwyg
+dependencies[] = wysiwyg_filter
+dependencies[] = media_internet
+dependencies[] = media_oembed
+
+; media custom
+dependencies[] = media_embed
+
+; performance
+dependencies[] = entitycache
+dependencies[] = views_litepager
+
+; web services
+dependencies[] = restws
+
+; boxes
+dependencies[] = views_slideshow_cycle
+dependencies[] = os_mailchimp
+
+; OS
+dependencies[] = os
+dependencies[] = os_help
+dependencies[] = os_files
+dependencies[] = os_files_private
+dependencies[] = os_books
+dependencies[] = os_boxes
+dependencies[] = os_wysiwyg
+dependencies[] = os_search_db
+dependencies[] = os_shields
+dependencies[] = os_comments
+dependencies[] = os_taxonomy
+dependencies[] = os_ga
+dependencies[] = os_wysiwyg_link
+dependencies[] = os_tour
+dependencies[] = os_importer
+
+; Control Panel
+dependencies[] = cp
+dependencies[] = cp_appearance
+dependencies[] = cp_layout
+dependencies[] = cp_menu
+dependencies[] = cp_user
+dependencies[] = cp_content
+dependencies[] = cp_toolbar
+
+; Features
+dependencies[] = os_biocv
+dependencies[] = os_blog
+dependencies[] = os_booklets
+dependencies[] = os_classes
+dependencies[] = os_dataverse
+dependencies[] = os_events
+dependencies[] = os_faq
+dependencies[] = os_image_gallery
+dependencies[] = os_links
+dependencies[] = os_news
+dependencies[] = os_pages
+dependencies[] = os_presentations
+dependencies[] = os_profiles
+dependencies[] = os_publications
+dependencies[] = os_reader
+dependencies[] = os_software
+dependencies[] = os_stats
+dependencies[] = os_taxonomy
+
+; other
+dependencies[] = diff
+dependencies[] = twitter_pull
+dependencies[] = nice_menus
+dependencies[] = password_policy
+dependencies[] = shorten
+dependencies[] = respondjs
+dependencies[] = views_infinite_scroll
+
+files[] = openscholar.profile
+
+

@@ -1,0 +1,101 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Code for the OS App FAQ (a feature module).
+ */
+
+include_once ('os_faq.features.inc');
+
+/**
+ * Implements hook_os_app_info().
+ */
+function os_faq_os_app_info() {
+  $apps = array();
+
+  $apps['os_faq'] = array(
+    'path' => 'faq',
+  	'nodetypes' => array(
+  	  'faq',
+    ),
+    'views tabs' => array(
+      'os_faq' => array('page'),
+    ),
+  );
+
+  return $apps;
+}
+
+/**
+ * Implements hook_vsite_og_node_type_info().
+ */
+function os_faq_vsite_og_node_type_info() {
+  return array(
+    'faq' => 'group content',
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function os_faq_menu() {
+  $items = array();
+  
+  $items['features/os_faq'] = array(
+    'title' => 'Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('os_faq_settings'),
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_CALLBACK,
+  );
+  
+  return $items;
+}
+
+/**
+ * App-specific settings for the FAQ app.
+ */
+function os_faq_settings($form, $form_state) {
+  $form = array();
+  
+  $form['os_faq_use_toggle'] = array(
+    '#title' => t('Enable Slider Behavior'),
+    '#type' => 'checkbox',
+    '#default_value' => variable_get('os_faq_use_toggle', TRUE),
+    '#description' => t('By default, clicking on a FAQ question will open the answer.
+    	By disabling slider behavior, you can force the answer to always appear.'),
+    '#weight' => -1
+  );
+  
+  return system_settings_form($form);
+}
+
+/**
+ * Increases the teaser break for faq by a huge amount when the slider is active
+ * @todo implement trim in node display settings.
+ */
+function os_faq_field_attach_view_alter(&$output, &$context) {
+  
+  // This is only here temporarially, once the variable 'os_faq_use_toggle' is removed the trim length should be updated
+  // in the node teaser setttings so that there is no trim.
+  if (isset($output['body']) && $output['body']['#object']->type == 'faq' && variable_get('os_faq_use_toggle', TRUE)) {
+    $item = $output['body']['#items'][0];
+    $output['body'][0]['#markup'] = text_summary($item['safe_value'], $item['format'], 10000);
+  }
+}
+
+/**
+ * Implements hook_preprocess_node().
+ * Adds toggling slider to FAQ nodes
+ */
+function os_faq_preprocess_node(&$vars) {
+  if ($vars['node']->type != 'faq') return;
+  
+  if (!$vars['page'] && variable_get('os_faq_use_toggle', TRUE)) {
+    $vars['header_attributes_array']['class'][] = 'toggle';
+    $vars['content_attributes_array']['class'][] = 'os-slider';
+    $vars['links_attributes_array']['class'][] = 'os-slider';
+    drupal_add_js(drupal_get_path('module', 'os').'/theme/os_toggle.js');
+  }
+}

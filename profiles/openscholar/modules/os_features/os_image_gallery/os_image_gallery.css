@@ -1,0 +1,4 @@
+.node-media-gallery .meta-wrapper.hover .slider.top,
+.node-media-gallery .meta-wrapper.hover .slider.bottom {
+	display: none;
+}

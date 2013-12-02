@@ -1,0 +1,92 @@
+<?php
+// $Id$
+
+
+/**
+ * Perform install-time configurations for events
+ */
+function os_events_install() {
+
+  //Don't store the 'last_viewed' date, This is annoying
+  variable_set('calendar_track_date', 0);
+
+  //Use colorbox for the calendar
+  variable_set('calendar_add_colorbox', 1);
+}
+
+/**
+ * Update the field data for events if it was not created correctly
+ */
+function os_events_update_7001() {
+
+  //Does the field already exist? if not do nothing.
+  if (!($db_field = field_info_field('field_date'))) {
+    return;
+  }
+
+  module_load_include('inc', 'features', 'features.export');
+  if ($def_fields = features_get_default('field', 'os_events')) {
+
+    //Get the default field in the features export
+    $def_field = $def_fields['node-event-field_date'];
+    $def_field_config = $def_field['field_config'];
+
+    //Are there any differences between the configs?
+    if ($def_field_config + $db_field != $db_field) {
+
+      //Get the db columns for the exported field
+      module_load_install($def_field_config['module']);
+      $def_schema = (array) module_invoke($def_field_config['module'], 'field_schema', $def_field_config);
+
+      $new_columns = array_diff_key($def_schema['columns'], $db_field['columns']);
+      if(count($new_columns)){
+
+        //Lets add the new columns needed for this field
+        foreach ($new_columns as $column_name => $attributes) {
+          $real_name = _field_sql_storage_columnname($def_field_config['field_name'], $column_name);
+          if(!db_field_exists("field_data_{$def_field_config['field_name']}", $real_name)){
+            db_add_field("field_data_{$def_field_config['field_name']}", $real_name, $attributes);
+          }
+          if(!db_field_exists("field_revision_{$def_field_config['field_name']}", $real_name)){
+            db_add_field("field_revision_{$def_field_config['field_name']}", $real_name, $attributes);
+          }
+        }
+      }
+
+      //Update the settings
+      $db_field['settings'] = $def_field_config['settings'];
+
+      // Write settings back to the database.
+      db_update('field_config')
+        ->fields(array('data' => serialize($db_field)))
+        ->condition('field_name', $def_field_config['field_name'])
+        ->execute();
+
+      // Clear caches
+      field_cache_clear(TRUE);
+
+      try{
+        //Apply any other non-field updates
+        field_update_field($def_field_config);
+      }catch (FieldUpdateForbiddenException $e){
+        return array('success' => FALSE, 'query' => 'field_date has failed to update it\'s configuration.');
+      }
+    }
+  }
+
+  return "field_date has been updated to it's exported configuration.";
+}
+
+/**
+ * Enabling the iCal module.
+ */
+function os_events_update_7002() {
+  module_enable(array('date_ical'));
+}
+
+/**
+ * Enable the registration module.
+ */
+function os_events_update_7004() {
+  module_enable(array('registration'));
+}

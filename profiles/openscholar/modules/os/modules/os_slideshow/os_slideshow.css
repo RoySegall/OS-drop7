@@ -1,0 +1,9 @@
+#flex-pager>.flex-page-link {
+	text-align: center;
+	width: 1em;
+	display: inline-block;
+}
+
+#flex-pager>.active {
+  border-bottom: 1px #aaa solid;
+}

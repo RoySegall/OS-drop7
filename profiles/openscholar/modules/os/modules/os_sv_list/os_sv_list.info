@@ -1,0 +1,10 @@
+name = "os sv list"
+core = "7.x"
+description = "OS Simpleview List"
+package = "OpenScholar"
+version = "7.x-rc1"
+
+dependencies[] = "boxes"
+dependencies[] = "ctools"
+features[box][] = simpleview_box
+files[] = plugins/boxes/os_sv_list.box.inc

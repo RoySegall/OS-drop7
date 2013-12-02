@@ -1,0 +1,161 @@
+<?php
+
+/**
+ * @file
+ * os_tour.module
+ */
+
+/**
+ * The default maximum number of feed items to display in the Notifications tab.
+ */
+define('OS_TOUR_NOTIFICATIONS_MAX_DEFAULT', 3);
+
+/**
+ * Implements hook_menu().
+ */
+function os_tour_menu() {
+  $items = array();
+
+  $path = drupal_get_path('module', 'os_tour') . '/includes';
+  $items['os/tour/user/%user/%'] = array(
+    'title' => 'AJAX update notifications last read timestamp',
+    'page callback' => 'os_tour_user_edit_ajax',
+    'page arguments' => array(3, 4),
+    'access callback' => 'user_edit_access',
+    'access arguments' => array(3),
+    'type' => MENU_CALLBACK,
+    'file' => 'os_tour.pages.inc',
+    'file path' => $path,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_library().
+ */
+function os_tour_library() {
+  $libraries = array();
+
+  $path = libraries_get_path('hopscotch');
+  $settings = array(
+    'group' => JS_LIBRARY,
+    'scope' => 'header',
+    'type' => 'file',
+  );
+  $libraries['hopscotch'] = array(
+    'title' => 'Hopscotch',
+    'website' => 'http://linkedin.github.io/hopscotch',
+    'version' => '0.1.2',
+    'js' => array(
+      "$path/js/hopscotch-0.1.2.min.js" => $settings,
+    ),
+    'css' => array(
+      "$path/css/hopscotch-0.1.2.min.css" => $settings,
+    ),
+  );
+
+  return $libraries;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for os_settings_form.
+ */
+function os_tour_form_os_settings_form_alter(&$form, &$form_state, $form_id) {
+  $form['os_tour'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Tours'),
+    '#weight' => 1,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+  $form['os_tour']['notifications'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Platform notifications'),
+    '#weight' => 1,
+    '#collapsible' => TRUE,
+    '#collapsed' => FALSE,
+  );
+  $form['os_tour']['notifications']['os_tour_notifications_feeds'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Feed URLs'),
+    '#default_value' => variable_get('os_tour_notifications_feeds', ''),
+    '#description' => t('Enter one or more RSS feeds to create a "Notifications" tab in the Admin Toolbar. Use commas to separate.'),
+  );
+
+  $default = OS_TOUR_NOTIFICATIONS_MAX_DEFAULT;
+  $form['os_tour']['notifications']['os_tour_notifications_max'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Max'),
+    '#default_value' => variable_get('os_tour_notifications_max', $default),
+    '#description' => t('Maximum amount of notification items to list for users.'),
+  );
+}
+
+/**
+ * Implements hook_preprocess_toolbar().
+ */
+function os_tour_preprocess_toolbar(&$vars) {
+  // Only continues if there are feeds to attempt to display from.
+  $feeds = variable_get('os_tour_notifications_feeds', '');
+  if (empty($feeds)) {
+    return;
+  }
+
+  // Prepares settings array to pass as javascript.
+  global $user;
+  if (isset($user->data['os_tour']['notifications_read'])) {
+    $last_read = $user->data['os_tour']['notifications_read'];
+  }
+  else {
+    // Default to 1 month before user's registration time.
+    $month_in_seconds = 60 * 60 * 24 * 30;
+    $last_read = $user->created - $month_in_seconds;
+  }
+  $default = OS_TOUR_NOTIFICATIONS_MAX_DEFAULT;
+  $max = variable_get('os_tour_notifications_max', $default);
+  // @TODO explode feeds value by comma and validate URLs.
+  $url = $feeds;
+  $settings = array(
+    'url' => $url,
+    'max' => $max,
+    'uid' => $user->uid,
+    'last_read' => $last_read,
+  );
+
+  // Adds the Notifications link to the Admin toolbar.
+  $path = drupal_get_path('module', 'os_tour');
+  $vars['toolbar']['toolbar_right']['os_tour_notifications'] = array(
+    '#theme' => 'links',
+    '#links' => array(
+      0 => array(
+        'title' => t('Notifications'),
+        'href' => '',
+        'html' => TRUE,
+        'attributes' => array(
+          'id' => 'os-tour-notifications-menu-link',
+          'data-tooltip' => t('Learn about updates that affect your site')
+        ),
+      ),
+    ),
+    '#attached' => array(
+      'js' => array(
+        0 => array(
+          'type' => 'file',
+          'data' => "$path/theme/os_tour.notifications.js",
+        ),
+        1 => array(
+          'type' => 'setting',
+          'data' => array('os_notifications' => $settings),
+        ),
+      ),
+      'library' => array(
+        array('google_feedapi', 'google_jsapi_feeds'),
+        array('os_tour', 'hopscotch'),
+      ),
+      'css' => array(
+        "$path/theme/os_tour.notifications.css",
+      ),
+    ),
+  );
+}

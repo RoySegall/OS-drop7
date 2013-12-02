@@ -1,0 +1,89 @@
+<?php
+/**
+ * Implements hook_og_permission().
+ *
+ */
+function og_moderation_og_permission() {
+  $perms = array();
+  $infos = node_type_get_types();
+  foreach($infos as $info) {
+    if (og_is_group_content_type('node', $info->type)) {
+      $perms["view any unpublished " . $info->type . " content"] = array(
+        'title' => t('View any unpublished %type_name content', array('%type_name' => $info->name)),
+      );
+      $perms["access publishing options of " . $info->type . " content"] = array(
+        'title' => t('Access publishing options of %type_name content', array('%type_name' => $info->name)),
+      );
+      $perms["access revisions options of " . $info->type . " content"] = array(
+        'title' => t('Access revisions options of %type_name content', array('%type_name' => $info->name)),
+      );
+    }
+  }
+  return $perms;
+}
+
+function og_moderation_form_alter(&$form, &$form_state, $form_id) {
+  if (isset($form['#node_edit_form'])) {
+    if ($form['#node_edit_form'] && og_is_group_content_type('node', $form['#bundle'])) {
+      if (isset($form['#node']->nid))
+        $gids = og_get_entity_groups('node', $form['#node']);
+      else
+        $gids = og_get_groups_by_user();
+      if ($gids) {
+        foreach($gids['node'] as $id => $gid) {
+          if (og_user_access('node', $gid, "access publishing options of " . $form['#bundle'] . " content")) {
+            $form['options']['#access'] = TRUE;
+          }
+          if (og_user_access('node', $gid, "access revisions options of " . $form['#bundle'] . " content")) {
+            $form['revision_information']['#access'] = TRUE;
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_access().
+ */
+function og_moderation_node_access($node, $op, $account) {
+  if ($op == 'view' && $gids = og_get_entity_groups('node', $node)) {
+    foreach ($gids['node'] as $id => $gid) {
+      if (og_user_access('node', $gid, "view any unpublished {$node->type} content")) {
+        return NODE_ACCESS_ALLOW;
+      }
+    }
+  }
+  return NODE_ACCESS_IGNORE;
+}
+
+/**
+ * Implements hook_menu_alter().
+ *
+ * Modify menu items defined in other modules (in particular the Node and
+ * Module Grants modules).
+ */
+function og_moderation_menu_alter(&$items) {
+  $items['node/%node/revisions']['access callback'] = 'og_moderation_node_revision_access';
+  $items['node/%node/revisions']['access arguments'] = array(1);
+
+  $items['node/%node/revisions/%/view']['access callback'] = 'og_moderation_node_revision_access';
+  $items['node/%node/revisions/%/view']['access arguments'] = array(1);
+
+  $items['node/%node/revisions/%/revert']['access callback'] = 'og_moderation_node_revision_access';
+  $items['node/%node/revisions/%/revert']['access arguments'] = array(1, 4);
+  $items['node/%node/revisions/%/delete']['access callback'] = 'og_moderation_node_revision_access';
+  $items['node/%node/revisions/%/delete']['access arguments'] = array(1, 4);
+}
+
+function og_moderation_node_revision_access($node, $op = 'view') {
+  if ($gids = og_get_entity_groups('node', $node)) {
+    foreach ($gids['node'] as $id => $gid) {
+      if (og_user_access('node', $gid, "access revisions options of " . $node->type . " content")) {
+        return TRUE;
+      }
+    }
+  }
+  return _node_revision_access($node, $op = 'view');
+}
+

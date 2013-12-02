@@ -1,0 +1,19 @@
+<div id="node-51" class="node node-mine node-type-help">
+  <div class="node-inner">
+            <div class="content">
+      <h3>Regions</h3><p>The "base theme" provides a number of <strong>content regions</strong> into which scholars may move widgets within the <strong>layout settings</strong> in the control panel. A <strong>region</strong> can be enabled by the site owner, or not according to preference on a particular pages, so all themes should be flexible enough to respond to these changes.</p>
+      <p>For instance the left column may be in use in the <em>publications</em> page, but not in the <em>blog</em> area. The right column might only be used on the site's front page, but not anywhere else.</p><p>In order to keep track of a user's preferences, CSS classes are added to the <strong>body tag</strong> to correspond with which regions are currently in use. So if the left sidebar is being used the body class 'sidebar-left' is added. If the right sidebar is also in use, the body class will change to 'both-sidebars'</p>
+
+      <h4>Map of regions and their respective divs:</h4> <p><img class="mceItem" src="path:div-map.png" alt="div map for OpenScholar" /></p><h3>Divs</h3><p>Some divs are always present in the markup. These will be<strong> #wrapper, #container, #content-wrapper, #main, #footer, #extradiv.</strong> #header and #header-wrapper will likely always be used, but technically could be disabled by the site user. These divs can be custom styled or left as defaults as you wish. (Note: The div <strong>#extradiv</strong> serves no function save for an additional styling div. It is otherwise empty.)</p><p>The divs that users will likely enable and disable on various pages are therefore #header-left, #header-main, #header-right, #navbar, #sidebar-left and #sidebar-right. The body tag is given classes to reflect which of these regions/divs is in use, and should be fairly obvious as to what they represent. They are:</p>
+        <ul>
+          <li><strong>body.sidebar-left</strong>, <em>or</em>, <strong>body.sidebar-right, </strong><em>or,</em> <strong>body.both-sidebars,</strong> <em>or</em>, <strong>body.no-sidebars</strong></li><li><strong>body.header-left-main-right</strong><em>, or</em><strong>, body.header-left, </strong><em>or, </em><strong>body.header-left-main</strong><em>, or, </em><strong>body.header-main-right,</strong> <em>or,</em> <strong>body.header-left-right</strong></li>
+          </ul>
+          <p>Body classes are strung together, for example: <strong>&lt;body class="sidebar-left header-left-main-right"&gt;</strong></p><table id="attachments" class="sticky-enabled">
+ <thead><tr><th>Attachment</th><th>Size</th> </tr></thead>
+<tbody>
+ <tr class="odd"><td><a href="path:div-map.png">div-map.png</a></td><td>11.08 KB</td> </tr>
+</tbody>
+</table>
+    </div>
+      </div> <!-- /node-inner -->
+</div> <!-- /node -->

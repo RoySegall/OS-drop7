@@ -1,0 +1,9 @@
+name = Rbuild
+description = Automatically fetch and create Software Releases using rbuild.
+core = 7.x
+package = IQSS
+php = 5.2.4
+dependencies[] = os_software
+features[features_api][] = api:1
+features[field][] = node-software_project-field_rbuild_short_name
+features[field][] = node-software_project-field_software_repo

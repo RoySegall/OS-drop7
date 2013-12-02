@@ -1,0 +1,15 @@
+name = OS Virtual Site: Presets
+description = Provides presets to automate virtual site creation tasks.
+core = 7.x
+package = OpenScholar vsite
+php = 5.2.4
+dependencies[] = ctools
+dependencies[] = og_tasks
+dependencies[] = spaces
+dependencies[] = vsite
+features[ctools][] = spaces:spaces:3
+features[features_api][] = api:1
+features[spaces_presets][] = hwp_administrative
+features[spaces_presets][] = hwp_lab_research_group
+features[spaces_presets][] = hwp_project
+files[] = includes/vsite_task.inc

@@ -1,0 +1,32 @@
+<?php 
+
+/**
+ *  Updates dataverse urls from `dvn.iq.harvard.edu` to `thedata.harvard.edu` #2948
+ **/
+function os_dataverse_update_7001() {
+  $done = 0;
+  $results = db_select('spaces_overrides', 'so')
+    ->condition('object_type', 'variable')
+    ->condition('object_id', 'os_dataverse_dvn_alias')
+    ->fields('so')
+    ->execute();
+  
+  while ($row = $results->fetchAssoc()) {
+    $value = unserialize($row['value']);
+    $value = str_replace('http://dvn.iq.harvard.edu/', 'http://thedata.harvard.edu/', $value);
+    $value = serialize($value);
+    
+    if ($value != $row['value']) {
+      $done += db_update('spaces_overrides')
+        ->fields(array('value' => $value))
+        ->condition('type', $row['type'])
+        ->condition('id', $row['id'])
+        ->condition('object_type', $row['object_type'])
+        ->condition('object_id', $row['object_id'])
+        ->execute();  
+    }
+  }
+  
+  return t('Updated @count sites.', array('@count' => $done));
+}
+

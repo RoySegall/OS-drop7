@@ -1,0 +1,183 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Code for the Profiles feature.
+ */
+
+include_once 'os_profiles.features.inc';
+
+/**
+ * Implements hook_os_app_info().
+ */
+function os_profiles_os_app_info() {
+  $apps = array();
+
+  $apps['os_profiles'] = array(
+    'path' => 'people',
+  	'nodetypes' => array(
+  	  'person',
+    ),
+    'views tabs' => array(
+      'os_profiles' => array('page'),
+    ),
+  );
+
+  return $apps;
+}
+
+/**
+ * Implements hook_process_hook() for node.
+ *
+ * Enter description here...
+ */
+function os_profiles_process_node(&$vars) {
+  if ($vars['type'] !== 'person') {
+    return;
+  }
+
+  // Helps poor theme developers find these changes to $variables
+  $vars['classes'] .= ' modified-in-os_profiles_process_node';
+  
+  // Moves the profile photo thumbnail before teaser title (full name)
+  if (isset($vars['content']['field_person_photo'])) {
+    $vars['title_prefix'] = $vars['content']['field_person_photo'];
+    unset($vars['content']['field_person_photo']);
+  }
+
+  //sidebar teaser
+  if ($vars['view_mode'] == 'sidebar_teaser') {
+
+    if (isset($vars['content']['pic_bio'])) {
+      $vars['title_prefix'] = $vars['content']['pic_bio'];
+      unset($vars['content']['pic_bio']);
+      $vars['classes'] .= ' with-person-photo';
+    }
+
+    //move the title inside
+    $vars['content']['node_title'] = array(
+      '#weight' => -50,
+      '#markup' => '<h1 ' . $vars['title_attributes'] . '><a href="' . $vars['node_url'] . '">' . $vars['title'] . '</a></h1>'
+    );
+    $vars['title'] = NULL;
+  }
+
+  // Includes custom CSS
+  $vars['title_prefix']['#attached'] = array(
+    'css' => array(
+      'type' => 'file',
+      'data' => drupal_get_path('module', 'os_profiles') . '/os_profiles.css',
+    ),
+  );
+
+  if (!$vars['teaser'] && $vars['view_mode'] != 'sidebar_teaser') {
+    $vars['title_prefix']['#suffix'] = '<h2>' . $vars['title'] . '</h2>';
+  }
+
+  // Exits if this was processed in hwpi_basetheme template.php
+  if (isset($vars['content']['pic_bio'])) {
+    return;
+  }
+
+  // Customizes field markup with prefixes and suffixes
+  if (isset($vars['content']['field_email'])) {
+    $email_plain = $vars['content']['field_email'][0]['#markup'];
+    if ($email_plain) {
+      $vars['content']['field_email'][0]['#markup'] = '<a href="mailto:' . $email_plain . '">email</a>';
+    }
+  }
+  if (isset($vars['content']['field_phone'])) {
+    $phone_plain = $vars['content']['field_phone'][0]['#markup'];
+    if ($phone_plain) {
+      $vars['content']['field_phone'][0]['#markup'] = t('p: ') . $phone_plain;
+    }
+  }
+}
+
+/**
+ * Implements hook_node_presave().
+ *
+ * Generates node title for Person nodes
+ */
+function os_profiles_node_presave($node) {
+  if ($node->type !== 'person') {
+    return;
+  }
+
+  // Sets the node title like "[first] [middle] [last]"
+  $title = _os_profiles_person_node_title($node);
+  if ($title) {
+    $node->title = $title;
+  }
+}
+
+/**
+ * Implements hook_vsite_og_node_type_info().
+ */
+function os_profiles_vsite_og_node_type_info() {
+  return array(
+    'person' => 'group content',
+  );
+}
+
+/**
+ * Implements hook_field_display_ENTITY_TYPE_alter().
+ */
+function os_profiles_field_display_node_alter(&$display, $context) {
+  // Disable field redirection if this node is configured to display via field_redirection, and we are not on the full_node page for the node.
+  if (isset($display['type']) && $display['type'] == "field_redirection" && !node_is_page($context['entity'])) {
+    $display['type'] = 'hidden';
+  }
+}
+
+/**
+ * Restrict access to the redirect field on the person node.
+ * @return boolean
+ */
+function os_profiles_field_access($op, $field, $entity_type, $entity, $account) {
+  if (!empty($entity) && $field['field_name'] == 'field_url' && $entity_type == 'node' && $entity->type == 'person' && $op == 'edit') {
+    return user_access('bypass redirection', $account);
+  }
+  return TRUE;
+}
+
+/**
+ * Prepares the node title for person nodes.
+ */
+function _os_profiles_person_node_title($node) {
+  $fields = array('first_name', 'middle_name_or_initial', 'last_name');
+  $values = array();
+  foreach ($fields as $field) {
+    $items = field_get_items('node', $node, 'field_' . $field);
+    if (!empty($items[0]['value'])) {
+      $values[] = $items[0]['value'];
+    }
+  }
+
+  $title = implode(' ', $values);
+  return $title;
+}
+
+/**
+ * Adds alt and title text where appropriate
+ */
+function os_profiles_field_attach_load($entity_type, $entities, $view_mode) {
+  if ($entity_type == 'node') {
+    foreach ($entities as $e_id => $e) {
+      if ($e->type != 'person') continue;
+
+      if (!empty($e->field_person_photo) && isset($e->title)) {
+        $e->field_person_photo[LANGUAGE_NONE][0]['alt'] = $e->title;
+        $e->field_person_photo[LANGUAGE_NONE][0]['title'] = $e->title;
+      }
+
+      if (!empty($e->field_website[LANGUAGE_NONE])) {
+        foreach ($e->field_website[LANGUAGE_NONE] as $k => $l) {
+          $e->field_website[LANGUAGE_NONE][$k]['attributes']['title'] = $e->title.'\'s website';
+        }
+      }
+    }
+  }
+}
+

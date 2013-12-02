@@ -1,0 +1,38 @@
+#menu-bar {
+	background: #C75A26;
+	}
+
+#menu-bar #block-os-primary-menu {
+	background: #C75A26;
+	}
+
+#menu-bar ul li a {
+	background: none; color:#FFFFFF;
+	border-bottom:none;
+}
+
+#menu-bar li a.active, #menu-bar li.active-trail a {
+background: #D4D4D5;  
+color: #C75A26;
+}
+
+ .teaser-extra a {color:#C75A26;}
+ 
+.more-link a {
+  color:#C75A26;
+}
+
+.sidebar .content h1 a {color:#C75A26;}
+
+#header-container h1 a,
+#header-container h1 a:visited {
+    color:#C75A26;
+    }
+    
+.sidebar h3.title {
+  color: #767676;
+  }
+
+#sidebar-second h3.title, #sidebar-second h3.title a {
+  color:#767676;
+  }

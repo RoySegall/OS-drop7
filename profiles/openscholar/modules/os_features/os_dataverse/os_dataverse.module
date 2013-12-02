@@ -1,0 +1,117 @@
+<?php
+// $Id$
+
+
+/**
+ * @file
+ * Code for the os_dataverse feature.
+ */
+
+include_once 'os_dataverse.features.inc';
+
+/**
+ * Implements hook_os_app_info().
+ */
+function os_dataverse_os_app_info() {
+  $apps = array();
+
+  $apps['os_dataverse'] = array(
+    'path' => 'data',
+  );
+
+  return $apps;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function os_dataverse_menu() {
+
+  $items = array();
+  $items['data'] = array(
+    'title' => 'Data',
+    'page callback' => '_os_dataverse_data_view',
+    'access callback' => 'spaces_access_feature',
+    'access arguments' => array('view', 'os_dataverse'),
+    'menu_name' => 'primary-menu',
+  );
+ // Named like 'features/$feature_name' by features/spaces convention.
+  $items['features/os_dataverse'] = array(
+    'title' => 'Dataverse Settings',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('os_dataverse_settings'),
+    'access callback' => module_exists('spaces') ? 'spaces_access_admin' : 'user_access',
+    'access arguments' => module_exists('spaces') ? array() : array('administer site configuration'),
+    'type' => MENU_CALLBACK,
+    'file' => 'os_dataverse.pages.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_preprocess_page().
+ *
+ * @param $vars
+ */
+function os_dataverse_preprocess_page(&$vars) {
+  $active_menu = menu_get_item();
+  if ($active_menu['path'] === 'data') {
+    $vars['title'] = '';
+  }
+}
+
+/**
+ * Provides content for page at /data
+ *
+ * @todo cleanup inline markup into theme hook
+ */
+function _os_dataverse_data_view() {
+  // Adds custom CSS and JS to page to format iframe
+  $module_path = drupal_get_path('module', 'os_dataverse');
+  drupal_add_js($module_path . '/os_dataverse.js');
+  drupal_add_css($module_path . '/os_dataverse.css');
+
+  // Varies display based on space and DVN alias system variable
+  $space = spaces_get_space();
+  $dvn_alias = variable_get('os_dataverse_dvn_alias', '');
+
+  // Embeds contents of Dataverse (DVN) hosted web page in an iframe
+  if ($space && $dvn_alias) {
+    $path = $dvn_alias;
+    // Properly formats any subpage to keep users from leaving OS site.
+    if (array_key_exists('dvn_subpage', $_REQUEST)) {
+      if (strlen($_REQUEST['dvn_subpage'])) {
+        $path .= '/' . ltrim($_REQUEST['dvn_subpage'], '/');
+      }
+    }
+    return '' . '<div id="os-dataverse-data">' . '  <iframe name="res" scrolling="auto" src ="' . $path . '">' . '  </iframe>' . '</div>';
+  }
+
+  // Instructs admin to enter their DVN alias at the control panel settings page
+  elseif ($space && $space->access_admin()) {
+    $l1     = l('feature settings page', "cp/build/features");
+    $l2     = l('create one now', 'http://thedata.harvard.edu', array('absolute' => TRUE));
+    $result = "<p>Please set up your Dataverse Network alias at the " . $l1 . ".</p>";
+    $result .= "<p>If you don't have a Dataverse Network alias yet, go " . $l2 . ".</p>";
+    return $result;
+  }
+
+  // Displays empty text to non-admin users.
+  else {
+    return t('No dataverse available yet');
+  }
+}
+
+/**
+ * Throws error if dataverse URL does not begin with http://
+ *
+ * @param unknown_type $element
+ * @param unknown_type $form_state
+ */
+function _os_dataverse_alias_validate($element, &$form_state) {
+  if (strpos($form_state['values']['os_dataverse_dvn_alias'], 'http:') === FALSE) {
+    form_set_error('os_dataverse_dvn_alias', t('Dataverse alias must begin with http://'));
+  }
+}
+

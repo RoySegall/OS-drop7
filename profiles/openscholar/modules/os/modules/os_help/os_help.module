@@ -1,0 +1,160 @@
+<?php
+// $Id$
+
+/**
+ * Implements hook_help().
+ */
+function os_help_help($path, $arg) {
+  switch ($path) {
+    case 'cp/build':
+    case 'cp/build/apps':
+      $topic = 'Apps';
+      break;
+    case 'cp/build/layout':
+      $topic = 'Customizing-Your-Site-Layout';
+      break;
+    case 'cp/appearance':
+    case 'cp/appearance/theme':
+      $topic = 'Theme-Selection';
+      break;
+    case 'cp/build/menu':
+      $topic = 'Menus';
+      break;
+    case 'cp/build/taxonomy':
+      $topic = 'Categorizing-Your-Content---Taxonomy';
+      break;
+    case 'cp/settings/site_info/%':
+      $topic = 'Site-Information';
+      break;
+    case 'cp/settings':
+    case 'cp/settings/generic':
+      $topic = 'Site-Settings';
+      break;
+    case 'cp/content':
+      $topic = 'Managing-Your-Content';
+      break;
+    case 'cp/content/files':
+      $topic = 'Managing-Files-and-Images';
+      break;
+    case 'cp/users':
+      $topic = 'Managing-Your-Users';
+      break;
+    case 'cp/news':
+      $topic = 'Getting-Project-News';
+      break;
+    case 'cp/support':
+      $topic = 'Getting-Support';
+      break;
+  }
+  if (isset($topic)) {
+    return theme('advanced_help_topic', array(
+    	'module' => 'os_help',
+    	'topic' => $topic,
+    ));
+  }
+}
+
+/**
+ * Impements hook_process_HOOK for page.tpl.php.
+ */
+function os_help_process_page(&$vars) {
+  $path = drupal_get_path_alias();
+  $arg = array();
+  $help = (os_help_help($path, $arg));
+  if ($help) {
+    $vars['page']['help'] = $help;
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_form_alter() for spaces_features_form
+ */
+function os_help_form_spaces_features_form_alter(&$form, &$form_state, $form_id) {
+  _os_help_traverse_form($form, $form_id);
+}
+
+/**
+ * Implements hook_form_FORM_ID_form_alter() for cp_layout_full_form
+ */
+function os_help_form_cp_layout_full_form_alter(&$form, &$form_state, $form_id) {
+  _os_help_traverse_form($form, $form_id);
+}
+
+/**
+ * Recursively traverses a form object as an array and adds help links.
+ *
+ * @see os_help_form_cp_layout_full_form_alter()
+ * @see os_help_form_spaces_features_form_alter()
+ */
+function _os_help_traverse_form(&$element, $form_id) {
+  if (is_object($element)) {
+    $element = (array)$element;
+  }
+  foreach (element_children($element) as $child) {
+    _os_help_traverse_form($element[$child], $form_id . ':' . $child);
+  }
+  _os_help_attach_help_link($element, $form_id);
+}
+
+/**
+ * Form traversal callback; prepends elements with custom help link if found.
+ *
+ * @see _os_help_traverse_form().
+ * @see os_help_form_alter().
+ */
+function _os_help_attach_help_link(&$element, $form_id) {
+  // Ignores elements without a type value or with an excluded type.
+  $ignore       = array('button', 'image_button', 'submit', 'markup', 'token', 'hidden', 'form', 'value', 'weight');
+  $is_ignored   = (bool) (!isset($element['#type']) || in_array($element['#type'], $ignore));
+  if ($is_ignored) {
+    return;
+  }
+
+  $variables = _os_help_get_theme_variables($form_id);
+  if (!$variables) {
+    return;
+  }
+
+  $link = theme('advanced_help_topic', $variables);
+
+  if ((string) $element['#type'] === 'fieldset') {
+    // @todo use form ['#attached'] ?
+    drupal_add_css(drupal_get_path('module', 'os_help') . '/os_help.css');
+    $link = preg_replace('/class="(.+?)"/', 'class="\1 os_help-nofloat"', $link);
+  }
+
+  $element['#description'] = isset($element['#description']) ? $link . ' ' . $element['#description'] : $link;
+}
+
+/**
+ * Returns theme variables for a given OS Help topic ID, or FALSE if none found.
+ *
+ * @see _os_help_attach_help_link()
+ */
+function _os_help_get_theme_variables($id) {
+  static $theme_variables = array(
+    'spaces_features_form:spaces_features:os_news' => array('module' => 'os_help', 'topic' => 'News-app'),
+    'spaces_features_form:spaces_features:os_biocv' => array('module' => 'os_help', 'topic' => 'Bio---CV-app'),
+    'spaces_features_form:spaces_features:os_blog' => array('module' => 'os_help', 'topic' => 'Blog-app'),
+    'spaces_features_form:spaces_features:os_booklets' => array('module' => 'os_help', 'topic' => 'Booklet-app'),
+    'spaces_features_form:spaces_features:os_classes' => array('module' => 'os_help', 'topic' => 'Class-app'),
+    'spaces_features_form:spaces_features:os_pages' => array('module' => 'os_help', 'topic' => 'Pages-app'),
+    'spaces_features_form:spaces_features:os_events' => array('module' => 'os_help', 'topic' => 'Events-app'),
+    'spaces_features_form:spaces_features:os_dataverse' => array('module' => 'os_help', 'topic' => 'Dataverse-app'),
+    'spaces_features_form:spaces_features:os_feeds' => array('module' => 'os_help', 'topic' => 'Feed-app'),
+    'spaces_features_form:spaces_features:os_front' => array('module' => 'os_help', 'topic' => 'Front-app'),
+    'spaces_features_form:spaces_features:os_image_gallery' => array('module' => 'os_help', 'topic' => 'Image-Gallery-app'),
+    'spaces_features_form:spaces_features:os_links' => array('module' => 'os_help', 'topic' => 'Links-app'),
+    'spaces_features_form:spaces_features:os_profiles' => array('module' => 'os_help', 'topic' => 'Profiles-app'),
+    'spaces_features_form:spaces_features:os_publications' => array('module' => 'os_help', 'topic' => 'Publications-app'),
+    'spaces_features_form:spaces_features:os_presentations' => array('module' => 'os_help', 'topic' => 'Presentations-app'),
+    'spaces_features_form:spaces_features:os_reader' => array('module' => 'os_help', 'topic' => 'Reader-app'),
+    'spaces_features_form:spaces_features:os_software' => array('module' => 'os_help', 'topic' => 'Software-app'),
+    'cp_layout_full_form:context_selection' => array('module' => 'os_help', 'topic' => 'Customizing-Your-Site-Layout'),
+  );
+  if (!isset($theme_variables[$id])) {
+    return FALSE;
+  }
+
+  return $theme_variables[$id];
+}

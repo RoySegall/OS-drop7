@@ -1,0 +1,96 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the OpenScholar profile.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function openscholar_install() {
+  // enable the following themes
+  $enable = array(
+    'adaptivetheme',
+    'aberdeen',
+    'aglet',
+    'airstream',
+    'ballard',
+    'bigpic',
+    'bunchy',
+    'cayley',
+    'cleanblue',
+    'collector',
+    'collegiate',
+    'commodore',
+    'cp_theme',
+    'dunster',
+    'documental',
+    'eloquent',
+    'nortony',
+    'quinn',
+    'redhead',
+    'seven',
+    'stripy',
+    'weft',
+    'os_basetheme',
+    'os_default',
+    'fairbanks_center',
+    'gking',
+    'openscholar_theme',
+    'projects_harvard',
+    'rcss',
+    'scholar_department',
+    'scholars_harvard',
+    'spinker',
+  );
+  theme_enable($enable);
+
+  // Disable the default Bartik theme.
+  theme_disable(array('bartik'));
+
+  // set the default theme.
+  variable_set('theme_default', 'os_default');
+
+  variable_set('admin_theme', 'seven');
+  variable_set('node_admin_theme', '1');
+
+  // Add the full html format.
+  /*$full_html_format = array(
+    'format' => 'full_html',
+    'name' => 'Full HTML',
+    'weight' => 1,
+    'filters' => array(
+      // URL filter.
+      'filter_url' => array(
+        'weight' => 0,
+        'status' => 1,
+      ),
+      // Line break filter.
+      'filter_autop' => array(
+        'weight' => 1,
+        'status' => 1,
+      ),
+      // HTML corrector filter.
+      'filter_htmlcorrector' => array(
+        'weight' => 10,
+        'status' => 1,
+      ),
+    ),
+  );
+  $full_html_format = (object) $full_html_format;
+  filter_format_save($full_html_format);*/
+
+  // Disable preventing anonymous cache in biblio.
+  variable_set('biblio_prevent_anon_cache', FALSE);
+
+  // Turn on the OG vocab term page access.
+  variable_set('og_vocab_term_page_access', TRUE);
+
+  // Allow accessing resource node to all users.
+  foreach (array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID) as $rid) {
+    user_role_grant_permissions($rid, array('access resource node'));
+    user_role_grant_permissions($rid, array('access resource file'));
+  }
+}
+

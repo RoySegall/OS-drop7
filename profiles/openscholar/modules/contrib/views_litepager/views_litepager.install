@@ -1,0 +1,27 @@
+<?php
+
+/**
+ * @file
+ * Install, update and uninstall functions for the views_litepager module.
+ */
+
+/**
+ * Implements hook_requirements().
+ *
+ * Check for views 3.x
+ */
+function views_litepager_requirements($phase) {
+  $requirements = array();
+  $t = get_t();
+  if ($phase == 'install') {
+    module_load_include('module', 'views');
+    if (views_api_version() < '3') {
+      $requirements['views_api_version'] = array(
+        'title' => $t('Views Litepager'),
+        'severity' => REQUIREMENT_ERROR,
+        'description' => $t("The <em>Views Litepager</em> module requires <em>Views 3.0</em> or later."),
+      );
+    }
+  }
+  return $requirements;
+}

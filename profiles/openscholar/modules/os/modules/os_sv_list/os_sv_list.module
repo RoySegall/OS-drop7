@@ -1,0 +1,141 @@
+<?php
+
+/**
+ * Implements hook_menu()
+ */
+function os_sv_list_menu() {
+  $items = array();
+
+  $items['os_sv_list/page/%os_boxes'] = array(
+    'title' => 'Pager',
+    'page callback' => 'os_sv_list_pager_callback',
+    'page arguments' => array(2),
+    'delivery callback'  => 'ajax_deliver',
+    'type' => MENU_CALLBACK,
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+/**
+ * Ajax callback.
+ */
+function os_sv_list_pager_callback($box) {
+  // Biblio doesn't use the EFQ's pager, so we have to initialize it ourselves.
+  if ($box->options['content_type'] == 'biblio') {
+    $page = isset($_GET['page']) ? $_GET['page'] : 0;
+    $total = count($box->get_nids(FALSE, $page));
+    $limit = $box->options['number_of_items'];
+
+    if (!isset($ref)) {
+      $page = isset($_GET['page']) ? $_GET['page'] : 0;
+    }
+
+    pager_default_initialize($total, $limit, $page);
+  }
+
+  $output = $box->render();
+  $commands[] = ajax_command_replace('box-' . $box->delta . '-page', $output['content']);
+  return $output['content'];
+}
+
+/**
+ * Implements hook_ctools_plugin_api
+ */
+function os_sv_list_ctools_plugin_api($module, $api) {
+  if ($module == 'boxes' && $api == 'plugins') {
+    return array(
+      'version' => 1,
+    );
+  }
+}
+
+/**
+ * Implements hook_boxes_plugins
+ */
+function os_sv_list_boxes_plugins() {
+  $plugins = array();
+
+  $plugins['os_sv_list_box'] = array(
+    'title' => 'List of Posts',
+    'tags' => array('Content'),
+    'handler' => array(
+      'class' => 'os_sv_list_box',
+      'file' => 'os_sv_list.box.inc',
+      'path' => drupal_get_path('module', 'os_sv_list') . '/plugins/',
+      'parent' => 'os_boxes_default',
+    ),
+    'factory' => TRUE,
+  );
+
+  return $plugins;
+}
+
+/**
+ * Get Vocabularies by content type.
+ *
+ * @param $bundle
+ *  The bundle that the og vocab are related to.
+ *
+ * @return Array
+ *  Array keyed with vocabulary id and valued with the vocabulary name.
+ */
+function os_sv_list_get_content_type_vocabs($bundle) {
+  if ($bundle != 'all') {
+    $vocabs = og_vocab_get_accessible_vocabs('node', $bundle, OG_VOCAB_FIELD);
+  }
+  else {
+    $os_bundles = os_get_bundles(array(1));
+    $vocabs = array();
+    foreach (array_keys($os_bundles) as $os_bundle) {
+      if ($vocab = og_vocab_get_accessible_vocabs('node', $os_bundle, OG_VOCAB_FIELD)) {
+        foreach ($vocab as $vid) {
+          $vocabs[] = $vid;
+        }
+      }
+    }
+  }
+
+  if (empty($vocabs)) {
+    return array();
+  }
+
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'og_vocab')
+    ->propertyCondition('entity_type', 'node')
+    ->propertyCondition('vid', $vocabs, is_array($vocabs) ? 'IN' : '=');
+
+  if ($bundle != 'all') {
+    $query->propertyCondition('bundle', $bundle);
+  }
+
+  $result = $query->execute();
+
+  if (empty($result['og_vocab'])) {
+    return array();
+  }
+
+  foreach (array_keys($result['og_vocab']) as $vid) {
+    $og_vocab = entity_load_single('og_vocab', $vid);
+    $vocabulary = taxonomy_vocabulary_load($og_vocab->vid);
+    $options[$vocabulary->vid] = $vocabulary->name;
+  }
+
+  return $options;
+}
+
+/**
+ * Element validate; Set 'terms' according to 'vocabs'.
+ */
+function os_sv_list_terms_element_validate($element, &$form_state) {
+  // Get all selected terms from the 'vocab' select fields.
+  $tids = array();
+  foreach ($form_state['values']['vocabs'] as $value) {
+    $tids = array_merge($tids, $value);
+  }
+
+  // Set 'terms' value to be the selected vocab terms.
+  $terms_element = array('#parents' => array('terms'));
+  form_set_value($terms_element, $tids, $form_state);
+}

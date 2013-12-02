@@ -1,0 +1,13 @@
+<?php
+
+/**
+ * @file
+ * Install file for the OS taxonomy module.
+ */
+
+/**
+ * Enable the Hierarchical taxonomy module.
+ */
+function os_taxonomy_update_7000() {
+  module_enable(array('hierarchical_taxonomy'));
+}

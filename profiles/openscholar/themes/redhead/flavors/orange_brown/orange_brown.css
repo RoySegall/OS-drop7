@@ -1,0 +1,11 @@
+/*Orange Brown version*/
+#header, 
+#header-container,
+#menu-bar {
+  background: #a25d3c;
+  }
+  
+.biblio-title a, .biblio-title-chicago a,
+a, a:visited {
+  color: #a25d3c;
+  }

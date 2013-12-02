@@ -1,0 +1,94 @@
+<?php
+
+/**
+ * @file
+ * Views cache per OG group.
+ */
+
+/**
+ * Implements of hook_views_plugins().
+ */
+function views_og_cache_views_plugins() {
+  return array(
+    'cache' => array(
+      'time_per_gorup' => array(
+        'title' => t('Time-based, per OG group'),
+        'help' => t('Simple time-based caching of data for each OG group, based on their access.'),
+        'handler' => 'views_og_cache_plugin_cache_time',
+        'uses options' => TRUE,
+        'parent' => 'time',
+        'help topic' => 'cache-time-per-og',
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function views_og_cache_node_insert($node) {
+  views_og_cache_invalidate_cache($node);
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function views_og_cache_node_update($node) {
+  views_og_cache_invalidate_cache($node);
+}
+
+/**
+ * Implements hook_node_delete().
+ */
+function views_og_cache_node_delete($node) {
+  views_og_cache_invalidate_cache($node);
+}
+
+/**
+ * Implements hook_comment_insert().
+ */
+function views_og_cache_comment_insert($comment) {
+  $node = node_load($comment->nid);
+  views_og_cache_invalidate_cache($node);
+}
+
+/**
+ * Implements hook_comment_update().
+ */
+function views_og_cache_comment_update($comment) {
+  $node = node_load($comment->nid);
+  views_og_cache_invalidate_cache($node);
+}
+
+/**
+ * Implements hook_comment_delete().
+ */
+function views_og_cache_comment_delete($comment) {
+  $node = node_load($comment->nid);
+  views_og_cache_invalidate_cache($node);
+}
+
+/**
+ * Invalidate Views cache based on a group node.
+ *
+ * @param $node
+ *   The node that is a group.
+ */
+function views_og_cache_invalidate_cache($node) {
+  if (!variable_get('views_og_cache_invalidate_node', TRUE)) {
+    // Allow users to have own invalidate strategy.
+    return;
+  }
+  if (og_is_group('node', $node)) {
+    cache_clear_all('og:node:' . $node->nid . ':', 'cache_views_data', TRUE);
+    return;
+  }
+  if (!og_is_group_content_type('node', $node->type) || !$gids = og_get_entity_groups('node', $node)) {
+    return;
+  }
+  foreach ($gids as $group_type => $values) {
+    foreach ($values as $gid) {
+      cache_clear_all('og:' . $group_type . ':' . $gid . ':', 'cache_views_data', TRUE);
+    }
+  }
+}

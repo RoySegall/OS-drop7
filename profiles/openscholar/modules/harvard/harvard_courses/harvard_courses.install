@@ -1,0 +1,98 @@
+<?php
+/**
+ * @file
+ * Install file for Harvard courses module.
+ */
+
+function harvard_courses_install() {
+  drupal_set_message(t('Please clear you cache for the settings to take place.'));
+
+  // Apply features exported fields.
+  features_rebuild();
+  field_cache_clear();
+
+  // Create import nodes.
+  $node = new stdClass();
+  $node->type = 'harvard_api_importer';
+  $node->title = 'Department & school importer';
+  $node->language = LANGUAGE_NONE;
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $wrapper->field_base_url->set('http://services.isites.harvard.edu/course_catalog/api/v1/search');
+  $wrapper->field_import_type->set('department_school');
+  $wrapper->author->set(1);
+  $wrapper->save();
+
+  $node = new stdClass();
+  $node->type = 'harvard_api_importer';
+  $node->title = 'Catalog importer';
+  $node->language = LANGUAGE_NONE;
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $wrapper->field_base_url->set('http://services.isites.harvard.edu/course_catalog/api/v1/search');
+  $wrapper->field_import_type->set('cat_num');
+  $wrapper->author->set(1);
+  $wrapper->save();
+
+  // Enable the harvard courses feature.
+  $preset = spaces_preset_load('os_scholar', 'og');
+  $preset->value['variable']['spaces_features']['harvard_courses'] = 1;
+  spaces_preset_save($preset);
+
+  $spaces_features = variable_get('spaces_features', array());
+  $spaces_features['harvard_courses'] = 1;
+  variable_set('spaces_features', $spaces_features);
+
+  // Change the weight of the module so we can change the OS add new link menu.
+  $weight = db_select('system', 's')
+    ->fields('s', array('weight'))
+    ->condition('name', 'os')
+    ->execute()
+    ->fetchField();
+
+  db_update('system')
+    ->fields(array('weight' => $weight +1))
+    ->condition('name', 'harvard_courses')
+    ->execute();
+
+  // Terms.
+  $taxonomy_terms = array(
+    'Faculty of Arts and Sciences',
+    'Harvard Business School - Doctoral Programs',
+    'Harvard Business School - MBA Program',
+    'Harvard Divinity School',
+    'Harvard Extension School',
+    'Harvard Graduate School of Design',
+    'Harvard Graduate School of Education',
+    'Harvard Kennedy School',
+    'Harvard Law School',
+    'Harvard Medical School',
+    'Harvard School of Dental Medicine',
+    'Harvard School of Public Health',
+    'Harvard Summer School',
+  );
+
+  // Creating the vocabulary.
+  $vocabulary = taxonomy_vocabulary_machine_name_load('schools_names');
+  if (!$vocabulary) {
+    // Create a terms vocabulary.
+    $vocabulary = new stdClass();
+    $vocabulary->name = 'Schools names';
+    $vocabulary->machine_name = 'schools_names';
+    taxonomy_vocabulary_save($vocabulary);
+  }
+
+  // Creating the terms for the vocabulary.
+  foreach ($taxonomy_terms as $taxonomy_term) {
+    // Create a term in the vocabulary.
+    $term = new stdClass();
+    $term->name = $taxonomy_term;
+    $term->vid = $vocabulary->vid;
+    taxonomy_term_save($term);
+  }
+}
+
+/**
+ * Disable comments for existing harvard courses nodes.
+ */
+function harvard_courses_update_7000() {
+  db_query("UPDATE {node} SET comment = 1 WHERE type = 'harvard_course'");
+}

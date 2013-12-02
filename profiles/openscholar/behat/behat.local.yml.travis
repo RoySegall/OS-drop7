@@ -1,0 +1,24 @@
+default:
+  context:
+    parameters:
+      drupal_users:
+        admin:
+          'admin'
+        john:
+          'jfk'
+        michelle:
+          'FourMoreYears'
+        bill:
+          'clinton'
+        alexander:
+          'bell'
+      # the node ID of the group
+      vsite:
+        2
+
+  extensions:
+    Behat\MinkExtension\Extension:
+      base_url:  http://127.0.0.1
+    Drupal\DrupalExtension\Extension:
+      drush:
+        alias: self

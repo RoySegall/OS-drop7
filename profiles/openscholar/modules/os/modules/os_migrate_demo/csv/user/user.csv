@@ -1,0 +1,5 @@
+ID,Username,Password,Email,First name,Last name,Role
+user1,michelle,FourMoreYears,michelle@whitehouse.gov,Michelle,Obama,vsite user
+user2,john,jfk,jfk@whitehouse.gov,John,Kennedy,vsite admin
+user3,bill,clinton,support@team.gov,Bill,clinton,support team
+user4,alexander,bell,alexander@bell.gov,Alexander,bell,vsite user

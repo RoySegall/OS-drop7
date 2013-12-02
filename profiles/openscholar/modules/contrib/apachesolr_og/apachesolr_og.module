@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * @file
+ *   Integrates Organic Group info with Apache Solr search application.
+ */
+
+/**
+ * Implements hook_apachesolr_field_mappings_alter().
+ */
+function apachesolr_og_apachesolr_field_mappings_alter(&$mappings) {
+  $mappings['group'] = array(
+    'indexing_callback' => 'apachesolr_og_group_indexing_callback',
+    'map callback' => 'apachesolr_og_map_gid_label',
+    'index_type' => 'integer',
+    'facets' => TRUE,
+    'facet missing allowed' => TRUE,
+    'dependency plugins' => array(),
+    'hierarchy callback' => FALSE,
+    'name_callback' => '',
+    'multiple' => TRUE,
+  );
+}
+
+/**
+ * Index callback for OG field.
+ */
+function apachesolr_og_group_indexing_callback($entity, $field_name, $index_key, $field_info) {
+  $fields = array();
+  if (!empty($entity->{$field_name})) {
+    $field = $entity->$field_name;
+    list($lang, $values) = each($field);
+    foreach ($values as $fval) {
+      if ($fval['gid']) {
+        $fields[] = array(
+          'key' => $index_key,
+          'value' => $fval['gid'],
+        );
+      }
+    }
+  }
+  return $fields;
+}
+
+/**
+ * Group name mapping callback.
+ */
+function apachesolr_og_map_gid_label($gids) {
+  return db_select('og', 'og')
+           ->fields('og', array('gid', 'label'))
+           ->condition('gid', $gids, 'IN')
+           ->execute()
+           ->fetchAllKeyed();
+}

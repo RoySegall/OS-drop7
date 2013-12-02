@@ -1,0 +1,70 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Code for the OS links feature.
+ */
+
+include_once ('os_links.features.inc');
+
+/**
+ * Implements hook_os_app_info().
+ */
+function os_links_os_app_info() {
+  $apps = array();
+
+  $apps['os_links'] = array(
+    'path' => 'links',
+  	'nodetypes' => array(
+  	  'link',
+    ),
+    'views tabs' => array(
+      'os_links' => array('page'),
+    ),
+  );
+
+  return $apps;
+}
+
+/**
+ * Implements hook_process_hook() for node.
+ *
+ * Removes the username from $submitted info on blog type nodes.
+ */
+function os_links_process_node(&$vars) {
+  if ($vars['type'] !== 'link' || (int)$vars['teaser'] !== 1) {
+    return;
+  }
+
+  // Changes the title URL destination from node alias to link field URL.
+  $field_name = 'field_links_link';
+  $items = field_get_items('node', $vars['node'], $field_name);
+  // Build the URL, including any url queries & fragments.
+  $vars['node_url'] = url($items[0]['url'], array('query' => isset($items[0]['query']) ? $items[0]['query'] : NULL,
+    'fragment' => isset($items[0]['fragment']) ? $items[0]['fragment'] : NULL
+    )
+  );
+}
+
+/**
+ * Implements hook_os_add_new_links_alter()
+ *
+ * Redirects user after creating Link node from "Add new" links
+ */
+function os_links_os_add_new_links_alter(&$links) {
+  if (isset($links['link'])) {
+    $request_path = request_path();
+    $links['link']['query'] = array('destination' => $request_path);
+  }
+}
+
+/**
+ * Implements hook_vsite_og_node_type_info().
+ */
+function os_links_vsite_og_node_type_info() {
+  return array(
+    'link' => 'group content',
+  );
+}
+

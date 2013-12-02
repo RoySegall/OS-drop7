@@ -1,0 +1,489 @@
+body {
+	font-family:helvetica,arial,sans-serif;
+}
+
+
+#page {
+padding: 0;
+}
+
+#branding h1.page-title {
+	color:#555;
+	font-size:2.3em;
+}
+
+#branding {
+overflow: hidden;
+padding: 30px 20px 0 38px;
+position: relative;
+background-color: #FFF;
+}
+
+/* GENERAL CP STYLES */
+
+
+a {color:#4E84C4;}
+
+strong {color:#444;}
+
+fieldset {
+background: #f1f1f1;
+}
+
+.vertical-tabs-panes fieldset {
+background: #FFF;
+}
+
+.region-footer {
+background: #000;
+color: #FFFFFF;
+height:30px;
+bottom: 0;
+position: fixed;
+width: 100%;
+z-index: 10;
+text-align:right;
+}
+
+region-footer a {
+ color: #FFFFFF;
+ }
+
+.region-footer .region-inner {
+  padding: 10px 20px 0 15px;
+ z-index:1;
+}
+
+h3 {margin:0;}
+
+table {
+font-size: 1em;
+}
+
+input.form-text,
+textarea {
+  font-size:13px;
+  height: auto;
+  padding: 6px 7px;
+  background: url('../../../themes/os_basetheme/images/form-input-bg.gif') repeat-x scroll left top #FFFFFF;
+  border: 1px solid #CDCDCD;
+}
+
+#og-vocabulary-add-more-wrapper select.form-select {height:120px;}
+
+html.js input.form-autocomplete {
+  background-position: 100% 8px;  
+}
+
+html.js input.throbbing {
+  background-position: 100% -13px !important;
+}
+
+#block-os-powered-by {
+	float:right;
+	text-align:left;
+	margin-top:14px;
+	height:15px;
+}
+
+.page-cp #block-os-powered-by a,
+ .page-cp #block-os-powered-by a:hover {
+    background: url("../../../themes/os_basetheme/images/poweredby.png") 0 -42px no-repeat;
+    margin-top: -43px;
+}
+
+
+a.advanced-help-link {
+    float: right;
+}
+
+
+.advanced-help-link {
+    background: url("../../../themes/os_basetheme/images/scholarbase-sprite.png") no-repeat 0 -150px;
+    display: block;
+    float: left;
+  margin-top: 2px;
+    padding: 0;
+  height: 19px;
+    width: 19px;
+}
+
+.advanced-help-link:hover {
+    background: url("../../../themes/os_basetheme/images/scholarbase-sprite.png") no-repeat 0 -170px;
+}
+
+
+.view-os-files-private ul {list-style-type: none !important;
+ list-style: none !important;}
+ 
+.view-os-files-private .cp-controls-wrapper .add_new {
+    background: url("/themes/seven/images/add.png") no-repeat scroll 0 center #FFF !important;
+    line-height: 30px;
+    padding:0 0 0 15px !important;
+    color:#4E84C4;
+     border-radius: 0;
+    display: inline;
+    float: none;
+    margin: 0;
+    text-decoration: none !important;
+}
+
+a#edit-cancel,
+a.form-cancel {
+  cursor: pointer;
+  padding: 5px 17px;
+  margin-bottom: 1em;
+  margin-right: 1em; /* LTR */
+  color: #5a5a5a;
+  text-align: center;
+  font-weight: normal;
+  font-size: 1.077em;
+  font-family: "Lucida Grande", Verdana, sans-serif;
+  border: 1px solid #e4e4e4;
+  border-bottom: 1px solid #b4b4b4;
+  border-left-color: #d2d2d2;
+  border-right-color: #d2d2d2;
+  background: url(/themes/seven/images/buttons.png) 0 0 repeat-x;
+  -moz-border-radius: 20px;
+  -webkit-border-radius: 20px;
+  border-radius: 20px;
+}
+
+a.form-cancel:hover {
+ text-decoration:none;
+}
+
+/* CTools MODAL OVERRIDES */
+
+#modalContent {
+  top: 0 !important;
+  color: #666;
+  position: fixed !important;
+}
+
+div.ctools-modal-content {
+  color: #555;
+  margin: 0;
+  text-align: left;
+  background: #fff;
+  -moz-box-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
+  -webkit-box-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
+  box-shadow: 0 4px 26px rgba(0, 0, 0, 0.5);
+  }
+
+div.ctools-modal-content .modal-title {
+  color: #666;
+  font-size:20px;
+  font-weight: normal;
+  }
+
+#modal-content {
+ padding: 20px 0 20px 25px;
+  }
+
+div.ctools-modal-content {
+  height: 100% !important;
+  border:none;
+  }
+
+div.ctools-modal-content .modal-header {
+  background: #EFEFEF;
+  border-bottom:2px solid #C4C2C2;
+ height:24px;
+ padding:10px;
+  }
+
+div.ctools-modal-content .modal-header a {
+float:right;
+color: transparent;
+background: url('../../../themes/os_basetheme/images/icon-close-window.png') no-repeat;
+width:30px;
+height:30px;
+  }
+
+div.ctools-modal-content .modal-content {
+  padding: 12px 12px 0 12px;
+  overflow: auto;
+  width: 575px;
+  height: 400px;
+  }
+
+#modalContent .spaces-customize-form .buttons input.form-submit {
+  margin-right: 140px;
+  }
+
+div.ctools-modal-content .button-div-wrapper {
+  display: inline;
+  }
+
+div.ctools-modal-content a.close:hover {
+  text-decoration: none;
+}
+
+div.ctools-modal-content a.close img {
+  position: relative;
+  top: 1px;
+  display:none;
+}
+
+div.ctools-modal-content .modal-content .modal-throbber-wrapper {
+  text-align: center;
+}
+
+div.ctools-modal-content .modal-content .modal-throbber-wrapper img {
+  margin-top: 160px;
+}
+
+
+/** OVERLAY MODAL OVERRIDES **/
+	
+#overlay-close, #overlay-close:hover {
+    background: url('../../../themes/os_basetheme/images/icon-close-window.png') no-repeat;
+	width:30px;
+	height:30px;
+	position: relative;
+ 	margin: -28px 10px;   
+}
+	
+#overlay-titlebar {
+    padding: 7px 10px 17px;
+    position: relative;
+    white-space: nowrap;
+    z-index: 100;
+    background: #EFEFEF;
+    border-bottom:2px solid #C4C2C2;
+    height:24px;
+}
+
+#overlay-title {
+    float: left;
+	margin: 0;
+    padding: 0.3em 0;
+    color: #666;
+    font-size:24px;
+    font-weight: normal;
+}
+	
+#overlay-tabs {
+ 	margin: -30px 0 0;
+ 	right: 50px;
+}
+
+ /* OVERRIDES WITH TABS IN MODAL - EXPERIMENTAL */
+#overlay-tabs {
+     border-bottom: 1px solid #CCCCCC;
+     margin: 20px 0px 40px 75px;
+     position: relative;
+}
+
+#overlay-content {
+     padding: 2.5em 1em;
+}
+
+#overlay-tabs li a, #overlay-tabs li.active a, #overlay-tabs li.active a.active, #overlay-tabs li.active a:active, #overlay-tabs li.active a:visited {
+     margin-bottom: -1px;
+     padding-bottom: 0px;
+}
+
+#overlay-tabs li.active a, #overlay-tabs li.active a.active, #overlay-tabs li.active a:active, #overlay-tabs li.active a:visited {
+     background-color: #EFEFEF;
+     color: #555555;
+}
+
+#overlay-tabs li a, #overlay-tabs li a:active, #overlay-tabs li a:visited, #overlay-tabs li a:hover {
+     color: #FFFFFF;
+     margin-bottom: -1px;
+     padding-bottom: 0px;
+}
+ 
+
+/** CP TABLE STYLES **/
+	
+table.spaces td.option, table.spaces td.storage {
+    width: 13%;
+}
+
+#edit-menu-table .section-heading {
+	background: #E1E2DC;
+    border-bottom: 2px solid #C4C2C2;
+    border-top: 2px solid #C4C2C2;
+    height: 25px;
+    text-transform:uppercase;
+    }
+    
+
+#edit-menu-table td:first-child {
+    width: 70%;
+}
+ 
+ 
+ 
+ #user-register-form {
+ 	background:#f1f1f1;
+    padding:15px;
+    border: 1px solid #CCC;
+ }
+ 
+ .cp-add-new-user ul {list-style-type:none;}
+
+/* CP/BUILD MENU */ 
+.page-cp-build-menu table thead {
+	display:none;
+	
+    }
+    
+#edit-menu-table,
+#cp-menu-build-form {width:775px;}   
+
+
+#cp-appearance-theme-picker-form select {max-width:90px;overflow:hidden;}
+
+#cp-appearance-theme-picker-form #theme-header-featured h2,
+#cp-appearance-theme-picker-form #theme-header-other h2 {font-weight:normal;}
+
+#cp-appearance-theme-picker-form #theme-header-featured p {color:#777;font-size:15px;margin:-8px 0 28px 0;}
+
+
+/* CP/BUILD LAYOUT */   
+.page-cp-build-layout #content {width:854px;}
+
+
+/* CP FEATURES */
+form#spaces-features-form td.actions a {
+    background: url("../images/featureCustGear.png") no-repeat scroll 0 0 transparent;
+    color: #105EA9;
+    height: 25px;
+    padding: 2px 0 5px 22px;
+    width: 100px;
+    margin-left: 6px;
+}
+
+#spaces-features-form select {
+    float: left;
+}
+
+
+/** VSITE OS LOGIN CONTAINER STYLES **/	
+body.page-cp.page-cp-account {
+	background:#EEE;
+}
+
+body.page-cp.page-cp-account #messages {
+	margin: 0 auto -80px;
+    width: 560px;
+}
+
+.page-cp.page-cp-account #columns {
+	background: #FFFFFF;
+	width:540px;
+	border-radius:8px;
+	-moz-border-radius:8px;
+	border-radius:8px;
+	margin:100px auto;
+	border:3px solid #8996A0;
+}
+
+.page-cp.page-cp-account #columns #main-content-header { 
+	background: #DDD;
+	margin:-10px -8px;
+	padding:7px;
+}
+
+
+/* PUBLICATIONS SETTING FORM IN MODAL */
+.os_publications-customize-form .column-left,
+.os_publications-customize-form #comment_settings {
+	float:left;
+	clear:left;
+}
+.os_publications-customize-form .column-left {
+    width: 48%;
+}
+.os_publications-customize-form #comment_settings {
+    width: 100%;
+}
+
+.os_publications-customize-form .form-actions {
+	clear:both;
+}
+
+.os_publications-customize-form .column-right {
+	float:right;
+	width:48%;
+	clear:right;
+	margin-bottom:20px;
+}
+ 
+.tabledrag-toggle-weight-wrapper {
+  display: none;
+}
+	
+	
+	
+/**	 QUICK TAB CREATION **/	
+	
+.page-os-widget #tabs {
+    background:  #F1F1F1;
+    border: 1px solid #CCCCCC;
+    padding-left:10px;
+}	
+	
+.page-os-widget #tabs .panel,
+.page-os-widget #tabs fieldset .fieldset-wrapper {
+  padding: 0;
+} 
+
+.page-os-widget .ui-state-disabled, .ui-widget-content .ui-state-disabled {
+    opacity: 1;
+}	
+
+.page-os-widget .ui-tabs .ui-tabs-nav li a {
+    border-radius: 10px 10px 0 0;
+    -webkit-border-radius: 10px 10px 0 0;
+    -moz-border-radius: 10px 10px 0 0;
+    padding: 5px;
+} 	
+
+/* Shrinks the node form to take up less vertical space. */
+
+#biblio-node-form .form-item {
+	padding: 0;
+}
+
+form.node-form input.form-text {
+	padding: 3px;
+}
+
+form.node-form fieldset .fieldset-wrapper  {
+	padding-bottom: 0;
+}
+
+form.node-form fieldset {
+	padding: 2.0em 0px 0px;
+	margin: 1em 0px 0.5em;
+}
+
+/* Shrinks the biblio node form to take up less vertical space. */
+
+#field-biblio-extra-values td .form-item.form-type-textfield {
+	float: left;
+	width:43%;
+	padding-right: 4%;
+}
+
+fieldset#edit-biblio-authors {
+	background-color: transparent;
+	border: 0 none;
+  padding: 1.5em 0 0;
+  margin: 0;
+}
+
+fieldset#edit-biblio-authors .fieldset-wrapper {
+	padding-left: 0;
+}
+
+fieldset#edit-biblio-authors .fieldset-legend {
+	padding-left: 0;
+	margin-top: 0;
+	text-transform: none;
+}

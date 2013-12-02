@@ -1,0 +1,10 @@
+name = JavaScript callback handler
+description = A high-performance JavaScript callback handler for 3rd party modules.
+core = "7.x"
+configure = admin/config/development/performance/js
+; Information added by drupal.org packaging script on 2012-12-27
+version = "7.x-1.0-beta2"
+core = "7.x"
+project = "js"
+datestamp = "1356609458"
+

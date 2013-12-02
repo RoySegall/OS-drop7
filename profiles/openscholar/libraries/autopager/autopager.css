@@ -1,0 +1,10 @@
+#autopager-load-more,
+#autopager-load-prev {
+	text-align: center;
+	width: 100%;
+}
+
+#autopager-load-more:hover,
+#autopager-load-prev:hover {
+	background-color: #f5f5ff;
+}

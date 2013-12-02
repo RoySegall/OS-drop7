@@ -1,0 +1,561 @@
+<?php
+
+/**
+ * Enable the harvard courses.
+ */
+function os_migrate_demo_define_harvard_courses() {
+  // Enable Harvard courses module.
+  module_enable(array('harvard_courses'));
+
+  return t('Harvard courses enabled successfully.');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function os_migrate_demo_menu() {
+
+  $items = array();
+
+  $items['os-reader/%'] = array(
+    'page callback' => 'os_reader_dummy_xml',
+    'access callback' => TRUE,
+    'page arguments' => array(1),
+  );
+
+  $items['os-importer-demo/%'] = array(
+    'page callback' => 'os_migrate_demo_import_csv',
+    'access callback' => TRUE,
+    'page arguments' => array(1),
+  );
+
+  return $items;
+}
+
+/**
+ * Menu callback; Print a dummy xml of feeds items.
+ */
+function os_reader_dummy_xml($vsite_name) {
+  drupal_add_http_header('Content-Type', 'text/xml; charset=utf-8');
+  $content = file_get_contents(drupal_get_path('module', 'os_migrate_demo') . '/includes/' . $vsite_name . '_dummy_rss.xml');
+
+  print $content;
+}
+
+/**
+ * Change the spaces overrides domain easily.
+ *
+ *  @param $type
+ *    The space type.
+ *  @param $id
+ *    The space ID.
+ *  @param $domain
+ *    The domain address.
+ */
+function os_migrate_demo_spaces_overrides($type, $id, $domain) {
+  $query = db_select('spaces_overrides', 'space')
+    ->fields('space', array('value'))
+    ->condition('space.type', $type)
+    ->condition('space.id', $id)
+    ->execute()
+    ->fetchAssoc();
+
+  if (empty($query)) {
+    // Check first if there is no PURL for the site.
+    db_insert('spaces_overrides')
+      ->fields(array(
+        'value' => serialize($domain),
+        'type' => $type,
+        'id' => $id,
+        'object_type' => 'variable',
+        'object_id' => 'vsite_domain_name',
+      ))
+    ->execute();
+  }
+  else {
+    if ($query['value'] == serialize($domain)) {
+      // This is the same value, return early.
+      return;
+    }
+    db_update('spaces_overrides')
+    ->fields(array(
+      'value' => serialize($domain),
+    ))
+    ->condition('type', $type)
+    ->condition('id', $id)
+    ->execute();
+  }
+}
+
+/**
+ * Import the courses not via batch API for the tests. The batch API not work
+ * in CLI mode, there for we will use the import functions directly.
+ */
+function os_migrate_demo_import_courses() {
+  $query = new entityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->propertyCondition('type', 'harvard_api_importer')
+    ->propertyCondition('title', 'Department & school importer')
+    ->execute();
+
+  if (!empty($result['node'])) {
+    foreach (array_keys($result['node']) as $nid) {
+      feeds_source('course', $nid)->import();
+    }
+  }
+}
+
+/**
+ * Create a dummy feed importer and import its items.
+ *
+ * @param $url
+ *  RSS url from which to import the items.
+ * @param $vsite_id
+ *  VSite ID to which to associate the imported feed.
+ * @param $type
+ *  The node importer type.
+ */
+function os_migrate_demo_import_feed_items($url, $vsite_id, $type = 'news') {
+  $node_type = $type == 'news' ? 'feed_importer' : 'blog_import';
+  $node = node_load($vsite_id);
+  $entity = entity_create('node', array(
+    'title' => $node->title . ' ' . $type . ' importer',
+    'language' => LANGUAGE_NONE,
+    'type' => $node_type,
+    'uid' => 1,
+  ));
+
+  $wrapper = entity_metadata_wrapper('node', $entity);
+  $wrapper->field_rss_url->set($url);
+  $wrapper->{OG_AUDIENCE_FIELD}->set(array($vsite_id));
+  $wrapper->save();
+
+  feeds_source('os_reader', $wrapper->getIdentifier())->import();
+}
+
+/**
+ * Implements hook_migrate_api().
+ */
+function os_migrate_demo_migrate_api() {
+  $migrations = array();
+
+  $classes = array(
+    'OsMigrateAuthorsTaxonomyTerm',
+    'OsMigrateBiologyTaxonomyTerm',
+    'OsMigrateMathTaxonomyTerm',
+    'OsMigrateScienceTaxonomyTerm',
+    'OsMigratePersonalNode',
+    'OsMigrateProjectNode',
+    'OsMigrateBioagrphyNode',
+    'OsMigratePublicationNode',
+    'OsMigrateClassesNode',
+    'OsMigrateClassesMaterialNode',
+    'OsMigrateCurriculumVitaeNode',
+    'OsMigrateNewsNode',
+    'OsMigrateEventsNode',
+    'OsMigrateBlogNode',
+    'OsMigrateBookNode',
+    'OsMigratePeopleNode',
+    'OsMigrateLinkNode',
+    'OsMigratePresntationsNode',
+    'OsMigrateFeedsNode',
+    'OsMigrateGalleryNode',
+    'OsMigrateOgVocab',
+    'OsMigrateUsers',
+    'OsMigrateFAQNode',
+    'OsMigrateSoftwareNode',
+    'OsMigrateFamilyTaxonomyTerm',
+    'OsMigrateDepartmentNode',
+  );
+
+  foreach ($classes as $class_name) {
+    $migrations[$class_name] = array('class_name' => $class_name);
+  }
+
+  $api = array(
+    'api' => 2,
+    'migrations' => $migrations,
+  );
+  return $api;
+}
+
+/**
+ * Attach a block to region on OS.
+ *
+ *  @param $nid
+ *    The node id of the site.
+ *  @param $box
+ *    The human name of the widget.
+ *  @param $page
+ *    The human name for the page for attaching the widget to.
+ *  @param $region
+ *    The machine name of the region, optional.
+ *
+ *  @return
+ *    A CSV string contain the widget plugin, the delta of the box/block, and
+ *    the context page mapping.
+ *    If the function called from CLI the function will print the string.
+ */
+function os_migrate_demo_set_box_in_region($nid, $box, $page, $region = 'sidebar_second') {
+  ctools_include('layout', 'os');
+  // Mapping for all the pages.
+  $page_mapping = array(
+    'News' => 'news_news',
+    'Blog' => 'blog_blog',
+    'Bio' => 'biocv_biocv',
+    'Link' => 'links_links',
+    'Reader' => 'reader_reader',
+    'Calendar' => 'events_events',
+    'Classes' => 'classes_classes',
+    'People' => 'profiles_profiles',
+    'Data' => 'dataverse_dataverse',
+    'Galleries' => 'gallery_gallery',
+    'Software' => 'software_software',
+    'Documents' => 'booklets_booklets',
+    'Publications' => 'publications_publications',
+    'Presentations' => 'presentations_presentations',
+  );
+
+  // Mapping widgets we want to tests. The array build in the format of:
+  //  The key hold the mapped name for the widget
+  //  If this is a block, the value will be MODULE-BLOCK_DELTA-BLOCK.
+  $boxes_mapping = array(
+    'Filter by term' => 'os_taxonomy_fbt',
+    'Simple view list' => 'os_sv_list_box',
+    'Search' => 'os_search_db-site-search',
+    'Active book TOC' => 'os_boxes_booktoc',
+    'Bio' => 'os_boxes_bio',
+    'RSS feed' => 'os_boxes_rss',
+    'Image gallery' => 'os_boxes_slideshow',
+  );
+
+  $contexts = array(
+    $page_mapping[$page],
+    'os_public',
+  );
+
+  $blocks = os_layout_get_multiple($contexts, FALSE, TRUE);
+
+  // Changing the region differently for box and block.
+  if (empty($blocks[$boxes_mapping[$box]])) {
+    // Define the box.
+    $options = array(
+      'delta' => 'box-' . strtolower(str_replace(" ", "-", $box)),
+      'title' => $box,
+      'description' => $box,
+    );
+
+    // Create the box.
+    $box = boxes_box::factory($boxes_mapping[$box], $options);
+    $box->save();
+    $blocks['boxes-' . $box->delta]['region'] = $region;
+
+    // Initialize the module ad the delta.
+    if (!array_key_exists($blocks['boxes-' . $box->delta], array('module', 'delta'))) {
+      $blocks['boxes-' . $box->delta]['delta'] = $options['delta'];
+      $blocks['boxes-' . $box->delta]['module'] = 'boxes';
+    }
+
+    $stringToPrint = $box->plugin_key . ',' . $options['delta'] . ',' . $page_mapping[$page];
+  }
+  else {
+    $blocks[$boxes_mapping[$box]]['region'] = $region;
+    $stringToPrint = $boxes_mapping[$box] . ',' . $options['delta'] . ',' . $page_mapping[$page];
+  }
+
+  // Save the widget in the region.
+  $vsite = spaces_load('og', $nid);
+  $vsite->controllers->context->set($contexts[0] . ":reaction:block", array(
+    'blocks' => $blocks,
+  ));
+
+  // Data that relate to the box we added and used in the end of the scenario.
+  if (drupal_is_cli()) {
+    print($stringToPrint);
+  }
+  else {
+    return $stringToPrint;
+  }
+}
+
+/**
+ * Hide the box. If the box is not exported, the function will delete the box.
+ *
+ *  @param $nid
+ *    The node id of the site.
+ *  @param $plugin
+ *    The box plugin name from the mapped boxes.
+ *  @param $delta
+ *    The delta of the box.
+ *  @param $page
+ *    The machine name page from the mapped pages.
+ *
+ *  @see os_migrate_demo_set_box_in_region().
+ */
+function os_migrate_demo_hide_box($nid, $plugin, $delta, $page) {
+  // Hide the box.
+  ctools_include('layout', 'os');
+  $contexts = array(
+    $page,
+    'os_public',
+  );
+  $blocks = os_layout_get_multiple($contexts, FALSE, TRUE);
+
+  if (empty($blocks[$plugin])) {
+    $blocks['boxes-' . $delta]['region'] = FALSE;
+    // Delete the box.
+    $box = boxes_box::factory($plugin, array());
+    $box->delete();
+  }
+  else {
+    $blocks[$plugin]['region'] = FALSE;
+  }
+
+  $vsite = spaces_load('og', $nid);
+  $vsite->controllers->context->set($page . ":reaction:block", array(
+    'blocks' => $blocks,
+  ));
+}
+
+/**
+ * Tag node to term.
+ *
+ *  @param $title
+ *    The title of the node.
+ *  @param $name
+ *    The name of the term.
+ *  @param $type
+ *    The type of the node. Optional, default is class.
+ */
+function os_migrate_demo_assign_node_to_term($title, $name, $type = 'class') {
+  $nid = reset(entity_load('node', NULL, array('title' => $title, 'type' => $type)))->nid;
+
+  $names = explode(",", $name);
+  $query = new entityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'taxonomy_term')
+    ->propertyCondition('name', $names, is_array($names) ? 'IN' : '=')
+    ->execute();
+
+  $tid = reset($result['taxonomy_term']);
+
+  $wrapper = entity_metadata_wrapper('node', $nid);
+  $wrapper->{OG_VOCAB_FIELD}[] = $tid;
+  $wrapper->save();
+}
+
+/**
+ * Remove term tag from node.
+ *
+ *  @param $title
+ *    The title of the node.
+ *  @param $name
+ *    The name of the term.
+ *  @param $type
+ *    The type of the node. Optional, default is class.
+ */
+function os_migrate_demo_unassign_node_from_term($title, $name, $type = 'class') {
+  $nid = reset(entity_load('node', NULL, array('title' => $title, 'type' => $type)))->nid;
+
+  $wrapper = entity_metadata_wrapper('node', $nid);
+
+  $terms = $wrapper->{OG_VOCAB_FIELD}->value();
+  foreach ($terms as $key => $term) {
+    if ($term->title == $name) {
+      unset($terms[$key]);
+    }
+  }
+
+  $wrapper->{OG_VOCAB_FIELD}->set($terms);
+  $wrapper->save();
+}
+
+/**
+ * Set a value for variable.
+ */
+function os_migrate_demo_variable_set($name, $value) {
+  $vsite = spaces_preset_load('os_scholar', 'og');
+  $vsite->value['variable'][$name] = $value;
+  spaces_preset_save($vsite);
+
+  variable_set($name, $value);
+}
+
+/**
+ * Set term under a term.
+ */
+function os_migrate_demo_set_term_under_term($child, $parent) {
+  $query = new entityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'taxonomy_term')
+    ->propertyCondition('name', $child)
+    ->execute();
+  $child_tid = reset($result['taxonomy_term'])->tid;
+
+  $term = taxonomy_term_load($child_tid);
+
+  $query = new entityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'taxonomy_term')
+    ->propertyCondition('name', $parent)
+    ->execute();
+  $parent_tid = reset($result['taxonomy_term'])->tid;
+
+  $term->parent = array($parent_tid);
+  taxonomy_term_save($term);
+}
+
+/**
+ * Get the term ID.
+ */
+function os_migrate_demo_get_term_id($term) {
+  $query = new entityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'taxonomy_term')
+    ->propertyCondition('name', $term)
+    ->execute();
+  print(reset($result['taxonomy_term'])->tid);
+}
+
+/**
+ * Get the node ID.
+ */
+function os_migrate_demo_get_node_id($title) {
+  $query = new entityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->propertyCondition('title', $title)
+    ->execute();
+
+  print(reset($result['node'])->nid);
+}
+
+/**
+ * Delete a node with a specific title.
+ *
+ * @param $title
+ *  The title of the node.
+ */
+function os_migrate_demo_delete_node($title) {
+  $query = new entityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->propertyCondition('title', $title)
+    ->execute();
+
+  if (!empty($result['node'])) {
+    node_delete_multiple(array_keys($result['node']));
+  }
+
+}
+
+/**
+ * Adding a subtheme to a site.
+ *
+ * @param $subtheme
+ *  The name of the subtheme(a theme flavor) which located in the behat folder.
+ * @param $vsite
+ *  The name of the vsite.
+ */
+function os_migrate_demo_add_subtheme($subtheme, $vsite) {
+  $path = drupal_get_path('profile', 'openscholar') . '/behat/' . $subtheme;
+
+  $query = new entityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->propertyCondition('title', $vsite)
+    ->range(0, 1)
+    ->execute();
+
+  if (empty($result['node'])) {
+    return;
+  }
+
+  $nid = array_keys($result['node']);
+  $vsite = vsite_get_vsite(reset($nid));
+
+  $flavors = $vsite->controllers->variable->get('flavors');
+
+  $flavors[$subtheme] = array(
+    'path' => $path,
+    'name' => $subtheme,
+  );
+
+  $vsite->controllers->variable->set('flavors', $flavors);
+}
+
+/**
+ * Define a subtheme for a vsite.
+ *
+ * @param $theme
+ *  The name of the theme which the new subtheme is her flavor.
+ * @param $subtheme
+ *  The name of the subtheme which located in the behat folder.
+ * @param $vsite
+ *  The name of the vsite.
+ */
+function os_migrate_demo_define_subtheme($theme, $subtheme, $vsite) {
+  $query = new entityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->propertyCondition('title', $vsite)
+    ->range(0, 1)
+    ->execute();
+
+  if (empty($result['node'])) {
+    return;
+  }
+
+  $nid = array_keys($result['node']);
+  $vsite = vsite_get_vsite(reset($nid));
+  $flavor_key = 'os_appearance_cleanblue_flavor';
+
+  $vsite->controllers->variable->set('theme_default', $theme);
+  $vsite->controllers->variable->set('os_appearance_cleanblue_flavor', $subtheme);
+}
+
+/**
+ * Display the watchdogs.
+ */
+function os_migrate_demo_display_watchdogs() {
+  $results = db_select('watchdog', 'w')
+    ->fields('w')
+    ->execute();
+
+  $string = array();
+  foreach ($results as $result) {
+    $string[] = format_string($result->message, unserialize($result->variables));
+  }
+
+  print implode("\n", $string);
+}
+
+/**
+ * Importing nodes from a demo CSV.
+ *
+ * @pram $import
+ *  The file name(without .csv)
+ */
+function os_migrate_demo_import_csv($type) {
+  global $base_url;
+
+  $importers = array(
+    'blog' => 'os_blog_csv',
+    'news' => 'os_news',
+    'event' => 'os_ical',
+  );
+
+  $ending = $type == 'event' ? 'ics' : 'csv';
+  $url = $base_url . '/' . drupal_get_path('module', 'os_migrate_demo') . '/includes/import_csv/' . $type . '.' . $ending;
+  $file = system_retrieve_file($url, 'public://', TRUE);
+
+  $source = feeds_source($importers[$type]);
+  $fetcher_config = $source->getConfigFor($source->importer->fetcher);
+  $fetcher_config['source'] = $file->uri;
+  $fetcher_config['file'] = $file;
+  $source->setConfigFor($source->importer->fetcher, $fetcher_config);
+  $source->save();
+
+  feeds_source($importers[$type], 0)->import();
+}

@@ -1,0 +1,6 @@
+ID,Title,Body,Timestamp,Site,Terms,UID,user2
+event1,John F. Kennedy birthday,John's 96th birthday.,2013-05-29 20:00:00;2013-05-29 20:00:00,personal1,authorTerm2,user2
+event2,Lou Gehrig birthday,Lou's 90th birthday,2013-06-19 21:00:00;2013-06-19 21:00:00,project1,,user2
+event3,2016 election day,The election day in 2016,2016-11-06 21:00:00;2016-11-06 21:00:00,personal2,,user2
+event4,Halley's Comet,Halley's Comet appearing,2062-05-29 21:00:00;2062-05-29 21:00:00,personal1,authorTerm1|authorTerm2|authorTerm3,user2
+event5,Testing event,Testing event,now;now,personal1,authorTerm2,user2

@@ -1,0 +1,77 @@
+<?php
+// $Id$
+
+
+/**
+ * @file
+ * Code for the OS Presentations feature.
+ */
+
+include_once 'os_presentations.features.inc';
+
+/**
+ * Implements hook_os_app_info().
+ */
+function os_presentations_os_app_info() {
+  $apps = array();
+
+  $apps['os_presentations'] = array(
+    'path' => 'presentations',
+  	'nodetypes' => array(
+  	  'presentation',
+    ),
+    'views tabs' => array(
+      'os_presentations' => array('page'),
+    ),
+  );
+
+  return $apps;
+}
+
+/**
+ * Implements hook_vsite_og_node_type_info().
+ */
+function os_presentations_vsite_og_node_type_info() {
+  return array(
+    'presentation' => 'group content',
+  );
+}
+
+/**
+ * Implements hook_preprocess_node().
+ */
+function os_presentations_preprocess_node(&$vars) {
+  // Set the display_submitted value to FALSE.
+  if(isset($vars['type']) && $vars['type'] == 'presentation') {
+  	if(isset($vars['display_submitted'])) {
+      $vars['display_submitted'] = FALSE;
+  	}
+  }
+}
+
+/**
+ * Implements hook_form_BASE_FORM_ID_alter() for node_form().
+ *
+ * Moves the "Attach Files" field to the vertical tabs, to avoid confusing users
+ * with multiple similar fields. This is only done on the Presentation node type
+ * because it is the only node type that currently exists to highlight an
+ * attached file.
+ */
+function os_presentations_form_node_form_alter(&$form, &$form_state, $form_id) {
+  // Only makes changes to the Presentation node form.
+  if ($form['#node']->type != 'presentation') {
+    return;
+  }
+
+  // Moves the existing field_upload form element into a new fieldset.
+  // Uses weight of -20 to position at top of vertical tabs as first item.
+  $form['os_presentations_attach_files'] = array(
+    '#type' => 'fieldset',
+    '#group' => 'additional_settings',
+    '#title' => 'Attach Files',
+    '#weight' => -20,
+    'field_upload' => $form['field_upload'],
+  );
+  // Unsets the original field item to avoid duplicate form items.
+  unset($form['field_upload']);
+}

@@ -1,0 +1,697 @@
+<?php
+/**
+ * @file
+ * Main file for the OS importer module.
+ */
+include_once 'os_importer.features.inc';
+
+/**
+ * Implements hook_feeds_plugins().
+ */
+function os_importer_feeds_plugins() {
+  $info = array();
+  $info['OsImporterFetcher'] = array(
+    'name'        => t('OS importer fetcher'),
+    'description' => t('Fetch node from a url.'),
+    'handler' => array(
+      'parent' => 'FeedsFetcher',
+      'class'  => 'OsImporterFetcher',
+      'file'   => 'OsImporterFetcher.inc',
+      'path'   => drupal_get_path('module', 'os_importer') . '/plugins',
+    ),
+  );
+  $info['OsImporterNodeProcessor'] = array(
+    'name' => t('OS importer Node processor'),
+    'description' => t('Import node from source. Including files form external URL.'),
+    'help' => t('Create and update nodes from parsed content.'),
+    'handler' => array(
+      'parent' => 'FeedsNodeProcessor',
+      'class' => 'OsImporterNodeProcessor',
+      'file' => 'OsImporterNodeProcessor.inc',
+      'path' => drupal_get_path('module', 'os_importer') . '/plugins',
+    ),
+  );
+  return $info;
+}
+
+/**
+ * Implements hook_node_insert().
+ *
+ * Import feed item when the user add the feed importer for the first time.
+ */
+function os_importer_node_insert($node) {
+  // Source attached to node.
+  if (isset($node->feeds) || !$importer_id = feeds_get_importer_id($node->type)) {
+    return;
+  }
+
+  // TODO: Add the node importer into the os app info.
+  $type = $importer_id == 'os_blog_import_rss' ? 'blog' : 'news';
+
+  $_GET['destination'] = 'cp/os-importer/' . $type . '/manage';
+
+  $source = feeds_source($importer_id, $node->nid);
+
+  // Start import if requested.
+  if (feeds_importer($importer_id)->config['import_on_create']) {
+    $source->startImport();
+  }
+
+  // Schedule source and importer.
+  $source->schedule();
+  feeds_importer($importer_id)->schedule();
+}
+
+/**
+ * Implements hook_os_add_new_links_alter().
+ */
+function os_importer_os_add_new_links_alter(&$links) {
+  $item = menu_get_item();
+  $apps = os_app_info();
+
+  $current_app = '';
+  foreach ($apps as $app) {
+    if ($item['path'] == $app['path']) {
+      $current_app = $app;
+      break;
+    }
+  }
+
+  if (!$current_app || empty($current_app['importers'])) {
+    return;
+  }
+
+  foreach ($current_app['importers'] as $type => $importers) {
+    if (os_importer_import_access($type) || os_importer_import_access($type, FALSE)) {
+      $links['cp/os-importer-' . $type] = array(
+        'title' => t('Import'),
+        'href' => 'cp/os-importer/' . $type,
+      );
+    }
+  }
+}
+
+/**
+ * Get all the content types which can be imported from external source.
+ *
+ * @param $type
+ *  Select specific node which you want to get information about.
+ *
+ * @return array
+ *  Array of node types which the user can import content with from external
+ *  source.
+ */
+function os_importer_importable_content($type = '') {
+  $apps = os_app_info();
+  $types = array();
+
+  // Loop through the apps and check which app has an importer.
+  foreach ($apps as $feature => $app) {
+    // Check to which bundle the user can import content.
+    if (!spaces_access_feature('create', $feature)) {
+      continue;
+    }
+
+    foreach ($app['importers'] as $bundle => $info) {
+      $types[$bundle] = $info;
+    }
+  }
+
+  return $type ? $types[$type] : $types;
+}
+
+/**
+ * Implements hook_menu().
+ */
+function os_importer_menu() {
+  $items = array();
+
+  $app_info = os_app_info();
+
+  foreach ($app_info as $type => $info) {
+    if (empty($info['importers'])) {
+      continue;
+    }
+
+    foreach ($info['importers'] as $node_type => $importer) {
+      $items['cp/os-importer/' . $node_type] = array(
+        'title callback' => 'os_importer_importer_title',
+        'title arguments' => array(2),
+        'access callback' => 'os_importer_import_access',
+        'access arguments' => array(2, FALSE),
+        'page callback' => 'drupal_get_form',
+        'page arguments' => array('os_importer_import', 2),
+      );
+
+      // Content types with RSS importers need a manage page. Adding tabs which
+      // act as links to these pages.
+      if (!empty($importer['rss'])) {
+        $items['cp/os-importer/' . $node_type . '/import'] = $items['cp/os-importer/' . $node_type] + array(
+          'type' => MENU_DEFAULT_LOCAL_TASK,
+        );
+
+        $items['cp/os-importer/' . $node_type . '/manage'] = array(
+          'title' => 'Manage',
+          'page callback' => 'os_reader_import_news',
+          'access callback' => 'os_reader_import_news_access_callback',
+          'type' => MENU_LOCAL_TASK,
+        );
+      }
+    }
+  }
+
+  $items['cp/os-importer/%/template'] = array(
+    'page callback' => 'feeds_importer_template',
+    'page arguments' => array(2),
+    'file' => 'feeds.pages.inc',
+    'file path' => drupal_get_path('module', 'feeds'),
+    'access callback' => 'os_importer_import_access',
+    'access arguments' => array(2),
+  );
+
+  return $items;
+}
+
+/**
+ * Generate callback for CSV importer page.
+ *
+ * @param $type
+ *  The CSV importer type.
+ *
+ * @return String
+ *  The title of the menu item.
+ */
+function os_importer_importer_title($type) {
+  $types = node_type_get_types($type);
+
+  return t('@type', array('@type' => $types[$type]->name));
+}
+
+/**
+ * Access callback - determine if the user can import content from csv.
+ *
+ * @param $type
+ *  The type of the feeds importer or the node type.
+ * @param $feed
+ *  Determine if the access callback is for feed or rss. Set TRUE if the access
+ *  is made against a feed importer.
+ *
+ * @return bool
+ *  Return TRUE/FALSE.
+ */
+function os_importer_import_access($type, $feed = TRUE) {
+  $bundle = $type;
+
+  if ($feed) {
+    $source = feeds_source($type);
+    $config = $source->importer->getConfig();
+
+    if (!$bundle = $config['processor']['config']['content_type']) {
+      return FALSE;
+    }
+  }
+
+  $info = os_importer_importable_content();
+
+  return !empty($info[$bundle]);
+}
+
+/**
+ * Callback function for importing files from out source.
+ *
+ * @param $source
+ *   Field mapper source settings.
+ * @param $entity
+ *   An entity object, for instance a node object.
+ * @param $target
+ *   A string identifying the target on the node.
+ * @param $value
+ *   The value to populate the target with.
+ * @param $mapping
+ *  Associative array of the mapping settings from the per mapping configuration
+ *  form.
+ */
+function os_importer_map_files($source, $entity, $target, $value, $mapping) {
+  if (!$value) {
+    return;
+  }
+  $field_name = $source->importer->processor->config['file_field'];
+  $files = array();
+
+  $sources = explode('|', $value);
+  foreach ($sources as $source) {
+    $file = system_retrieve_file($source, 'public://', TRUE);
+    $files[] = array(
+      'fid' => $file->fid,
+      'display' => 1,
+      'description' => '',
+    );
+  }
+
+  $entity->{$field_name}[$entity->language] = $files;
+}
+
+/**
+ * Form callback - Adding an importer.
+ */
+function os_importer_import($form, &$form_state, $type) {
+  $bundle = os_importer_importable_content($type);
+  $form_state['type'] = $type;
+
+  $options = array();
+  foreach (array_keys($bundle) as $option) {
+    $options[$option] = $option == 'ical' ? t('iCal') : strtoupper($option);
+  }
+
+  $feed_importer = !empty($bundle['csv']) ? feeds_importer($bundle['csv']) : NULL;
+  $form['format'] = array(
+    '#type' => 'radios',
+    '#multiple' => TRUE,
+    '#title' => t('Format'),
+    '#options' => $options,
+    '#default_value' => key($options),
+  );
+
+  $params = array('!new-york-times' => l(t('New York Times'), 'http://www.nytimes.com/services/xml/rss/index.html'));
+  $text = 'Importing content from RSS feeds supports only news and blog content. ';
+  $text .= 'For example: you can import a feed item from the !new-york-times rss news feeds.<br />';
+  $text .= "When submitting the form, the import process will begin. After that, you can choose which news items you want to import into your site.";
+  $text = t($text, $params);
+
+  $form['rss_container'] = array(
+    '#type' => 'container',
+    '#states' => array(
+      'visible' => array(
+        ':input[name="format"]' => array('value' => 'rss'),
+      ),
+    ),
+    'explain' => array(
+      '#markup' => $text,
+    ),
+  );
+
+  // Only CSV parsers have a template.
+  if ($feed_importer && $feed_importer->parser instanceof FeedsCSVParser) {
+    $form['csv_container'] = array(
+      '#type' => 'container',
+      '#states' => array(
+        'visible' => array(
+          ':input[name="format"]' => array('value' => 'csv'),
+        ),
+      ),
+      'template' => array(
+        '#markup' => l(t('Download a template'), 'cp/os-importer/' . $bundle['csv'] . '/template'),
+      ),
+    );
+  }
+
+  $form['import_source'] = array(
+
+    // RSS title.
+    'title' => array(
+      '#type' => 'textfield',
+      '#title' => t('Title'),
+
+      '#description' => t('Required field - The title of the feed source. E.g. "New York Times Sport". '),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="format"]' => array('value' => 'rss'),
+        ),
+      ),
+    ),
+
+    // RSS url.
+    'url' => array(
+      '#type' => 'textfield',
+      '#title' => t('URL'),
+
+      '#description' => t('The url of your feed. E.g. http://rss.cnn.com/rss/cnn_tech.rss'),
+      '#states' => array(
+        'visible' => array(
+          ':input[name="format"]' => array('value' => 'rss'),
+        ),
+      ),
+    ),
+
+    // iCal / CSV need upload file from user computer.
+    'file' => array(
+      '#title' => t('File'),
+      '#type' => 'managed_file',
+      '#description' => t('Select a file form your computer to import.'),
+      '#upload_location' => 'public://',
+      '#upload_validators' => array(
+        'file_validate_extensions' => array('ics csv'),
+      ),
+      '#states' => array(
+        'invisible' => array(
+          ':input[name="format"]' => array('value' => 'rss'),
+        ),
+      ),
+      '#weight' => -99,
+    ),
+  );
+
+  $form['#validate'][] = 'os_importer_verify_uploaded_file';
+
+  $form['actions'] = array(
+    '#type' => 'actions',
+    'submit' => array(
+      '#type' => 'submit',
+      '#value' => t('Submit'),
+    ),
+  );
+
+  return $form;
+}
+
+/**
+ * Validate handler - if the user selected RRS importer then he must enter a
+ * RSS address and a title for the node importer..
+ */
+function os_importer_import_validate($form, $form_state) {
+  if ($form_state['values']['format'] == 'rss') {
+    if (empty($form_state['values']['title'])) {
+      form_set_error('title', t('The title field is required'));
+    }
+
+    if (empty($form_state['values']['url'])) {
+      form_set_error('url', t('The title field is required'));
+    }
+    else {
+      // Validate the url address.
+      $url = $form_state['values']['url'];
+      $result = drupal_http_request($url);
+      if ($result->code != 200) {
+        form_set_error('url', t("The address @url is not a valid address.", array('@url' => check_plain($url))));
+      }
+
+      // Verify the user didn't enter that address.
+      if (module_exists('vsite') && $vsite = vsite_get_vsite()) {
+        $importer_type = $form_state['type'] == 'blog' ? 'blog_import' : 'feed_importer';
+
+        // Check for existing nodes in the same VSite.
+        $query = new EntityFieldQuery();
+        $result = $query
+          ->entityCondition('entity_type', 'node')
+          ->entityCondition('bundle', $importer_type)
+          ->propertyCondition('status', NODE_PUBLISHED)
+          ->fieldCondition(OG_AUDIENCE_FIELD, 'target_id', $vsite->id)
+          ->fieldCondition('field_rss_url', 'value', $url)
+          ->execute();
+
+        if (!empty($result['node'])) {
+          $row = reset($result['node']);
+          $node = node_load($row->nid);
+
+          $params = array(
+            '@url' => url('cp/os-importer/' . $form_state['type'] . '/manage/' . $node->nid),
+            '@title' => $node->title,
+          );
+
+          form_set_error('url', t('RSS url already exists in <a href="@url">@title</a>.', $params));
+        }
+      }
+    }
+  }
+  else {
+    if (empty($form_state['values']['file'])) {
+      form_set_error('file', t('The file field is required'));
+    }
+  }
+}
+
+/**
+ * Validate handler - verify that the uploaded CSV file has a validate columns
+ * structure.
+ */
+function os_importer_verify_uploaded_file($form, $form_state) {
+  if ($form_state['values']['format'] == 'ical') {
+    // Don't validate iCal files.
+    return;
+  }
+  $bundle = os_importer_importable_content($form_state['type']);
+
+  $source = feeds_source($bundle[$form_state['values']['format']]);
+  $config = $source->importer->getConfig();
+
+  // Get the mappings of the current importer.
+  $mappings = array();
+  foreach ($config['processor']['config']['mappings'] as $mapping) {
+    $mappings[] = strtolower($mapping['source']);
+  }
+
+  // Load the uploaded file and parse his headers.
+  $file = file_load($form_state['values']['file']);
+  feeds_include_library('ParserCSV.inc', 'ParserCSV');
+  $parser = new ParserCSV();
+  $parser->setDelimiter(',');
+  $iterator = new ParserCSVIterator($file->uri);
+  $header = _os_importer_parse_header($parser, $iterator);
+
+  // Check what missing in the uploaded CSV file and display message if needed.
+  if ($missing = array_diff($mappings, $header)) {
+    $params = array('!missing' => theme('item_list', array('items' => $missing)));
+    form_set_error('file', t('The next columns are missing in you CSV: !missing', $params));
+  }
+}
+
+/**
+ * Parsing the header.
+ */
+function _os_importer_parse_header(ParserCSV $parser, ParserCSVIterator $iterator) {
+  $parser->setLineLimit(1);
+  $rows = $parser->parse($iterator);
+  if (!count($rows)) {
+    return array();
+  }
+  $header = array_shift($rows);
+  foreach ($header as $i => $title) {
+    $header[$i] = trim(drupal_strtolower($title));
+  }
+  return $header;
+}
+
+/**
+ * Form submit.
+ */
+function os_importer_import_submit($form, &$form_state) {
+  global $language, $user;
+  $values = $form_state['values'];
+  $bundle = os_importer_importable_content($form_state['type']);
+
+  if (in_array($values['format'], array('csv', 'ical'))) {
+    $fid = $values['file'];
+    $file = file_load($fid);
+
+    $source = feeds_source($bundle[$values['format']]);
+    $fetcher_config = $source->getConfigFor($source->importer->fetcher);
+    $fetcher_config['source'] = $file->uri;
+    $fetcher_config['file'] = $file;
+    $source->setConfigFor($source->importer->fetcher, $fetcher_config);
+    $source->save();
+
+    $source->startImport();
+  }
+  else {
+    $node_type = $form_state['type'] == 'blog' ? 'blog_import' : 'feed_importer';
+    $node = entity_create('node', array(
+      'title' => $values['title'],
+      'type' => $node_type,
+      'language' => $language->language,
+      'uid' => $user->uid,
+    ));
+    $wrapper = entity_metadata_wrapper('node', $node);
+    $wrapper->field_rss_url->set($values['url']);
+    $wrapper->save();
+  }
+}
+
+/**
+ * Implements hook_feeds_presave().
+ *
+ * Supporting creation of vocabularies on the fly from the CSV file.
+ */
+function os_importer_feeds_presave(FeedsSource $source, $entity, $item) {
+  if (!$id = _os_importer_determine_context()) {
+    return;
+  }
+
+  _os_importer_import_vocab($source, $entity, $item, $id);
+  _os_importer_import_behalf_of_user($source, $entity, $item, $id);
+}
+
+/**
+ * Helper function to import a node on a behalf of another user.
+ */
+function _os_importer_import_behalf_of_user(FeedsSource $source, $entity, $item, $id) {
+  global $user;
+
+  // When importing an iCal don't search for the author, just use the current
+  // user UID.
+  if ($source->importer->id == 'os_ical') {
+    $entity->uid = $user->uid;
+    return;
+  }
+
+  if (empty($item['author'])) {
+    $account = user_load($user->uid);
+  }
+  else {
+    if ($account = user_load_by_name($item['author'])) {
+      // Check that the user is a group member and verify he can create node of
+      // this type.
+      $account = og_is_member('node', $id, 'user', $account) && node_access('create', $entity->type, $account) ? $account : user_load($user->uid);
+    }
+    else {
+      // Loading the current user.
+      $account = user_load($user->uid);
+    }
+  }
+
+  $entity->uid = $account->uid;
+}
+
+/**
+ * Helper function to import vocabularies and taxonomy terms on the fly.
+ */
+function _os_importer_import_vocab(FeedsSource $source, $entity, $item, $id) {
+  $config = $source->importer->getConfig();
+
+  // Getting the mappings from the processor config.
+  $mappings = array();
+  foreach ($config['processor']['config']['mappings'] as $mapping) {
+    $mappings[] = strtolower($mapping['source']);
+  }
+
+  // Now when we know what the original mapping was we can get the names of the
+  // new vocabularies.
+  $new_vocabs = array_diff(array_keys($item), $mappings);
+  $tids = array();
+  foreach ($new_vocabs as $vocab) {
+    // Create the terms and the vocabulary.
+    $info = _os_importer_create_vocab($vocab, $item[$vocab], 'node', $id, 'node', $entity->type);
+
+    // Build the taxonomy terms for the new node.
+    $tids = array_merge($info['tids'], $tids);
+  }
+
+  if (!$tids) {
+    return;
+  }
+
+  $wrapper = entity_metadata_wrapper('node', $entity);
+  $wrapper->{OG_VOCAB_FIELD}->set($tids);
+}
+
+/**
+ * Helper function for determine the vsite ID.
+ *
+ * @return $id
+ *  The ID of the group.
+ */
+function _os_importer_determine_context() {
+  // Vsite context exists - use him.
+  if (module_exists('vsite') && $vsite = vsite_get_vsite()) {
+    return $vsite->id;
+  }
+
+  // Verify we're in a queue.
+  if ($_GET['q'] != 'batch') {
+    return;
+  }
+
+  // Decide how we should get the vsite ID.
+  $batch = batch_load($_GET['id']);
+
+  if (empty($batch['form_state']['complete form']['#space']['#value'])) {
+    return;
+  }
+
+  list(, $id) = explode(':', $batch['form_state']['complete form']['#space']['#value']);
+
+  return $id;
+}
+
+/**
+ * Create OG vocab on the fly.
+ *
+ * @param $name
+ *  The new vocabulary title.
+ * @param $terms
+ *  The taxonomy terms of the new vocabulary.
+ * @param $group_type
+ *  The group type
+ * @param $gid
+ *  The group ID.
+ * @param $entity_type
+ *  The entity type the OG vocab is attached to.
+ * @param $bundle
+ *  The bundle of the entity.
+ *
+ * @return array
+ *  Array with the vocabulary ID and the his term IDs.
+ */
+function _os_importer_create_vocab($name, $terms, $group_type, $gid, $entity_type, $bundle) {
+  $query = db_select('og_vocab_relation', 'ogr');
+  $query->join('taxonomy_vocabulary', 'v', 'v.vid = ogr.vid');
+
+  // We need to check if a vocabulary with that name exists in the group.
+  $result = $query
+    ->fields('v')
+    ->condition('group_type', $group_type)
+    ->condition('gid', $gid)
+    ->condition('v.name', $name)
+    ->execute()
+    ->fetchAllAssoc('vid');
+
+  if ($result) {
+    // The vocabulary is already exists, we can use him.
+    $vocabulary = reset($result);
+  }
+  else {
+    // We didn't found any vocabulary - create a new one.
+    $i = 0;
+    $machine_name = str_replace(array(' ', '-'), '_', strtolower($name));
+    while (taxonomy_vocabulary_machine_name_load($machine_name)) {
+      $machine_name = substr($machine_name, 0, 32 - strlen($i)) . $i;
+      $i++;
+    }
+
+    // Creating the new vocabulary.
+    $vocabulary = new stdClass();
+    $vocabulary->name = $name;
+    $vocabulary->machine_name = $machine_name;
+    taxonomy_vocabulary_save($vocabulary);
+  }
+
+  $tids = array();
+
+  // Creating the terms for the new vocabulary.
+  $taxonomy_terms = explode("|", $terms);
+
+  foreach ($taxonomy_terms as $taxonomy_term) {
+    $term = taxonomy_get_term_by_name($taxonomy_term, $vocabulary->machine_name);
+
+    if (!$term) {
+      $term = new stdClass();
+      $term->name = $taxonomy_term;
+      $term->vid = $vocabulary->vid;
+      taxonomy_term_save($term);
+      $tids[] = $term->tid;
+    }
+    else {
+      $tids[] = reset($term)->tid;
+    }
+  }
+
+  // Create the OG vocabulary and the relation to the group.
+  if (!og_vocab_load_og_vocab($vocabulary->vid, $entity_type, $bundle)) {
+    og_vocab_create_og_vocab($vocabulary->vid, $entity_type, $bundle)->save();
+    og_vocab_relation_save($vocabulary->vid, $group_type, $gid);
+  }
+
+  return array(
+    'vid' => $vocabulary->vid,
+    'tids' => $tids,
+  );
+}

@@ -1,0 +1,27 @@
+#header-container {background:#FFF;}
+#header-container a {color: #293352;}
+
+.block-boxes-os_boxes_site_info  {
+    border-left: 8px solid #CCC;
+}
+
+.block-boxes-os_boxes_site_info h1 a {color:#293352;}
+.block-boxes-os_boxes_site_info h2, 
+.block-boxes-os_boxes_site_info p {color:#777;}
+
+.region-header-third .nice-menu li a {
+  color: #293352;
+border-right:1px solid #293352;
+text-decoration: underline !important;
+
+ }
+ 
+.region-header-third .nice-menu li.last {
+border-right:none;
+  
+ }  
+ 
+.biblio-title a, .biblio-title-chicago a,
+p a,
+p a:visited,
+#content-column li a {color:#4E84C4;}

@@ -1,0 +1,125 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Code for the OS news feature module.
+ */
+
+include_once ('os_news.features.inc');
+
+/**
+ * Implements hook_os_app_info().
+ */
+function os_news_os_app_info() {
+  $apps = array();
+
+  $apps['os_news'] = array(
+    'path' => 'news',
+  	'nodetypes' => array(
+  	  'news',
+    ),
+    'views tabs' => array(
+      'os_news' => array('page'),
+    ),
+    'importers' => array(
+      'news' => array(
+        'csv' => 'os_news',
+        'rss' => 'feed_importer',
+      ),
+    ),
+  );
+
+  return $apps;
+}
+
+/**
+ * Implements hook_process_hook() for node.
+ *
+ * Customizes $submitted for new nodes as just "M D, YYYY"
+ *
+ * Moves the photo field before the title for teaser display.
+ *
+ * Moves the taxonomy terms to top of the node rather than the bottom.
+ */
+function os_news_process_node(&$vars) {
+  if ($vars['type'] !== 'news') {
+    return;
+  }
+
+  // Helps poor theme developers find these changes to $variables
+  $vars['classes'] .= ' modified-in-os_news_process_node';
+
+  if ($vars['teaser'] || $vars['view_mode'] == 'sidebar_teaser') {
+    // Moves the profile photo thumbnail before teaser title (full name)
+    if (isset($vars['content']['field_photo'])) {
+      $vars['title_prefix'] = $vars['content']['field_photo'];
+      unset($vars['content']['field_photo']);
+    }
+
+    // sidebar_teaser - moves title into content area
+    if ($vars['view_mode'] == 'sidebar_teaser') {
+      $vars['content']['node_title'] = array(
+        '#markup' => '<h1 ' . $vars['title_attributes'] . '><a href="' . $vars['node_url'] . '">' . $vars['title'] . '</a></h1>'
+      );
+      $vars['title'] = NULL;
+    }
+  }
+  else {
+    if (isset($vars['content']['field_photo']) && isset($vars['content']['body'])) {
+      $vars['content']['body'][0]['#markup'] = render($vars['content']['field_photo']) . $vars['content']['body'][0]['#markup'];
+      unset($vars['content']['field_photo']);
+    }
+  }
+
+  // Move the terms to the top of the node display.
+  if(isset($vars['content']['og_vocabulary'])) {
+    $vars['content']['og_vocabulary']['#weight'] = 0;
+  }
+
+  // Includes custom CSS
+  $vars['title_prefix']['#attached'] = array(
+    'css' => array(
+      'type' => 'file',
+      'data' => drupal_get_path('module', 'os_news') . '/os_news.css',
+    ),
+  );
+}
+
+/**
+ * Implements hook_vsite_og_node_type_info().
+ */
+function os_news_vsite_og_node_type_info() {
+  return array(
+    'news' => 'group content',
+  );
+}
+
+/**
+ * Implements hook_field_access().
+ *
+ * Restrict access to the redirect field on the news node.
+ */
+function os_news_field_access($op, $field, $entity_type, $entity, $account) {
+  if (!empty($entity) && $field['field_name'] == 'field_url' && $entity_type == 'node' && $entity->type == 'news' && $op == 'edit') {
+    return user_access('bypass redirection', $account);
+  }
+  return TRUE;
+}
+
+/**
+ * Adds alt and title text where appropriate
+ */
+function os_news_field_attach_load($entity_type, $entities, $view_mode) {
+  if ($entity_type == 'node') {
+    foreach ($entities as $e_id => $e) {
+      if ($e->type != 'news') continue;
+
+      if (!empty($e->field_photo) && isset($e->title)) {
+        $e->field_photo[LANGUAGE_NONE][0]['alt'] = $e->title;
+        $e->field_photo[LANGUAGE_NONE][0]['title'] = $e->title;
+      }
+    }
+  }
+}
+

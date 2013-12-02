@@ -1,0 +1,30 @@
+<?php
+
+/**
+ * Implementation of hook_install().
+ */
+function os_pinserver_auth_install(){
+  //set module weight
+  db_query("UPDATE {system} SET weight = 80 WHERE name = 'os_pinserver_auth'");
+  cache_clear_all('strongarm', 'cache');
+}
+
+/**
+ * Creates the table `os_pinserver` if it doesn't exist.
+ */
+function os_pinserver_auth_update_7001() {
+  $table = 'os_pinserver';
+  $table_exists = db_table_exists($table);
+  if ($table_exists) {
+    return;
+  }
+
+  $schema = os_pinserver_auth_schema();
+  if (!isset($schema[$table])) {
+    return;
+  }
+
+  // Creates the table.
+  db_create_table($table, $schema[$table]);
+}
+

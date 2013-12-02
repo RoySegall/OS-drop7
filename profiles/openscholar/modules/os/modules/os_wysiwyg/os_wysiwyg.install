@@ -1,0 +1,25 @@
+<?php
+/**
+ * @file
+ * Install file of the os wysiwyg module.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function os_wysiwyg_install() {
+  // Add HTML as an allowed type for WYSIWYG files.
+  $types = media_variable_get('wysiwyg_allowed_types');
+  $types[] = 'html';
+  media_variable_set('wysiwyg_allowed_types', $types);
+
+}
+
+/**
+ * Remove unneeded tracking of file usages.
+ */
+function os_wysiwyg_update_7001() {
+  db_delete('file_usage')
+    ->condition('module', 'os_wysiwyg')
+    ->execute();
+}

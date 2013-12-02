@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * Implementation of hook_schema().
+ */
+function citation_distribute_schema() {
+
+  $schema['citation_distribute'] = array(
+    'description' => t('Status of citations to distribute'),
+    'fields' => array(
+
+      'nid' => array(
+        'description' => t("Drupal node ID"),
+        'type' => 'int',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+      ),
+
+      'plugin' => array(
+        'description' => t("Contains the name of the submodule to identify the type of template"),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+      ),
+
+      'noauto' => array(
+        'description' => t('Do not autoflag this plugin/node pair.'),
+        'type' => 'int',
+        'size' => 'tiny',
+        'not null' => TRUE,
+        'unsigned' => TRUE,
+        'default' => 0,
+      ),
+
+      'batch_command' => array(
+        'description' => t('Command to run when this node is next processed by cron'),
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+        'default' => '',
+      ),
+
+    ),
+    'primary key' => array('nid','plugin'),
+    'unique key' => array('nid_plug' => array('nid', 'plugin')),
+  );
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install()
+ *
+ * Installs citation_distribute table and presets.
+ * If cite_distribute is installed, copies out its data.
+ */
+function citation_distribute_install(){
+  //set default module mode
+  variable_set('citation_distribute_module_mode', 'per_submission');
+
+  //limit nodes pushed per cron run
+  variable_set('citation_distribute_cron_limit', 10);
+
+  //check if table exists
+  $msg = db_table_exists('citation_distribute') ? '' :  'Error creating Cite Disitribute table';
+  //if cannot create table then display message
+  if (!empty($msg)) {
+    drupal_set_message(t($msg));
+  }
+}
+/**
+ * Implementation of hook_uninstall()
+ */
+function citation_distribute_uninstall(){
+  //delete citation_distribute variables.  since module is disabled, we can't use its functions to figure out what plugins were enabled.
+  $result = db_select('variable', 'v')
+    ->condition('name', 'citation_distribute_%', 'LIKE')
+    ->fields('v', array('name'))
+    ->execute();
+  foreach ($result->fetchCol() as $var) {
+    variable_del($var);
+  }
+}
+

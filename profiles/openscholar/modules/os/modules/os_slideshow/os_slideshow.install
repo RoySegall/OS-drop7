@@ -1,0 +1,22 @@
+<?php
+
+/*
+ * Add og_group_ref to image files attached to slideshow_image nodes
+ */
+function os_slideshow_update_7001() {
+  $query = db_select('node', 'n')
+    ->condition('n.type', 'slideshow_slide'); 
+  $query->join('file_usage', 'f', 'n.nid = f.id');
+  $query->fields('f', array('fid'));
+  $query->join('og_membership', 'og', 'n.nid = og.etid');
+  $query->fields('og', array('gid'));
+  
+  $results = $query->execute();
+  while ($res = $results->fetchAssoc()) {
+    og_group('node', $res['gid'], array(
+      'entity_type' => 'file',
+      'entity' => $res['fid'],
+      'field_name' => OG_AUDIENCE_FIELD,
+    ));
+  }
+}

@@ -1,0 +1,84 @@
+<?php
+/**
+ * @file
+ * The hierarchical_taxonomy module provides a hierarchically-structured form
+ * of taxonomy_get_tree().
+ *
+ * This module provides no UI, just a function for other modules to use.
+ */
+
+
+/**
+ * Create a hierarchical representation of a vocabulary.
+ *
+ * @param $vid
+ *   Which vocabulary to generate the tree for.
+ * @param $parent
+ *   The term ID under which to generate the tree. If 0, generate the tree
+ *   for the entire vocabulary.
+ * @param $max_depth
+ *   The number of levels of the tree to return. Leave NULL to return all levels.
+ * @param $load_entities
+ *   If TRUE, a full entity load will occur on the term objects. Otherwise they
+ *   are partial objects queried directly from the {taxonomy_term_data} table to
+ *   save execution time and memory consumption when listing large numbers of
+ *   terms. Defaults to FALSE.
+ *
+ * @return
+ *   An array of all term objects in the tree. Each term object is extended
+ *   to have "depth" and "parents" attributes in addition to its normal ones.
+ *   Results are statically cached. Term objects will be partial or complete
+ *   depending on the $load_entities parameter.
+ *   Child terms will be structured below the "below" property of each term.
+ *
+ * @see taxonomy_get_tree()
+ */
+function hierarchical_taxonomy_get_tree($vid, $parent = 0, $max_depth = NULL, $load_entities = FALSE) {
+  $build = array($parent => (object) array('below' => array()));
+
+  $tree = taxonomy_get_tree($vid, $parent, $max_depth, $load_entities);
+
+  // Sort the tree by depth.
+  usort($tree, '_hierarchical_taxonomy__sort_by_depth');
+
+  // Initialise the build tree with a flat hierarchy, indexed by tid.
+  foreach ($tree as $term) {
+    $build[$term->tid] = $term;
+  }
+
+  while (count($build) > 1) {
+    // Take a term off the end (i.e. traverse deep-first).
+    $term = array_pop($build);
+
+    // Find this term's parent (where 0 represents the root of the vocabulary).
+    $parent_tid = (empty($term->parents)) ? 0 : current($term->parents);
+
+    // Attach this term to its parent. The traverse is deep-first, ensuring the
+    // parent is always available.
+    $build[$parent_tid]->below[$term->tid] = $term;
+  }
+
+  return $build[$parent]->below;
+}
+
+/**
+ * Usort-callable comparitor.
+ */
+function _hierarchical_taxonomy__sort_by_depth($a, $b) {
+  // Both arguments must be objects.
+  if (!(is_object($a) && is_object($b))) {
+    return 0;
+  }
+  // Both objects must provide a depth property.
+  elseif(!(is_numeric($a->depth) && is_numeric($b->depth))) {
+    return 0;
+  }
+  // If the depth is identical, they're considered equal in sort order.
+  elseif ($a->depth == $b->depth) {
+    // Compare the term name.
+    return strcmp($b->name, $a->name);
+  }
+  else {
+    return ($a->depth < $b->depth) ? -1 : 1;
+  }
+}

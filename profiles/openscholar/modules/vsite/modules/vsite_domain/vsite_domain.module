@@ -1,0 +1,263 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Creates a domain handler that overides the default purl domain handler.
+ *
+ * Also provides admin form for creating domains for vsites.
+ */
+
+// Changes the default domain proccessor to our custom processor.
+define('PURL_VSITE_DOMAIN', 'vsite_domain');
+
+// Changes the default domain proccessor to our custom processor.
+define('PURL_VSITE_PATH', 'vsite_path');
+
+/**
+ * Implements hook_enable().
+ */
+function vsite_domain_enable() {
+  global $base_url;
+
+  // Configure purl, grab OG method, replace path with vsite_path
+  $purl_types = variable_get('purl_types', array());
+  if (variable_get('purl_method_spaces_og', FALSE)) {
+    // Removes standard path processing
+    if (isset($purl_types['path'])) {
+      unset($purl_types['path']);
+    }
+    // Removes standard domain processing
+    if (isset($purl_types['domain'])) {
+      unset($purl_types['domain']);
+    }
+
+    // Adds new domain and path processing
+    $purl_types['vsite_domain'] = 'vsite_domain';
+    $purl_types['vsite_path'] = 'vsite_path';
+    variable_set('purl_types', $purl_types);
+
+    variable_set('purl_method_spaces_og', 'vsite_path');
+    variable_set('purl_method_vsite_domain', 'vsite_domain');
+  }
+
+  // Domain should be set to correct base, so that it does not change when
+  // domain providers are used
+  if (!variable_get('purl_base_domain', FALSE)) {
+    variable_set('purl_base_domain', $base_url);
+  }
+
+  // Sets vsite_domain module weight to be after Spaces OG in system table.
+  $weight = db_query("SELECT weight FROM {system} WHERE type = :type AND name = :name", array(
+      ':type' => 'module',
+      ':name' => 'spaces_og',
+    ))->fetchField();
+
+  db_update('system')->fields(array(
+      'weight' => ($weight + 1),
+    ))->condition('name', 'vsite_domain')->execute();
+}
+
+/**
+ * Implements hook_perm().
+ */
+function vsite_domain_permission() {
+  // Adds new permissions for managing domains witin a vsite.
+
+  return array(
+    'change vsite domain' => array(
+      'title' => t('Change vsite domain'),
+      'description' => t('Change vsite domain'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_purl_provider().
+ */
+function vsite_domain_purl_provider() {
+  // Provides the domain provider for vsites.
+
+  $items = array();
+  $items['vsite_domain'] = array(
+    'name' => 'VSite Domain Provider',
+    'description' => t('Sets the spaces context for a domain match.'),
+    'callback' => 'vsite_domain_apply_context',
+    'callback arguments' => array(
+      'og',
+    ),
+    'example' => 'my-space',
+  );
+
+  return $items;
+}
+
+/**
+ * Apply context callback; activates current space using a domain provider.
+ */
+function vsite_domain_apply_context($space_type, $sid) {
+  static $once;
+  if (empty($once)) {
+    spaces_init_space($space_type, $sid);
+    $space = spaces_get_space();
+    $space->purl_provider = PURL_VSITE_DOMAIN;
+
+    $modifier = purl_load(array('id' => $sid, 'provider' => $space->purl_provider));
+    $host = str_replace('http://', '', $_SERVER['HTTP_HOST']);
+    if ($modifier['value'] != $host && strpos($host, 'www.') === 0 && $modifier['value'] == substr($host, 4)) {
+      // If we are at a path prefixed with www and this site is not configured
+      // with www as the default domain then redirect to default
+      unset($_GET['destination']);
+      drupal_goto(request_path(), array(
+          'purl' => array(
+            'provider' => $space->purl_provider,
+            'id' => $sid,
+          ),
+          'query' => drupal_get_query_parameters($_GET, array('q')),
+        ), 301);
+    }
+
+    $once = TRUE;
+  }
+}
+
+/**
+ * Implements hook_purl_processor().
+ */
+function vsite_domain_purl_processor() {
+  // Context prefix provider callback.
+
+  $info = array();
+  $info['vsite_domain'] = array(
+    'title' => t('Scholar Vsite Domain Modifier'),
+    'handler' => array(
+      'class' => 'purl_vsite_domain',
+      'file' => 'purl_vsite_domain.inc',
+      'path' => drupal_get_path('module', 'vsite_domain') . '/plugins',
+      'parent' => 'domain',
+    ),
+  );
+  $info['vsite_path'] = array(
+    'title' => t('Scholar Vsite Path Modifier'),
+    'handler' => array(
+      'class' => 'purl_vsite_path',
+      'file' => 'purl_vsite_path.inc',
+      'path' => drupal_get_path('module', 'vsite_domain') . '/plugins',
+      'parent' => 'path',
+    ),
+  );
+
+  return $info;
+}
+
+/**
+ * Implements hook_cp_settings().
+ */
+function vsite_domain_cp_settings() {
+  $vsite = vsite_get_vsite();
+
+  //ensure we're in a vsite and it can take domains
+  if (!($vsite && in_array('vsite_domain', array_keys(variable_get('purl_types', array()))))){
+    return;
+  }   
+  
+  //ensure we have access to change domains or we're in a subsite whose parent provides domains
+  $parent = (isset($vsite->group->field_group_parent)) ? vsite_get_vsite($vsite->group->field_group_parent[LANGUAGE_NONE][0]['target_id']) : FALSE;
+  if (!(($parent && $parent->group->field_subsite_domains) || user_access('change vsite domain'))) {
+    return;
+  }
+  
+  $settings = array('vsite_domain_name' => array(
+    'group' => array(
+      '#id' => 'domain',
+      '#title' => t('Domain'),
+      '#weight' => 0,
+    ),
+    'submit' => array('vsite_domain_cp_settings_domain_submit'),
+  ));
+  $domain = variable_get('vsite_domain_name', '');
+  $shared = variable_get('vsite_domain_shared', '');
+  $purl = str_replace('http://', '', variable_get('purl_base_domain', ''));
+  ctools_include('form', 'vsite_domain');
+  
+  // Get purl form and modify it
+  $form = purl_form('vsite_domain', $vsite->group->nid, $domain);
+  $form['value']['#title'] = t('Custom domain name');
+  $form['value']['#field_prefix'] = 'http://';
+  $form['value']['#required'] = FALSE;   // Leaving the vsite domain name field blank means use purl base domain.
+  $form['#element_validate'] = array('vsite_domain_cp_settings_domain_validate');  // Use our validate function (which still invokes purl's validate).
+  $form['sid'] = array(
+    '#type' => 'hidden',
+    '#value' => isset($vsite->group->nid) ? $vsite->group->nid : 0,
+  );
+  
+  // Adds the option to share multiple vsites on one domain
+  // If this option is selected, we actually do not make a purl record.
+  $form['vsite_domain_shared'] = array(
+    // Disable/check the box when no domain is set. Attempts to align with the actual allowed states.
+    '#states' => array(
+      'enabled' =>  array(':input[name="vsite_domain_name[value]"]' => array('filled' => TRUE)),
+      'disabled' => array(':input[name="vsite_domain_name[value]"]' => array('filled' => FALSE)),
+      'checked' =>  array(':input[name="vsite_domain_name[value]"]' => array('filled' => FALSE)),
+    ),
+    '#type' => 'checkbox',
+    '#title' => t('Share domain name'),
+    '#default_value' => $shared,
+    '#weight' => 10,
+    '#description' => t("Add \"<em><strong>/@site</strong></em>\" to the URL and share this domain name with other sites (default).<br/>If you own this custom domain, uncheck to use for just this site.", array('@site' => vsite_get_purl($vsite))),
+  );
+  
+  // If shared, makes sure to display the shared option as "checked".
+  // Needed because checkbox #default_value = 1 does NOT show as checked.
+  // @see http://drupal.org/node/104852
+  if ($shared) {
+    $form['vsite_domain_shared']['#states']['checked'][':input[name="vsite_domain_name[value]"]'] = array('enabled' => TRUE);
+  }
+  
+  //subsite domains - non-admins can only add domains provided by parent site
+  if (!user_access('change vsite domain')) {
+    $parent_domains = array_map(function($a) {return $a['value'];}, $parent->group->field_subsite_domains[LANGUAGE_NONE]);
+    $form['value'] = array_merge($form['value'], array(
+      '#type' => 'select',
+      '#options' => array_merge(array('' => $purl), drupal_map_assoc($parent_domains)), // '' should clear the domain
+      '#value' => ($domain) ? $domain : '',
+      '#size' => null,
+      '#description' => t('Change your site\'s domain name.'),
+    ));
+          
+    $form['vsite_domain_shared'] = array_merge($form['vsite_domain_shared'], array(
+      '#type' => 'hidden',
+      '#value' => TRUE,  
+    ));
+    
+  } else {
+    $form['#access'] = user_access('change vsite domain');
+  }
+  
+  $settings['vsite_domain_name']['form'] = $form;  
+  return $settings;
+}
+
+/**
+ * Maintains a static array of purl values that have been processed.
+ *
+ * Note: only one vsite_provider should adjust each path.
+ *
+ * @param string $purl
+ *
+ * @return array $processed
+ */
+function _vsite_domain_processed_purls($purl = FALSE) {
+  static $processed;
+
+  if (!isset($processed)) {
+    $processed = array();
+  }
+
+  if (strlen($purl)) {
+    $processed[$purl] = $purl;
+  }
+
+  return $processed;
+}
+

@@ -1,0 +1,39 @@
+/*Grey/black bg version*/
+
+body {
+    color:#FFF;
+    background: #000;
+    }
+    
+  #columns, #columns a, #columns h3, #columns div {
+  	  background: none;
+  	  color:#FFF;
+   }  
+
+  #columns h3,  #columns h2 {
+  	  color:#ccc;
+   } 
+
+#header, 
+#header-container,
+#menu-bar {
+  background: #888;
+  }
+
+.biblio-title a, .biblio-title-chicago a,
+a, a:visited, a:hover {
+  color: #FFF;
+  }
+  
+ #content-column a, a:visited, a:hover {
+text-decoration:underline;
+ color:#FFF;
+  }
+  
+#menu-bar a, #header-container a {
+	text-decoration:none;
+}
+
+.node-teaser.os-links-trail {
+  border: 1px dashed #fff;
+}

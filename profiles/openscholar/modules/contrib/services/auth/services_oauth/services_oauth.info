@@ -1,0 +1,14 @@
+name = OAuth Authentication
+description = Provides OAuth authentication for the services module
+package = Services - authentication
+dependencies[] = services
+dependencies[] = oauth_common
+core = 7.x
+php = 5.2
+
+; Information added by drush on 2013-12-02
+version = "7.x-3.3+42-dev"
+core = "7.x"
+project = "services"
+datestamp = "1385971716"
+

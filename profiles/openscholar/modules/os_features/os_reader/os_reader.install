@@ -1,0 +1,97 @@
+<?php
+/**
+ * @file
+ * Install file of the OS reader module.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function os_reader_schema() {
+  $schema = array();
+
+  $schema['os_feed_item'] = array(
+    'description' => 'Base table of the feed item.',
+    'fields' => array(
+      'id' => array(
+        'description' => 'The primary identifier of the entry.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'guid' => array(
+        'description' => 'Unique identifier for the feed item.',
+        'type' => 'text',
+        'not null' => TRUE,
+      ),
+      'title' => array(
+        'description' => 'the title of the feed item.',
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => TRUE,
+        'default' => '',
+      ),
+      'description' => array(
+        'description' => 'The body of the feed item.',
+        'type' => 'blob',
+      ),
+      'created' => array(
+        'description' => 'The timestamp the feed created',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'url' => array(
+        'description' => 'The URL of the news.',
+        'type' => 'blob',
+      ),
+      'type' => array(
+        'description' => 'The type of the entity.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => 'feed_item',
+      ),
+      'importer_type' => array(
+        'description' => 'The type of the importer.',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => 'news',
+      ),
+      'importer_nid' => array(
+        'description' => 'The feed importer NID',
+        'type' => 'int',
+      ),
+    ),
+    'primary key' => array('id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Perform some setup items for the feed / feed_item content types provided by the feeds module
+ */
+function os_reader_install() {
+  // Turn comments off by default.
+  variable_set('comment_feed', COMMENT_NODE_CLOSED);
+  variable_set('comment_feed_item', COMMENT_NODE_CLOSED);
+}
+
+/**
+ * Creating the OS feed item schema.
+ */
+function os_reader_update_7000() {
+  $schema = os_reader_schema();
+  db_create_table('os_feed_item', $schema['os_feed_item']);
+
+  module_enable(array('feeds', 'feeds_xpathparser'));
+}
+/**
+ * Adding an importer type.
+ */
+function os_reader_update_7001() {
+  $schema = os_reader_schema();
+  db_add_field('os_feed_item', 'importer_type', $schema['os_feed_item']['fields']['importer_type']);
+}

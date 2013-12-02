@@ -1,0 +1,228 @@
+/* D6 retro css for older themes */
+#columns {padding:0 10px;}
+
+html {
+    min-width: 910px;
+    }
+
+body {
+    color:#353535;
+    font-family: "Lucida Grande","Lucida Sans Unicode",Arial,Verdana,sans-serif;
+    }
+
+#columns,#header-container, #block-os-primary-menu {
+    margin: 0 auto;
+    }
+    
+#columns {
+    margin-top: 20px;
+    }    
+
+
+a, a:visited {
+    color:#8A281B;
+    }
+    
+.biblio-title a, .biblio-title-chicago a {
+    color:#8A281B !important;
+    }    
+
+a:hover {
+    color:#8A281B;
+    text-decoration: underline;
+    }
+
+
+h1, h2, h3, .region-sidebar-second a {
+    font-weight: normal;
+    color:#889095;
+    }
+
+h1, h2 {
+    font-size: 1.4em;
+    }
+    
+h1.node-title,
+h1.node-title a {
+	 font-size: 1.09em;
+}
+
+h2.block-title {
+    font-size: 1.12em;
+    }
+
+
+h2, h3, h4 {
+  margin-bottom: 1em;
+  margin-top: 1em;
+  }
+
+h1#page-title {
+  margin-bottom: 1em;
+  }
+  
+.node-teaser.os-links-trail h3 {
+  margin-top: 0;
+}  
+
+h1 a, h2 a, h3 a, .region-sidebar-second a {
+    font-style: normal;
+    }
+
+/* LAYOUT ELEMENTS */
+#header,
+#header-container, 
+#menu-bar
+ {
+  background: #A03A25;
+
+  }
+
+
+
+
+body.sidebar-first #columns .hg-container,
+body.header-left-main #header-container {
+  padding-right: 20px;
+  }
+
+.region-sidebar-second .region-inner {
+ border-left: 1px solid #ccc;
+    }
+
+#footer {
+    font-size: .9em;
+    }
+
+/* HEADER ELEMENTS */
+
+#header-container {
+    padding: 16px 0 6px 0;
+    color: #FFF;
+ 
+    }
+
+#header-container h1 {
+    font-size: 24px;
+    line-height: 1.1em;
+    }
+
+#header-container h2 {
+    font-size: 18px;
+     line-height: 1.3em;
+    }
+
+#header-container h1,
+#header-container h2 {
+ margin-bottom: 0;
+ margin-top: 0;
+}
+
+
+
+#header-container h1,
+#header-container h2,
+#header-container h3,
+#header-container a,
+#header-container a:visited,
+#header-container h1 a,
+#header-container h1 a:visited {
+    color:#EFEFEF;
+    }
+
+#header-container a, #header-container a:visited {
+    text-decoration: none;
+    }
+
+#menu-bar
+ a,
+#menu-bar
+ a:visited {
+  color: #fff;
+  }
+
+#header-container a:hover,
+#header-container a.active {
+    color:#F9E433;
+    }
+
+#menu-bar
+ li {
+    margin-right:.4em;
+    text-transform: uppercase;
+    font-size: 1.1em;
+    background: none;
+    }
+    
+  /** NICE MENUS **/
+#menu-bar ul.nice-menu ul {
+	margin-top:-20px;
+	border:none;
+	background:#777;
+	}
+	
+#menu-bar ul.nice-menu ul ul {
+	margin-top:0;
+}
+
+#menu-bar ul.nice-menu ul ul li {
+	margin-bottom:0;
+}	
+	
+#menu-bar ul.nice-menu ul li {
+	margin-top:0;
+	background:#252A2B;
+}
+	
+#menu-bar ul.nice-menu ul li a {
+	color:#FFF;
+	background:#777;
+	padding:4px 8px ;
+}
+
+
+
+ul.nice-menu-right li.menuparent, ul.nice-menu-right li li.menuparent,
+ul.nice-menu-left li.menuparent, ul.nice-menu-left li li.menuparent,
+ul.nice-menu-right li.menuparent:hover, ul.nice-menu-right li li.menuparent:hover,
+ul.nice-menu-left li.menuparent:hover, ul.nice-menu-left li li.menuparent:hover {
+    background: none;
+}
+
+ul.nice-menu-left a, ul.nice-menu-left ul a {
+    padding-left: 0;
+}
+
+ul.nice-menu-right a, ul.nice-menu-right ul a {
+    padding-right: 0;
+}	
+
+/* MAIN CONTENT AREA */
+
+body.sidebar-first #content {
+    margin-left: 30px;
+    }
+
+body.sidebar-second #content {
+    margin-right: 30px;
+    }
+
+
+body.two-sidebars #content {
+    margin-left: 20px;
+    margin-right: 20px;
+    }
+
+/* Nodes */
+
+.submitted {
+  color: #444;
+  border-bottom: 1px dashed #a1b1b1;
+  display:block;
+  }
+  
+ #powerby-login {
+   position: fixed;
+    right: 0;
+    bottom:20px;
+ }

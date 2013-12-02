@@ -1,0 +1,33 @@
+.follow-icon {
+	background-image: url('follow_icons.png');
+	width: 24px;
+	height: 28px;
+	text-indent: -999em;
+	display: inline-block;
+	padding: 0;
+}
+
+.follow-me-links li {
+	display: inline-block;
+}
+
+.follow-me-links-vertical li {
+	display: block;
+	padding: 3px;
+}
+
+.block-boxes-os_boxes_follow .item-list ul li {
+    height: 32px;
+    line-height: 32px;
+}
+
+.service-name-span {
+	vertical-align: middle;
+	padding-left: 5px;
+}
+
+.form-item-link-to-add .add_new {
+	padding: 6px 11px;
+	border: 1px outset gray;
+	background-color: lightgray;
+}

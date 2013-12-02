@@ -1,0 +1,37 @@
+body  {
+background-position: 0 0;
+ }    
+
+  body.admin-menu {
+background-position: 0 0;
+ 	}
+  
+  body.logged-in {
+ 	background: url("../../images/bodyBg.png") repeat-x scroll 0 0 #F7F7F9;
+ 	}
+  
+ body.header-none {
+ 	background-position: 0 0;
+ 	}
+
+#menu-bar li a
+ {
+border-bottom:none;
+ }
+ 
+#sidebar-second h3.title, #sidebar-second h3.title a,
+#sidebar-first h3.title, #sidebar-first h3.title a {
+    color: #106599;text-transform:none;font-size: 14px;
+}
+
+#sidebar-first #block-vsite_menus-features .content ul.menu li, #sidebar-first #block-vsite_menus-scholar_secondary_menu .content ul.menu li {
+    list-style-image: url('../../images/greenHdrBg.gif');
+    padding-bottom: 12px;
+   
+}
+
+#sidebar-first #block-vsite_menus-features .content ul.menu li a, #sidebar-first #block-vsite_menus-scholar_secondary_menu .content ul.menu li a {
+   text-transform:none;
+   padding-left: 0
+}
+

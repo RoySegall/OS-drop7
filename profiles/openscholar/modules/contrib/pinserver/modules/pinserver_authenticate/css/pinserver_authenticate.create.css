@@ -1,0 +1,57 @@
+#user-login fieldset {
+  border: 0;
+  -webkit-padding-before: 0;
+  -webkit-padding-start: 0;
+  height: auto;
+  margin: 10px 0;
+  padding-top: 5px;
+}
+
+.pin-button,
+#user-login fieldset legend {
+  display: inline-block;
+  width: 100%;
+  border-radius: 5px;
+  background-color: lightgreen;
+  color: white;
+  margin: 10px 0;
+}
+
+#user-login fieldset legend {
+  font-size: 1em;
+  font-weight: normal;
+}
+
+#user-login fieldset legend .fieldset-legend {
+  background-image: none;
+  padding-left: 0;
+}
+
+.pin-button:hover,
+#user-login fieldset legend:hover {
+  background-color: darkgreen;
+}
+
+.pin-button a,
+#user-login fieldset legend a {
+  display: block;
+  padding: 5px;
+  color: black !important;
+}
+
+.pin-button:hover a,
+#user-login fieldset legend:hover a {
+  color: white !important;
+}
+
+.not-logged-in.page-user #columns #main-content h1#page-title {
+  margin-bottom: 1em !important;
+}
+
+#footer .footer-login {
+  display: none !important;
+}
+
+.summary {
+  display: none;
+}

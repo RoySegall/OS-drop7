@@ -1,0 +1,75 @@
+<?php
+
+/**
+ * @file
+ * Code for OS Virtual Site: Presets
+ */
+
+include_once 'vsite_preset.features.inc';
+
+/**
+ * Implements hook_og_tasks_info().
+ */
+function vsite_preset_og_tasks_info($entity_type, $entity) {
+  $tasks = array();
+  $path = drupal_get_path('module', 'vsite_preset');
+
+  // Provides all simple section tasks.
+  $sections = array(
+    'About' => array(
+      'subpages' => array(
+        'Contact',
+      ),
+    ),
+    'Academics' => array(),
+    'Activities' => array(),
+    'News & Events' => array(),
+    'Overview' => array(),
+    'Research' => array(),
+    'Resources' => array(),
+    'Services' => array(),
+  );
+  foreach ($sections as $title => $info) {
+    $key = 'vsite_preset_section_' . str_replace(' ', '_', strtolower($title));
+    $tasks[$key] = _vsite_preset_new_section_task($title, $info);
+  }
+
+  // Provides a single generic menu ordering-task based off a preset variable.
+  $properties = array(
+    'title' => t('Initial Menu Order'),
+    'description' => t('Sets up standard primary menu link ordering.'),
+    'required' => TRUE,
+    'callback' => '_vsite_preset_menu_order_task',
+    'file' => $path . '/includes/menu.inc',
+  );
+  $tasks['vsite_preset_menu_order'] = new vsite_task($properties);
+
+  return $tasks;
+}
+
+/**
+ * Builds a new task that creates a page section and primary menu item.
+ *
+ * @param string $title
+ *   The string to use for the page title and menu link title.
+ * @return object $task
+ *   The new vsite_task object to create the new page and new menu link.
+ */
+function _vsite_preset_new_section_task($title, $info = array()) {
+  $path = drupal_get_path('module', 'vsite_preset');
+  $replacements = array('@title' => $title);
+  $properties = array(
+    'title' => t('@title Section', $replacements),
+    'description' => t('Sets up standard template for a @title section.', $replacements),
+    'required' => TRUE,
+    'callback' => '_vsite_preset_section_task',
+    'arguments' => array(
+      'title' => t($title),
+      'info' => $info,
+    ),
+    'file' => $path . '/includes/menu.inc',
+  );
+  $task = new vsite_task($properties);
+
+  return $task;
+}
