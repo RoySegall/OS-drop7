@@ -1,0 +1,41 @@
+.form-item.form-type-dragndrop-upload {
+  padding: 0;
+  margin: 0;
+}
+
+.field-widget-media-draggable-file .droppable {
+  float: none;
+  background-color: #f0f0ee;
+  border-radius: 3px;
+}
+
+.field-widget-media-draggable-file .droppable-message {
+  line-height: inherit;
+  padding: 10px 0;
+}
+
+.field-widget-media-draggable-file .droppable-standard-upload {
+  display: inline-block;
+  min-height: initial;
+}
+
+.field-widget-media-draggable-file .file-list-single {
+  border-bottom: 1px solid #ccc;
+  padding: 5px 0;
+}
+
+.field-widget-media-draggable-file .file-list-single span {
+  display: inline-block;
+  width: 70%;
+}
+
+.field-widget-media-draggable-file .file-list-single ul {
+  display: inline-block;
+  width: 30%;
+  margin: 0;
+}
+
+.field-widget-media-draggable-file .file-list-single ul li {
+  display: inline-block;
+  width: 45%;
+}

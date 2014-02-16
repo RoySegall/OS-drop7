@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * @file
+ * This module enables some HTML to be used in node titles but filters all other
+ * markup to prevent XSS vulnerablities. It strips markup from RSS and views
+ * JSON display output to eliminate unsightly encoded markup.
+ */
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function html_title_uninstall() {
+  variable_del('html_title_allowed_elements');
+}

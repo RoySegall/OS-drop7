@@ -1,0 +1,14 @@
+#branding_header, #branding_footer, #header, #menu-bar, .sidebar, #footer {
+     display: none;
+}
+
+#content-column .content-inner {
+     margin: 0px ! important;
+}
+
+#columns {
+     width: 90%;
+     font-family: arial, verdana;
+}
+
+h1, h2, h3, h4,p {margin-bottom:15px;}

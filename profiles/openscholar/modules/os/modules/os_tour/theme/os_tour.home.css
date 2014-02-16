@@ -1,0 +1,17 @@
+#os-tour-home {
+    display: none;
+    float: right;
+    margin-right: 5px;
+    right: 0;
+    height: 0;
+    font-weight: bold;
+    z-index: 100;
+}
+
+.os-tour-home-wrapper {
+    float: right;
+    height: 20px;
+    padding: 0 0 0 5px;
+    margin-bottom: -20px;
+    margin-top: -63px;
+}

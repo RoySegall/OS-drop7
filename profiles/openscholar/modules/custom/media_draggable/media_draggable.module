@@ -1,0 +1,274 @@
+<?php
+
+/**
+ * Implements hook_field_widget_info.
+ */
+function media_draggable_field_widget_info() {
+  return array(
+    'media_draggable_file' => array(
+      'label' => t('Drag & Drop Media Browser'),
+      'field types' => array('file'),
+      'settings' => array(
+        'progress_indicator' => 'throbber',
+        // This setting is responsive for showing Browse button or not.
+        'standard_upload' => 1,
+        'allow_replace' => 0,
+        'upload_event' => 'automatic',
+        'upload_button_text' => t('Upload'),
+        'droppable_area_text' => t('Drop files here to upload'),
+        // This settings allows to drop multiple files at once.
+        'multiupload' => 0,
+        'allowed_types' => array('image'),
+        'browser_plugins' => array(),
+        'allowed_schemes' => array('public', 'private'),
+      ),
+      'behaviors' => array(
+        'multiple values' => FIELD_BEHAVIOR_CUSTOM,
+        'default value' => FIELD_BEHAVIOR_NONE,
+      ),
+    )
+  );
+}
+
+/**
+ * Implements hook_field_widget_settings_form.
+ *
+ * Just puts together a form from the dragndrop_upload and media widget settings form
+ */
+function media_draggable_field_widget_settings_form($field, $instance) {
+  $form = dragndrop_upload_file_field_widget_settings_form($field, $instance);
+  $form += media_field_widget_settings_form($field, $instance);
+
+  return $form;
+}
+
+/**
+ * Implements hook_field_widget_form.
+ *
+ * Puts together a row for each file in the field, as well as a template row that the js can use to make new rows for
+ * itself. Also adds the drop region
+ */
+function media_draggable_field_widget_form(&$form, &$form_state, $field, $instance, $langcode, $items, $delta, $element) {
+  $field_settings = $instance['settings'];
+  $widget_settings = $instance['widget']['settings'];
+
+  $element += array(
+    '#field' => $field,
+    '#instance' => $instance,
+    '#process' => array(
+      'media_draggable_field_widget_process',
+    ),
+    '#attached' => array(
+      'js' => array(
+        drupal_get_path('module', 'media_draggable').'/js/media_draggable.widget.js',
+        array(
+          'type' => 'setting',
+          'data' => array(
+            'mediaDraggable' => array(
+              'elements' => array(
+                drupal_html_class('edit-'.$element['#field_name']) => array(
+                  'global' => array(
+                    'types' => array_filter($widget_settings['allowed_types']),
+                    'enabledPlugins' => array_filter($instance['widget']['settings']['browser_plugins']),
+                    'schemes' => $widget_settings['allowed_schemes'],
+                    'file_directory' => isset($field_settings['file_directory']) ? $field_settings['file_directory'] : '',
+                    'file_extensions' => isset($field_settings['file_extensions']) ? $field_settings['file_extensions'] : media_variable_get('file_extensions'),
+                    'max_filesize' => isset($field_settings['max_filesize']) ? $field_settings['max_filesize'] : 0,
+                    'uri_scheme' => !empty($field['settings']['uri_scheme']) ? $field['settings']['uri_scheme'] : file_default_scheme(),
+                  ),
+                )
+              )
+            )
+          )
+        )
+      ),
+      'css' => array(
+        drupal_get_path('module', 'media_draggable').'/css/media_draggable.widget.css',
+      )
+    )
+  );
+
+  // Essentially we use the `dragndrop_upload_file` type,
+  // extended with some enhancements.
+  $widget_settings = $element['#instance']['widget']['settings'];
+  $instance_settings = $element['#instance']['settings'];
+
+  $info = element_info('dragndrop_upload');
+
+  $element['drop'] = array(
+    '#type' => 'dragndrop_upload',
+    '#upload_location' => file_field_widget_uri($element['#field'], $element['#instance']),
+    '#upload_validators' => file_field_widget_upload_validators(
+      $element['#field'],
+      $element['#instance']
+    ),
+    '#pre_render' => array_merge(array('media_draggable_dnd_pre_render'), $info['#pre_render']),
+    '#value_callback' => 'file_field_widget_value',
+    '#progress_indicator' => $widget_settings['progress_indicator'],
+    '#upload_event' => $widget_settings['upload_event'],
+    '#standard_upload' => $widget_settings['standard_upload'],
+    '#allow_replace' => $widget_settings['allow_replace'],
+    '#upload_button_text' => $widget_settings['upload_button_text'],
+    '#droppable_area_text' => $widget_settings['droppable_area_text'],
+    '#file_upload_max_size' => $instance_settings['max_filesize'] ? $instance_settings['max_filesize'] : file_upload_max_size(),
+    '#cardinality' => $element['#field']['cardinality'],
+    // Do not allow for 'multiupload' setting to be enabled if the module
+    // is disabled.
+    '#multiupload' => module_exists(
+        'dragndrop_upload_multi') ? $widget_settings['multiupload'] : 0,
+    // Allows this field to return an array instead of a single value.
+    '#extended' => TRUE,
+    '#weight' => -1,
+  );
+
+  $element['template'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array(
+        'file-list-single',
+      )
+    ),
+    '#file' => false,
+    'fid' => array(
+      '#type' => 'hidden',
+      '#default_value' => 0,
+    ),
+    'display' => array(
+      '#type' => 'value',
+      '#value' => true,
+    ),
+    '#process' => array(
+      'media_draggable_field_widget_indiv_process',
+    )
+  );
+
+  foreach ($items as $delta => $item) {
+    $element[$delta] = $element['template'];
+    $element[$delta]['#file'] = file_load($item['fid']);
+    $element[$delta]['fid']['#default_value'] = $item['fid'];
+  }
+
+  $element['template']['#attributes']['hidden'] = 'hidden';
+
+  return $element;
+}
+
+/**
+ * Widget process function
+ *
+ * Processes files input by adding or removing rows to the form, based on the user's input
+ */
+function media_draggable_field_widget_process($element, &$form_state, &$form) {
+
+  if (!empty($form_state['input'])) {
+    $copy = &$form_state['input']['field_upload'][LANGUAGE_NONE];
+    unset($copy['drop'], $copy['template']);
+
+    $current = array();
+    $new = array();
+    foreach (element_children($element) as $c) {
+      if (is_numeric($c)) {
+        $current[$c] = $element[$c]['fid']['#default_value'];
+      }
+    }
+    foreach ($copy as $k => $f) {
+      $new[$k] = $f['fid'];
+    }
+    $removed = array_diff($current, $new);
+    $added = array_diff($new, $current);
+
+    foreach ($removed as $k => $fid) {
+      unset($element[$k]);
+    }
+
+    foreach ($added as $k => $fid) {
+      $temp = $element['template'];
+      $temp['fid']['#default_value'] = $fid;
+      $temp['#file'] = file_load($fid);
+      $element[$k] = $temp;
+    }
+  }
+
+  return $element;
+}
+
+/**
+ * Row process function
+ *
+ * Expands the row definitions in the original form array into everything the user needs to see and interact with.
+ */
+function media_draggable_field_widget_indiv_process($element) {
+  $file = $element['#file'];
+
+  if (!$file) {
+    $file = (object)array(
+      'fid' => 0,
+      'filename' => 'blank',
+      'filemime' => 'blank',
+    );
+  }
+
+  $vars = array(
+    'file' => $file,
+  );
+  $element['label'] = array(
+    '#markup' => theme('file_icon', $vars).' '.$file->filename,
+    '#prefix' => '<span>',
+    '#suffix' => '</span>'
+  );
+
+  $element['controls'] = array(
+    '#theme' => 'links',
+    '#links' => array(
+      'edit' => array(
+        'href' => 'media/'.$file->fid.'/edit/nojs',
+        'title' => t('Edit'),
+        'attributes' => array(
+          'class' => 'use-ajax',
+        )
+      ),
+      'remove' => array(
+        'href' => '',
+        'title' => t('Remove'),
+        'external' => true,
+      )
+    ),
+  );
+
+  return $element;
+}
+
+/**
+ * Clears the droppable region so it's always empty and ready to upload a new file
+ */
+function media_draggable_dnd_pre_render($element) {
+  if (!empty($element['#value']['fid'])) {
+    $file = $element['#file'];
+
+    module_load_include('inc', 'media', 'includes/media.browser');
+    media_browser_build_media_item($file);
+
+    drupal_add_js(array(
+      'mediaDraggable' => array(
+        'newFile' => $file,
+      )
+    ), 'setting');
+
+    $element['#value']['fid'] = 0;
+    $element['#file'] = false;
+    $element['fid']['#value'] = 0;
+    unset($element['filename']);
+  }
+
+  return $element;
+}
+
+/**
+ * Undoes any automatic change in the timestamp.
+ * Prevent filefield_paths from doing anything to a pre-uploaded file
+ */
+function media_draggable_file_presave($file) {
+  if (isset($file->original)) {
+    $file->timestamp = $file->original->timestamp;
+  }
+}

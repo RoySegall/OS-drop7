@@ -1,0 +1,8 @@
+<?php 
+
+/**
+ * Blog revert - blog uses infinite scroll.
+ */
+function os_blog_update_7001() {
+  features_revert(array('os_blog' => 'view'));
+}
