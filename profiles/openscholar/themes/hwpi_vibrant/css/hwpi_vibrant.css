@@ -314,7 +314,7 @@ div.contextual-links-wrapper a,
 }
 
 ul.nice-menu-down li ul li ul {
-  left: 12em;
+  left: 13.5em;
 }
 
 
@@ -455,6 +455,24 @@ ul.primary {
   box-sizing: border-box;
 }
 
+
+.front #content-column .block.block-boxes-os_boxes_columns {
+  border: none;
+  background: none;
+  box-shadow: none;
+  -webkit-border-radius: none;
+  border-radius: none;
+  -moz-box-sizing: none;
+  -webkit-box-sizing:none;
+  box-sizing: none;
+}
+
+
+.front #content-column .block.block-boxes-os_boxes_columns .block-content:first-child {
+	border-top:none;
+	padding:0;
+	}
+ 
 .sidebar .block {
   margin-bottom: 20px;
 }
@@ -737,9 +755,13 @@ table td.mini .mini-day-on a {
   border-top: 1px solid #5090C8;
 }
 
-.ui-tabs ul.ui-tabs-nav li.ui-tabs-active a {
-  background: #5090C8;
+.ui-tabs ul.ui-tabs-nav li.ui-tabs-active {
   background: linear-gradient(to bottom, #5090C8 0%, #2A68AC 100%) repeat scroll 0 0 transparent;
+
+}
+
+.ui-tabs ul.ui-tabs-nav li.ui-tabs-active a {
+
   color: #fff;
   outline: 0 none;
   position: relative;
@@ -820,6 +842,25 @@ table td.mini .mini-day-on a {
   color: #1E1E1E !important;
 }
 
+.block-boxes-os_taxonomy_fbt.navigation .block-content  {
+	padding:0 !important;
+	}
+	
+.block-boxes-os_taxonomy_fbt.navigation ul {
+border-bottom: none;
+border-left: none;
+border-right: none;
+border-top: none;
+}
+
+.block-boxes-os_taxonomy_fbt.navigation ul li {
+border-top: none;
+}
+	
+
+.block-boxes-os_taxonomy_fbt.navigation a {
+	font-weight:bold;
+	}
 
 /* Readmore and other similar link-button styles */
 ul.links li {

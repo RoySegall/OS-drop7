@@ -90,3 +90,17 @@ function os_events_update_7002() {
 function os_events_update_7004() {
   module_enable(array('registration'));
 }
+
+/**
+ * Update the event registration UX.
+ */
+function os_events_update_7005() {
+  features_revert(array('os_events' => array('field')));
+}
+
+/**
+ * Revert fields to get new field weights on event full node view.
+ */
+function os_events_update_7006() {
+  features_revert(array('os_events' => array('field_instance')));
+}

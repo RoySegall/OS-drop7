@@ -6,57 +6,6 @@
  * Implements hook_install().
  */
 function vsite_install() {
-  $node_info = module_invoke_all('vsite_og_node_type_info');
-  $group_bundles = array_keys($node_info, 'group');
-  foreach ($group_bundles as $group_bundle) {
-
-    // Adds the base vsite roles as OG roles
-    $vsite_roles = array(
-      'member',
-      'non-member',
-      'vsite user',
-      'vsite admin',
-      'content editor',
-    );
-
-    foreach ($vsite_roles as $name) {
-      $role = og_role_create($name, 'node', 0, $group_bundle);
-      og_role_save($role);
-    }
-
-    $roles = og_roles($group_type = 'node', $bundle = $group_bundle);
-    $manager_roles = array();
-    // Sets OG-specific roles
-    foreach ($roles as $rid => $role) {
-      switch ($role) {
-        case 'vsite admin':
-          $manager_roles[] = $rid;
-          og_role_grant_permissions($rid, array(
-              'view users outside groups',
-              'update group',
-              'unsubscribe',
-              'manage group space',
-              'approve and deny subscription',
-              'administer group',
-              'add user',
-              'access administration pages',
-            ));
-          break;
-
-        case 'vsite user':
-          og_role_grant_permissions($rid, array(
-              'view users outside groups',
-              'unsubscribe',
-            ));
-          break;
-
-        case 'manager':
-          $manager_roles[] = $rid;
-          break;
-      }
-    }
-  }
-
   og_create_field(OG_AUDIENCE_FIELD, 'user', 'user');
   // Add "Support expire" field to allow support team to auto-subscribe to
   // a group to a set interval.
@@ -65,12 +14,21 @@ function vsite_install() {
   $og_field['field']['settings']['handler_settings']['membership_type'] = 'support_expire';
   og_create_field('vsite_support_expire', 'user', 'user', $og_field);
 
-  variable_set('og_group_manager_default_rids_node_vsite', $manager_roles);
-
   // Sets the default OG preset to be os_personal
   variable_set('spaces_preset_og', 'os_scholar');
 
   _vsite_initilize_group_fields();
+
+  // Get all group types.
+  $node_info = module_invoke_all('vsite_og_node_type_info');
+  $group_bundles = array_keys($node_info, 'group');
+
+  // Set the default manager roles for each group type.
+  foreach ($group_bundles as $bundle) {
+    $og_roles = og_roles('node', $bundle);
+    $rid = array_search('vsite admin', $og_roles);
+    variable_set('og_group_manager_default_rids_node_' . $bundle, $rid);
+  }
 }
 
 /**
@@ -458,10 +416,10 @@ function vsite_update_7012() {
 function vsite_update_7013() {
   //subsite domains field
   features_revert(array('vsite' => array('field')));
-  
+
   $group_types = array_keys(array_intersect(module_invoke_all('vsite_og_node_type_info'), array('group')));
-  $group_types = array_intersect($group_types, variable_get('subsite_parents', array('department')));
-  
+  $group_types = array_intersect($group_types, variable_get('subsite_parents', array('department', 'project')));
+
   foreach ($group_types as $type) {
     vsite_attach_fields_to_group($type);
   }
@@ -471,4 +429,176 @@ function vsite_update_7013() {
   $og_field['instance']['label'] = 'Support expire';
   $og_field['field']['settings']['handler_settings']['membership_type'] = 'support_expire';
   og_create_field('vsite_support_expire', 'user', 'user', $og_field);
+}
+
+/**
+ * Add "Override roles and permissions" functionality to VSites.
+ */
+function vsite_update_7014() {
+  $group_types = array_keys(array_intersect(module_invoke_all('vsite_og_node_type_info'), array('group')));
+  foreach ($group_types as $type) {
+    vsite_attach_fields_to_group($type);
+  }
+
+  variable_set('og_node_access_strict', TRUE);
+
+  // Delete the "vsite user" site-wide role.
+  if ($role = user_role_load_by_name('vsite user')) {
+    user_role_delete('vsite user');
+  }
+
+  // Remove the "vsite admin" site-wide role from users in case it was
+  // accidentally assigned to them.
+  $role_names = array(
+    'content editor',
+    'vsite admin',
+    'vsite user',
+  );
+  $rids = array();
+  foreach ($role_names  as $role_name) {
+    $role = user_role_load_by_name($role_name);
+    $rids[] = $role->rid;
+  }
+
+  db_delete('users_roles')
+    ->condition('rid', $rids, 'IN')
+    ->execute();
+
+  features_revert(array('os' => array('user_role')));
+  features_revert(array('os' => array('user_permission')));
+  $features = array(
+    'biocv',
+    'book',
+    'blog',
+    'classes',
+    'events',
+    'faq',
+    'image_gallery',
+    'links',
+    'news',
+    'pages',
+    'presentations',
+    'profiles',
+    'publications',
+    'reader',
+    'software',
+  );
+
+  foreach ($features as $feature) {
+    features_revert(array('os_' . $feature => array('user_permission')));
+  }
+
+  // Set og permissions for VSite roles.
+  $bundles = og_get_all_group_bundle();
+  foreach (array_keys($bundles['node']) as $bundle) {
+    vsite_set_og_permissions($bundle);
+  }
+}
+
+/**
+ * Grant the VSite the permissions and remove all permissions from member and
+ * non-member roles.
+ */
+function vsite_update_7015() {
+  $default_roles = og_get_default_roles();
+  $default_permissions = og_get_default_permissions();
+
+  // Get a list of all the permissions to be revoked from member and non-member.
+  $all_permissions = array_keys(og_get_permissions());
+
+  // Get all group types.
+  $node_info = module_invoke_all('vsite_og_node_type_info');
+  $group_bundles = array_keys($node_info, 'group');
+
+  // Iterate over all existing group permissions, and change them according to
+  // the default ones.
+  foreach ($group_bundles as $bundle) {
+    $og_roles = og_roles('node', $bundle);
+
+    foreach ($og_roles as $rid => $name) {
+      $default_rid = array_search($name, $default_roles);
+      $permissions = $default_permissions[$default_rid];
+
+      // Revoke all permissions, before re-adding the needed ones.
+      if (in_array($name, array('member', 'non-member'))) {
+        og_role_revoke_permissions($rid, $all_permissions);
+        continue;
+      }
+
+      // Grant vsite user, vsite admin and content editor the default permissions.
+      og_role_grant_permissions($rid, array_keys($permissions));
+
+      // If role is content editor revoke the following permissions.
+      if ($name == 'content editor') {
+        og_role_revoke_permissions($rid, array('update any feed content', 'update any feed importer content'));
+      }
+    }
+  }
+}
+
+ /**
+ * Updates the enabled presets value to expose new `HWP Personal` preset.
+ */
+function vsite_update_7016() {
+  // Sets the available presets variable (instead of reverting vsite strongarm).
+  $default = array(
+    'os_department' => 'os_department',
+    'os_department_minimal' => 'os_department_minimal',
+    'os_scholar' => 'os_scholar',
+    'os_project' => 'os_project',
+    'hwp_administrative' => 'hwp_administrative',
+    'hwp_lab_research_group' => 'hwp_lab_research_group',
+    'hwp_project' => 'hwp_project',
+  );
+  $value = variable_get('os_enabled_spaces_presets', $default);
+  $value['hwp_personal'] = 'hwp_personal';
+  variable_set('os_enabled_spaces_presets', $value);
+}
+
+/**
+ * Give support team domain and create vsite on behalf privileges
+ */
+function vsite_update_7017() {
+  features_revert(array('vsite' => array('user_permission')));
+}
+
+/**
+ * Saves the value for the newly exported variable `theme_settings`.
+ *
+ * This is so that there is no need to revert the feature.
+ */
+function vsite_update_7018() {
+  $name = 'theme_settings';
+  $original = variable_get($name, array());
+  $modified = array(
+    'toggle_favicon' => 0,
+    'default_favicon' => 0,
+    'favicon_path' => NULL,
+    'favicon_upload' => NULL,
+  );
+  $value = array_merge($original, $modified);
+
+  variable_set($name, $value);
+}
+
+/*
+ * Set "content editor" permissions for "synced" permissions.
+ */
+function vsite_update_7019() {
+  $permissions = array('edit boxes');
+
+  $group_bundles = og_get_all_group_bundle();
+
+  foreach (array_keys($group_bundles['node']) as $bundle) {
+    $og_roles = og_roles('node', $bundle);
+    $rid = array_search('content editor', $og_roles);
+    og_role_grant_permissions($rid, $permissions);
+  }
+}
+
+/**
+ * Add description to image fields
+ */
+function vsite_update_7020() {
+  features_revert(array('vsite' => array('field_instance')));
 }

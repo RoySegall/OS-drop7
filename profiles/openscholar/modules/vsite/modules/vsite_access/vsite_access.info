@@ -1,4 +1,4 @@
-name = "vsite Access"
+name = Vsite Access
 description = "This handles views and menu access to OpenScholar vsites"
 core = 7.x
 package = "OpenScholar vsite"

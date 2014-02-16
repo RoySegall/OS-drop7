@@ -13,6 +13,28 @@ function iqss_scholars_front_default_box() {
   $box = new stdClass();
   $box->disabled = FALSE; /* Edit this to true to make a default box disabled initially */
   $box->api_version = 1;
+  $box->delta = 'iqss_scholars_fixed_header';
+  $box->plugin_key = 'simple';
+  $box->title = '';
+  $box->description = 'Scholars fixed-position header.';
+  $box->options = array(
+    'body' => array(
+      'value' => '<div id="os-reasons_header" class="os-scholar-header">
+        <div class="os-scholar-header-wrap">
+            <h2><a href="/" title="Home" rel="home">Scholars at Harvard</a></h2>
+            <a href="/site/register" class="os-big-button">Get Your Site Now</a>
+            </div>
+        </div>
+      ',
+      'format' => 'filtered_html',
+    ),
+    'additional_classes' => '',
+  );
+  $export['iqss_scholars_fixed_header'] = $box;
+
+  $box = new stdClass();
+  $box->disabled = FALSE; /* Edit this to true to make a default box disabled initially */
+  $box->api_version = 1;
   $box->delta = 'iqss_scholars_fp_headertext';
   $box->plugin_key = 'simple';
   $box->title = '';
@@ -51,22 +73,6 @@ function iqss_scholars_front_default_box() {
   $box = new stdClass();
   $box->disabled = FALSE; /* Edit this to true to make a default box disabled initially */
   $box->api_version = 1;
-  $box->delta = 'iqss_scholars_fp_logoblock';
-  $box->plugin_key = 'simple';
-  $box->title = '';
-  $box->description = 'Scholars Logo';
-  $box->options = array(
-    'body' => array(
-      'value' => '<h1>Scholars at Harvard</h1>',
-      'format' => 'filtered_html',
-    ),
-    'additional_classes' => '',
-  );
-  $export['iqss_scholars_fp_logoblock'] = $box;
-
-  $box = new stdClass();
-  $box->disabled = FALSE; /* Edit this to true to make a default box disabled initially */
-  $box->api_version = 1;
   $box->delta = 'iqss_scholars_fp_learnmore';
   $box->plugin_key = 'simple';
   $box->title = '';
@@ -90,30 +96,22 @@ function iqss_scholars_front_default_box() {
   );
   $export['iqss_scholars_fp_learnmore'] = $box;
 
-  // Fixed position header for /websites & /learnmore.
   $box = new stdClass();
   $box->disabled = FALSE; /* Edit this to true to make a default box disabled initially */
   $box->api_version = 1;
-  $box->delta = 'iqss_scholars_fixed_header';
+  $box->delta = 'iqss_scholars_fp_logoblock';
   $box->plugin_key = 'simple';
   $box->title = '';
-  $box->description = 'Scholars fixed-position header.';
+  $box->description = 'Scholars Logo';
   $box->options = array(
     'body' => array(
-      'value' => '<div id="os-reasons_header" class="os-scholar-header">
-        <div class="os-scholar-header-wrap">
-            <h2><a href="/" title="Home" rel="home">Scholars at Harvard</a></h2>
-            <a href="/site/register" class="os-big-button">Get Your Site Now</a>
-            </div>
-        </div>
-      ',
+      'value' => '<h1>Scholars at Harvard</h1>',
       'format' => 'filtered_html',
     ),
     'additional_classes' => '',
   );
-  $export['iqss_scholars_fixed_header'] = $box;
+  $export['iqss_scholars_fp_logoblock'] = $box;
 
-  // Learn more toggle info.
   $box = new stdClass();
   $box->disabled = FALSE; /* Edit this to true to make a default box disabled initially */
   $box->api_version = 1;

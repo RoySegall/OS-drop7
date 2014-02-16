@@ -173,14 +173,57 @@ function _hwpi_branding_footer() {
       ),
     ),
     'copyright' => array(
-      '#markup' => t('<span class="harvard-copyright">Copyright &copy; 2013 The President and Fellows of Harvard College</span> | !privacy | !access', array(
-          '!privacy' => l('Privacy', 'http://www.harvard.edu/privacy-statement'),
+      '#markup' => t('<span class="harvard-copyright">Copyright &copy; @year The President and Fellows of Harvard College</span> !privacy | !access', array(
+          '!privacy' => variable_get('privacy_policy','')?'| '.l('Privacy', variable_get('privacy_policy')): '',
           '!access' => l('Accessibility', 'http://accessibility.harvard.edu/'),
+          '@year' => date('Y'),
         )),
     ),
   );
 
   return $footer;
+}
+
+/**
+ * Implements hook_cp_settings().
+ */
+function hwpi_cp_settings() {
+  // For non-user-1, only adds the responsive setting for HWPI-themed sites.
+  $theme = variable_get('theme_default');
+  if (!_is_hwpi_theme($theme) && !user_access('administer themes')) {
+    return;
+  }
+
+  $settings = array(
+    'enable_responsive' => array(
+      'group' => array(
+        '#title' => t('Responsive'),
+        '#id' => 'responsive',
+      ),
+      'form' => array(
+        '#type' => 'checkbox',
+        '#default_value' => variable_get('enable_responsive', FALSE),
+        '#title' => t('Enable responsive behaviors'),
+        '#description' => t('Responsive behaviors will change the layout of your page to fit the screens of smaller devices, such
+          as phones or tablets. Disabling this will prevent the layout from changing, but could make using your site more difficult
+          on smaller devices.'),
+      ),
+    ),
+    'privacy_policy' => array(
+      'group' => array(
+        '#title' => t('Privacy'),
+        '#id' => 'privacy',
+      ),
+      'form' => array(
+        '#type' => 'textfield',
+        '#default_value' => variable_get('privacy_policy', ''),
+        '#title' => t('Privacy Policy'),
+        '#description' => t('Enter a link to the privacy policy you wish to use for your site. Can be a link to a post on your own site.'),
+      )
+    )
+  );
+
+  return $settings;
 }
 
 /**
@@ -194,3 +237,72 @@ function hwpi_block_view_alter(&$render, $block) {
   }
 }
 
+/**
+ * Implements hook_node_insert().
+ */
+function hwpi_node_insert($node) {
+  // Only continues if the new node is an OG group type.
+  if (!og_is_group_type('node', $node->type)) {
+    return;
+  }
+
+  // Only continues to alter settings if the site's theme is HWPI.
+  $vsite = vsite_get_vsite($node->nid);
+  $theme = $vsite->controllers->variable->get('theme_default');
+  if (!_is_hwpi_theme($theme)) {
+    return;
+  }
+
+  // Sets all HWPI-theme-specific variable defaults.
+  hwpi_theme_set_defaults();
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter() for cp_appearance_theme_picker_form.
+ */
+function hwpi_form_cp_appearance_theme_picker_form_alter(&$form, &$form_state, $form_id) {
+  $form['#submit'][] = 'hwpi_theme_picker_form_submit';
+}
+
+/**
+ * Submit callback for cp_appearance_theme_picker_form.
+ */
+function hwpi_theme_picker_form_submit($form, &$form_state) {
+  // Only continues if a theme value is set.
+  if (!isset($form_state['values']['theme_default'])) {
+    return;
+  }
+
+  // Only continues if the selected theme is HWPI.
+  $selected_theme = $form_state['values']['theme_default'];
+  if (!_is_hwpi_theme($selected_theme)) {
+    return;
+  }
+
+  // Sets all HWPI-theme-specific variable defaults.
+  hwpi_theme_set_defaults();
+}
+
+/**
+ * Sets all HWPI-theme-specific variable defaults.
+ *
+ * @see hwpi_form_cp_appearance_theme_picker_form_alter()
+ * @see
+ */
+function hwpi_theme_set_defaults() {
+  // Declares settings specific to HWPI themes.
+  $settings = array(
+    'os_breadcrumbs_show_breadcrumbs' => 0,
+    'enable_responsive' => 1,
+  );
+
+  // Sets all HWPI-theme-specific settings.
+  foreach ($settings as $name => $value) {
+    if ($space = spaces_get_space()) {
+      $space->controllers->variable->set($name, $value);
+    }
+    else {
+      variable_set($name, $value);
+    }
+  }
+}

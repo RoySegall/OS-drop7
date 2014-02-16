@@ -4,7 +4,7 @@ Feature: Testing the creation of the a new site.
   Scenario: Test the creation of a new site and verify that we don't get JS alert.
     Given I am logging in as "admin"
      When I visit "/"
-      And I click "Create your site"
+      And I click "Create a site"
       And I fill "edit-domain" with random text
       And I press "edit-submit"
       And I visit the site "random"

@@ -26,7 +26,7 @@ function vsite_vocab_get_vocabularies($vsite = false){
     }
   }
 
-  // No avalible vocabs
+  // No available vocabs
   return array();
 }
 

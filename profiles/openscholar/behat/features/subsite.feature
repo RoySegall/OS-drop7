@@ -4,12 +4,12 @@ Feature:
 
   @api
   Scenario: Test view subsites for user with permission
-    Given I am logging in as "john"
+    Given I am logging in as "alexander"
      When I visit "edison/subsites"
      Then I should see "Tesla"
 
   @api
   Scenario: Test view subsites for user with no permission
-    Given I am logging in as "alexander"
+    Given I am logging in as "michelle"
      When I go to "edison/subsites"
      Then I should get a "403" HTTP response

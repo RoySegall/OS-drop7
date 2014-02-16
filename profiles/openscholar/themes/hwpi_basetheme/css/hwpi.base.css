@@ -120,6 +120,12 @@ table caption {
   color: #1e1e1e;
 }
 
+@-moz-document url-prefix() { 
+a.biblio-abstract-link.toggle {
+    background-position: 0 -397px;
+ }
+}
+
 
 /* Block Styles */
 #content-column .block ul {
@@ -133,6 +139,11 @@ table caption {
 .block .node:last-child {
     margin-bottom: 0;
 }
+
+.block .node:only-child {
+    margin-bottom: 20px;
+}
+
 
 /* Search Results */
 .page-search input.form-text {
@@ -390,7 +401,7 @@ ol.search-results li.search-result:last-child {
 }
 
 .view-os-events ul li .node .field-name-field-date {
-  margin-bottom: 18px;
+  margin-bottom: 0;
 }
 
 .block .view-os-events.view-id-os_events .view-header {
@@ -398,6 +409,8 @@ ol.search-results li.search-result:last-child {
 }
 
 /* Views Node Lists */
+
+.page-taxonomy.page-taxonomy-term .node-teaser.article,
 .view .node-teaser {
   margin: 0 0 20px;
   padding: 20px 0 40px;
@@ -446,17 +459,28 @@ ol.search-results li.search-result:last-child {
   margin-left: 70px;
 }
 
-.node-event .field-name-field-date {
+/* Gray color for both Date and Location fields */
+.node-event .field-name-field-date,
+.node-event .field-name-field-event-location {
   color: #6D6D6D;
+}
+
+.node-event .field-name-field-event-location {
+	margin-bottom: 10px;
+}
+
+
+/* Adds bottom margin to event date fields everywhere */
+.node-event .field-name-field-date {
   margin-bottom: 7px;
 }
 
-.node-event .field-name-field-date .field-label {
-  float: left;
+/* Overrides bottom margin for event fields on full node view only. */
+.node-event .field-name-field-date.view-mode-full.field-label-inline {
+    margin-bottom: 0px;
 }
-
-.node-event .field-name-field-date.field-label-above .field-label {
-	float: none;
+.node-event .field-name-field-event-location.view-mode-full .field-label {
+    margin-bottom: 7px;
 }
 
 .node-event .field-name-field-date .field-item div {
@@ -532,6 +556,7 @@ ol.search-results li.search-result:last-child {
 /* node person */
  .node-type-person #content-column .node-person h1.node-title {
   font-size: 38px;
+  line-height: 35px;
 }
 
 .node-type-person .node-person .field-name-field-professional-title {
@@ -543,12 +568,12 @@ ol.search-results li.search-result:last-child {
   border-top: 1px solid #e7e7e7;
   padding-top: 35px;
   margin-top: 20px;
-  margin-bottom: 60px;
+  margin-bottom: 30px;
 }
 
-article.node-teaser.node-person .field-name-field-person-photo ~ .node-header,
 article.node-teaser.node-person .field-name-field-person-photo ~ .node-content {
-	margin-left: 6em;
+  float: left;
+  margin-left: 0;
 }
 
 #content-column article.node-teaser.node-person .field-name-field-person-photo ~ .node-header {
@@ -560,6 +585,13 @@ article.node-teaser.node-person .field-name-field-person-photo ~ .node-content {
 .node-person.node-sidebar-teaser .field-name-field-person-photo {
   float: left;
   margin-top: 5px;
+  display: table-cell;
+}
+
+/* An empty div styling in case of no default image */
+.node-person .no-default-image {
+  width: 75px;
+  height: 75px;
 }
 
 .node-type-person #content .node-person .field-name-body {
@@ -619,9 +651,28 @@ article.node-teaser.node-person .field-name-field-person-photo ~ .node-content {
   padding: 15px 0 30px;
 }
 
+.block-boxes-os_boxes_manual_list .node-teaser.node-person {
+  padding: 0 0 30px;
+}
+
+.person-teaser-wrapper {
+	display:table-cell;
+	vertical-align:top;
+}
+
 .node-link.node-teaser {
 	padding: 10px 0 5px;
 	}
+
+
+.sidebar .node-person .person-teaser-wrapper,
+.sidebar .block-boxes-os_boxes_manual_list .node-person.node-teaser .person-teaser-wrapper,
+.front .region-content-first .block-boxes-os_boxes_manual_list .node-person.node-teaser .person-teaser-wrapper,
+.front .region-content-second .block-boxes-os_boxes_manual_list .node-person.node-teaser .person-teaser-wrapper,
+.front .region-content-bottom .block-boxes-os_boxes_manual_list .node-person.node-teaser .person-teaser-wrapper {
+	display:inline;
+}
+
 
 
 /**
@@ -631,15 +682,12 @@ LIST OF POSTS - PERSON TEASER IN SIDEBAR
 .sidebar .block-boxes-os_sv_list_box .node.node-person.article.with-person-photo .pic-bio {
      margin-right: 0;
 }
-/* I DONT THINK THIS IS NEEDED ANYMORE,BUT LEAVING IN UNTIL TESTED
-.sidebar .block-boxes-os_sv_list_box .node.node-person.node-teaser.article.with-person-photo .node-header {
-	margin-left: 95px;
-}
-*/
+
+
 /* Node FAQ */
 .node-teaser.node-faq {
   line-height: 19px;
-  padding: 5px 0 30px;
+  padding: 5px 0 2px;
 }
 
 .sidebar .node-teaser.node-faq {
@@ -752,6 +800,10 @@ h2.comment-title.comment-form {
   text-decoration: underline;
 }
 
+a.node-readmore {
+  text-decoration: underline;
+}
+
 
 /* Files tables, for attached files to nodes such as PDF's */
 table.os-files-other-list {
@@ -860,5 +912,8 @@ ul.pager li.pager-item {
   float: left;
 }
 
+.two-sidebars .sidebar .node-person.node-teaser .field-name-field-email {
+  float: none;
+}
 
 

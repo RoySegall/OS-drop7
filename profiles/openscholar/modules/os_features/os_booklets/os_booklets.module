@@ -23,6 +23,14 @@ function os_booklets_os_app_info() {
     'views tabs' => array(
       'os_booklets' => array('page'),
     ),
+    'browse_pages' => array(
+      'book' => array(
+        'url' => 'browse/documents',
+        'title' => t('Documents'),
+        'display_mode' => 'teaser',
+        'menu_item' => 'documents',
+      ),
+    ),
   );
 
   return $apps;

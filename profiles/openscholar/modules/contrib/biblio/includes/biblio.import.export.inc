@@ -180,7 +180,7 @@ function biblio_import_form($form, &$form_state) {
   }
   else {
     drupal_set_message(t("You are not authorized to access the biblio import page"), 'error');
-    print theme('page', '');
+    print theme('page');
   }
 }
 

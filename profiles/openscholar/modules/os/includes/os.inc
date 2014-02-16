@@ -29,21 +29,17 @@ define('OS_PRIVATE_APP', 2);
 /**
  * Returns available bundles, with option to filter by spaces_features status.
  *
- * @param $privacy
+ * @param $include_status
  *  Can be array:
  *    - 0: disabled
  *    - 2: private
  *    - 1: public
  *  TRUE returns all
  *
- * @param $space_type
- * @param $reset
- *   (reset features cache)
- *
  * @return
  *  Array keyed with the bundle ID and the bundle name as value.
  */
-function os_get_bundles($include_status = array(OS_PUBLIC_APP), $space_type = 'og', $reset = FALSE) {
+function os_get_bundles($include_status = array(OS_PUBLIC_APP)) {
   $return_all = FALSE;
   if ($include_status === TRUE) {
     $return_all = TRUE;
@@ -83,6 +79,62 @@ function os_get_bundles($include_status = array(OS_PUBLIC_APP), $space_type = 'o
   drupal_alter('os_get_bundles', $bundles);
 
   return $bundles;
+}
+
+/**
+ * Returns available bundles per OS app, with option to filter by status.
+ *
+ * @param $include_status
+ *  spaces_features status. Can be array:
+ *    - 0: disabled
+ *    - 2: private
+ *    - 1: public
+ *  TRUE returns all
+ *
+ * @return
+ *  Array keyed with the application name, with an array of bundle IDs and
+ *  their bundle name as values.
+ */
+function os_get_bundles_per_app($include_status = array(OS_PUBLIC_APP)) {
+  $return_all = FALSE;
+  if ($include_status === TRUE) {
+    $return_all = TRUE;
+  }
+  elseif (!is_array($include_status)) {
+    $include_status = array($include_status);
+  }
+
+  $bundles_per_app = array();
+  $app_info = os_app_info();
+  $spaces_features = variable_get('spaces_features', array());
+
+  foreach ($app_info as $app_name => $info) {
+    if (!isset($info['nodetypes'])) {
+      continue;
+    }
+    $module = $info['module'];
+    if (!$return_all && (!isset($spaces_features[$module]) || !in_array($spaces_features[$module], $include_status))) {
+      continue;
+    }
+
+    $_node_types = _node_types_build();
+    foreach ($info['nodetypes'] as $nodetype) {
+      if (empty($bundles_per_app[$app_name])) {
+        $bundles_per_app[$app_name] = array();
+      }
+      if (isset($_node_types->names[$nodetype])) {
+        $bundles_per_app[$app_name][$nodetype] = $_node_types->names[$nodetype];
+      }
+      else {
+        $bundles_per_app[$app_name][$nodetype] = $module;
+      }
+    }
+  }
+
+  // Sort the bundles in alphabetical order.
+  asort($bundles_per_app);
+
+  return $bundles_per_app;
 }
 
 /**

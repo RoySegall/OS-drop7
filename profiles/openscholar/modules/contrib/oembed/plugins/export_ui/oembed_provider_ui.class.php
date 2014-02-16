@@ -20,7 +20,7 @@ class oembed_provider_ui extends ctools_export_ui {
     $form['endpoint'] = array(
       '#type'          => 'textfield',
       '#title'         => t('Endpoint'),
-      '#description'   => t('The endpoint where OEmbed requests are going to be sent.'),
+      '#description'   => t('The endpoint where oEmbed requests are going to be sent.'),
       '#size'          => 32,
       '#maxlength'     => 255,
       '#required'      => TRUE,
@@ -41,7 +41,7 @@ class oembed_provider_ui extends ctools_export_ui {
    */
   function edit_form_submit(&$form, &$form_state) {
     // Clear the oEmbed provider cache.
-    oembedcore_providers_reset();
+    oembed_providers_reset();
     return parent::edit_form_submit($form, $form_state);
   }
 
@@ -50,7 +50,7 @@ class oembed_provider_ui extends ctools_export_ui {
    */
   function edit_form_import_submit($form, &$form_state) {
     // Clear the oEmbed provider cache.
-    oembedcore_providers_reset();
+    oembed_providers_reset();
     return parent::edit_form_import_submit($form, $form_state);
   }
 
@@ -59,7 +59,7 @@ class oembed_provider_ui extends ctools_export_ui {
    */
   function delete_form_submit(&$form_state) {
     // Clear the oEmbed provider cache.
-    oembedcore_providers_reset();
+    oembed_providers_reset();
     return parent::delete_form_submit($form_state);
   }
 
@@ -68,7 +68,7 @@ class oembed_provider_ui extends ctools_export_ui {
    */
   function set_item_state($state, $js, $input, $item) {
     // Clear the oEmbed provider cache.
-    oembedcore_providers_reset();
+    oembed_providers_reset();
     return parent::set_item_state($state, $js, $input, $item);
   }
 }

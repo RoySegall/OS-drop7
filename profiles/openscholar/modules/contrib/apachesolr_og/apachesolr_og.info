@@ -6,9 +6,9 @@ core = 7.x
 dependencies[] = apachesolr
 dependencies[] = og
 
-
-; Information added by drush on 2013-12-02
-version = "5fda19fc208bd62713be99a839aed0528d9d3db7"
+; Information added by drupal.org packaging script on 2012-10-22
+version = "7.x-1.0"
+core = "7.x"
 project = "apachesolr_og"
-datestamp = "1385971818"
+datestamp = "1350923471"
 

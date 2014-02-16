@@ -162,7 +162,7 @@ function vsite_domain_cp_settings() {
   }   
   
   //ensure we have access to change domains or we're in a subsite whose parent provides domains
-  $parent = (isset($vsite->group->field_group_parent)) ? vsite_get_vsite($vsite->group->field_group_parent[LANGUAGE_NONE][0]['target_id']) : FALSE;
+  $parent = (!empty($vsite->group->field_group_parent)) ? vsite_get_vsite($vsite->group->field_group_parent[LANGUAGE_NONE][0]['target_id']) : FALSE;
   if (!(($parent && $parent->group->field_subsite_domains) || user_access('change vsite domain'))) {
     return;
   }
@@ -261,3 +261,14 @@ function _vsite_domain_processed_purls($purl = FALSE) {
   return $processed;
 }
 
+/**
+ * Implements hook_form_FORM_ID_alter() for cp_settings_form().
+ */
+function vsite_domain_form_cp_settings_form_alter(&$form, &$form_state, $form_id) {
+  // Adds the include file to the form_state to allow AJAX on the form.
+  $form_state['build_info']['files'][] = array(
+    'type' => 'inc',
+    'module' => 'vsite_domain',
+    'name' => 'includes/form',
+  );
+}

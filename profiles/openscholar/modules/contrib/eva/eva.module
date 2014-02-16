@@ -14,7 +14,7 @@ function eva_views_api() {
 
 
 /**
- * Implements hook_field_extra_fields().
+ * Implements hook_content_extra_fields().
  */
 function eva_field_extra_fields() {
   $extras = array();
@@ -22,21 +22,14 @@ function eva_field_extra_fields() {
   
   foreach ($views as $entity => $data) {
     foreach ($data as $view) {
-      if ($view['bundles']) {
-        $bundles = $view['bundles'];
-      }
-      else {  // If no bundles are set, apply to all bundles.
-        $entity_info = entity_get_info($entity);
-        $bundles = array_keys($entity_info['bundles']);
-      }
-      foreach ($bundles as $bundle) {
+      foreach ($view['bundles'] as $bundle) {
         $extras[$entity][$bundle]['display'][$view['name'] . '_' . $view['display']] = array(
           'label' => (empty($view['title'])) ? $view['name'] : $view['title'], 
           'description' => $view['title'], 
           'weight' => 10,
         );
         // Provide a separate extra field for the exposed form if there is any.
-        if (!empty($view['exposed form']) && !empty($view['exposed form split'])) {
+        if ($view['exposed form']) {
           $extras[$entity][$bundle]['display'][$view['name'] . '_' . $view['display'] . '_' . 'form'] = array(
             'label' => ((empty($view['title'])) ? $view['name'] : $view['title']) . ' (' . t('Exposed form') . ')', 
             'description' => t('The exposed filter form of the view.'),
@@ -129,7 +122,6 @@ function eva_get_views($type = NULL, $reset = FALSE) {
 
     // If it's still empty rebuild it.
     if (!isset($used_views)) {
-      $used_views = array();
       // Trigger a rebuild of the views object cache, which may not be fully loaded.
       ctools_include('export');
       ctools_export_load_object_reset('views_view');
@@ -147,7 +139,6 @@ function eva_get_views($type = NULL, $reset = FALSE) {
           'display' => $display_id,
           'bundles' => $view->display_handler->get_option('bundles'),
           'exposed form' => $view->display_handler->uses_exposed(),
-          'exposed form split' => $view->display_handler->get_option('exposed_form_as_field'),
         );
         $view->destroy();
       }

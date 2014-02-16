@@ -28,6 +28,7 @@
     padding-right: 15px;
 }
 
+
 #menu-bar ul.nice-menu .menuparent.over > a,
 #menu-bar ul.nice-menu .menuparent a:hover,
 #menu-bar ul.nice-menu .menuparent a.active {
@@ -36,13 +37,28 @@
     padding-right: 15px;
 }
 
+#menu-bar ul.nice-menu ul .menuparent.over > a,
+#menu-bar ul.nice-menu ul .menuparent a:hover,
+#menu-bar ul.nice-menu ul .menuparent a.active {
+    background: none;
+     color:inherit;
+}
+
 #menu-bar ul.nice-menu li {
     margin-right: 20px;
   
 }
+
+#menu-bar ul.nice-menu li.last {
+    margin-right: 0;
+}
  
 ul.nice-menu ul {
     top: 3.3em !important;
+}
+
+ul.nice-menu ul ul {
+    top: 0 !important;
 }
 
 #menu-bar ul.nice-menu ul {
@@ -150,9 +166,36 @@ ul.nice-menu ul {
 	background-color: #E6E6E3 !important;
 }
 
+.block-boxes-os_taxonomy_fbt.navigation a.active,
 .section-nav a.active {
 	color: #333;
 }
+
+/* TAXONOMY AS NAVIGATION BASE STYLES*/
+.block-boxes-os_taxonomy_fbt.navigation a {
+	color: #215990;
+	}
+
+.block-boxes-os_taxonomy_fbt.navigation a:hover {
+    background-color: #e3e3e1;
+  
+}
+
+.block-boxes-os_taxonomy_fbt.navigation ul li {
+    background-color: #FFF;
+  }
+
+.block-boxes-os_taxonomy_fbt.navigation ul {
+    border-bottom: 1px solid #EBE3DF;
+    border-left: 1px solid #EBE3DF;
+    border-right: 1px solid #EBE3DF;
+  }
+
+
+.block-boxes-os_taxonomy_fbt.navigation ul li {
+	border-top: 1px solid #EBE3DF;
+}
+
 
 /* BOOK NAV IN CONTENT AREA */
 #content-column .book-menu a.active {

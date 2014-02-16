@@ -22,7 +22,7 @@
  * Return the current vocabularies
  *
  * @return array|bool
- *   An array of all avalible vocabulary objects, indexed by vid, or FALSE.
+ *   An array of all available vocabulary objects, indexed by vid, or FALSE.
  */
 function os_get_vocabularies(){
 
@@ -33,10 +33,36 @@ function os_get_vocabularies(){
   }
 
   return taxonomy_get_vocabularies();
-
-  return FALSE;
 }
 
+/**
+ * Utility to get vocabulary entities related to entity type and bundle.
+ *
+ * @param $entity_type
+ *   Entity type name.
+ * @param $bundle
+ *   Bundle name.
+ *
+ * @return mixed
+ *   Array of vocabulary entities.
+ */
+function os_get_vocabularies_by_bundle($entity_type, $bundle) {
+  if (!$vsite = vsite_get_vsite()) {
+    return;
+  }
+
+  $query = db_select('og_vocab', 'ogv');
+  $query->join('og_vocab_relation', 'ogr', 'ogr.vid = ogv.vid');
+  $result = $query
+    ->fields('ogv')
+    ->condition('ogv.entity_type', $entity_type)
+    ->condition('ogv.bundle', $bundle)
+    ->condition('ogr.gid', $vsite->id)
+    ->execute()
+    ->fetchAllAssoc('vid');
+
+  return taxonomy_vocabulary_load_multiple(array_keys($result));
+}
 
 /**
  * Creates a new drupal vocabulary

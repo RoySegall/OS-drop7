@@ -1,6 +1,4 @@
 <?php
-// $Id$
-
 /**
  * @file
  * os_biocv.context.inc
@@ -13,9 +11,7 @@ function os_biocv_context_default_contexts() {
   $export = array();
 
   $context = new stdClass();
-  /* Edit this to true to make a default context disabled initially */
-
-  $context->disabled = FALSE;
+  $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
   $context->api_version = 3;
   $context->name = 'biocv_biocv';
   $context->description = '';
@@ -39,6 +35,8 @@ function os_biocv_context_default_contexts() {
       ),
     ),
   );
+  $context->reactions = '';
+  $context->condition_mode = 0;
 
   // Translatables
   // Included for use with string extractors like potx.
@@ -47,4 +45,3 @@ function os_biocv_context_default_contexts() {
 
   return $export;
 }
-

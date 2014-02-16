@@ -18,17 +18,39 @@ function os_spaces_presets() {
   $spaces_presets->description = '';
   $spaces_presets->space_type = 'og';
   $spaces_presets->value = array(
-    'bundles' => array('department'),
+    'bundles' => array(
+      0 => 'department',
+    ),
     'og_tasks' => array(
-      'vsite_preset_section_about',
-      'vsite_preset_section_academics',
-      'vsite_preset_section_research',
-      'vsite_preset_section_activities',
-      'vsite_preset_section_resources',
-      'vsite_preset_section_news_&_events',
-      'vsite_preset_menu_order',
+      0 => 'vsite_preset_section_about',
+      1 => 'vsite_preset_section_academics',
+      2 => 'vsite_preset_section_research',
+      3 => 'vsite_preset_section_activities',
+      4 => 'vsite_preset_section_resources',
+      5 => 'vsite_preset_section_news_&_events',
+      6 => 'vsite_preset_menu_order',
     ),
     'variable' => array(
+      'pathauto_node_biblio_pattern' => '[vsite:site-purl]/publications/[node:title]',
+      'pathauto_node_bio_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_blog_pattern' => '[vsite:site-purl]/blog/[node:original:created:custom:Y]/[node:original:created:custom:m]/[node:title]',
+      'pathauto_node_book_pattern' => '[vsite:site-purl]/book/[node:title]',
+      'pathauto_node_cv_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_class_pattern' => '[vsite:site-purl]/classes/[node:title]',
+      'pathauto_node_class_material_pattern' => '[vsite:site-purl]/classes/[node:field_class]/materials/[node:title]',
+      'pathauto_node_event_pattern' => '[vsite:site-purl]/event/[node:title]',
+      'pathauto_node_faq_pattern' => '[vsite:site-purl]/faq/[node:title]',
+      'pathauto_node_feed_pattern' => '[vsite:site-purl]/feeds/[node:title]',
+      'pathauto_node_feed_importer_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_link_pattern' => '[vsite:site-purl]/links/[node:title]',
+      'pathauto_node_media_gallery_pattern' => '[vsite:site-purl]/galleries/[node:title]',
+      'pathauto_node_news_pattern' => '[vsite:site-purl]/news/[node:title]',
+      'pathauto_node_page_pattern' => '[vsite:site-purl]/[node:title]',
+      'pathauto_node_person_pattern' => '[vsite:site-purl]/people/[node:title]',
+      'pathauto_node_presentation_pattern' => '[vsite:site-purl]/presentations/[node:title]',
+      'pathauto_node_software_project_pattern' => '[vsite:site-purl]/software/[node:title]',
+      'pathauto_node_software_release_pattern' => '[vsite:site-purl]/software/[node:field_software_project]/[node:field_software_version]',
+      'pathauto_taxonomy_term_pattern' => '[vsite:site-purl]/[term:vocabulary]/[term:name]',
       'vsite_preset_menu_order' => array(
         'primary-menu' => array(
           'HOME' => -8,
@@ -50,26 +72,26 @@ function os_spaces_presets() {
         'os_links' => '1',
       ),
       'spaces_features_available' => array(
-        'os_blog',
-        'os_booklets',
-        'os_classes',
-        'os_dataverse',
-        'os_events',
-        'os_faq',
-        'os_files_private',
-        'os_image_gallery',
-        'os_links',
-        'os_news',
-        'os_pages',
-        'os_presentations',
-        'os_profiles',
-        'os_publications',
-        'os_reader',
-        'os_software',
-        'harvard_courses',
+        0 => 'os_blog',
+        1 => 'os_booklets',
+        2 => 'os_classes',
+        3 => 'os_dataverse',
+        4 => 'os_events',
+        5 => 'os_faq',
+        6 => 'os_files_private',
+        7 => 'os_image_gallery',
+        8 => 'os_links',
+        9 => 'os_news',
+        10 => 'os_pages',
+        11 => 'os_presentations',
+        12 => 'os_profiles',
+        13 => 'os_publications',
+        14 => 'os_reader',
+        15 => 'os_software',
+        16 => 'harvard_courses',
       ),
       'site_frontpage' => 'home',
-      'theme_default' => 'ballard',
+      'theme_default' => 'hwpi_classic',
       'os_breadcrumbs_show_breadcrumbs' => 0,
     ),
     'menus' => array(
@@ -82,7 +104,6 @@ function os_spaces_presets() {
           'p1' => 900,
           'depth' => 1,
           'router_path' => 'home',
-          // @todo move these defaults to a hook_preset_alter() ?
           'menu_name' => 'primary-menu',
           'external' => 1,
           'weight' => 0,
@@ -177,8 +198,6 @@ function os_spaces_presets() {
   // Translatables
   // Included for use with string extractors like potx.
   t('HWP Academic');
-  t('HOME');
-  t('People');
   $export['os_department'] = $spaces_presets;
 
   $spaces_presets = new stdClass();
@@ -189,30 +208,52 @@ function os_spaces_presets() {
   $spaces_presets->description = '';
   $spaces_presets->space_type = 'og';
   $spaces_presets->value = array(
-    'bundles' => array('department'),
+    'bundles' => array(
+      0 => 'department',
+    ),
     'variable' => array(
+      'pathauto_node_biblio_pattern' => '[vsite:site-purl]/publications/[node:title]',
+      'pathauto_node_bio_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_blog_pattern' => '[vsite:site-purl]/blog/[node:original:created:custom:Y]/[node:original:created:custom:m]/[node:title]',
+      'pathauto_node_book_pattern' => '[vsite:site-purl]/book/[node:title]',
+      'pathauto_node_cv_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_class_pattern' => '[vsite:site-purl]/classes/[node:title]',
+      'pathauto_node_class_material_pattern' => '[vsite:site-purl]/classes/[node:field_class]/materials/[node:title]',
+      'pathauto_node_event_pattern' => '[vsite:site-purl]/event/[node:title]',
+      'pathauto_node_faq_pattern' => '[vsite:site-purl]/faq/[node:title]',
+      'pathauto_node_feed_pattern' => '[vsite:site-purl]/feeds/[node:title]',
+      'pathauto_node_feed_importer_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_link_pattern' => '[vsite:site-purl]/links/[node:title]',
+      'pathauto_node_media_gallery_pattern' => '[vsite:site-purl]/galleries/[node:title]',
+      'pathauto_node_news_pattern' => '[vsite:site-purl]/news/[node:title]',
+      'pathauto_node_page_pattern' => '[vsite:site-purl]/[node:title]',
+      'pathauto_node_person_pattern' => '[vsite:site-purl]/people/[node:title]',
+      'pathauto_node_presentation_pattern' => '[vsite:site-purl]/presentations/[node:title]',
+      'pathauto_node_software_project_pattern' => '[vsite:site-purl]/software/[node:title]',
+      'pathauto_node_software_release_pattern' => '[vsite:site-purl]/software/[node:field_software_project]/[node:field_software_version]',
+      'pathauto_taxonomy_term_pattern' => '[vsite:site-purl]/[term:vocabulary]/[term:name]',
       'spaces_features' => array(
         'os' => '1',
         'os_pages' => '1',
       ),
       'spaces_features_available' => array(
-        'os_blog',
-        'os_booklets',
-        'os_classes',
-        'os_dataverse',
-        'os_events',
-        'os_faq',
-        'os_files_private',
-        'os_image_gallery',
-        'os_links',
-        'os_news',
-        'os_pages',
-        'os_presentations',
-        'os_profiles',
-        'os_publications',
-        'os_reader',
-        'os_software',
-        'harvard_courses',
+        0 => 'os_blog',
+        1 => 'os_booklets',
+        2 => 'os_classes',
+        3 => 'os_dataverse',
+        4 => 'os_events',
+        5 => 'os_faq',
+        6 => 'os_files_private',
+        7 => 'os_image_gallery',
+        8 => 'os_links',
+        9 => 'os_news',
+        10 => 'os_pages',
+        11 => 'os_presentations',
+        12 => 'os_profiles',
+        13 => 'os_publications',
+        14 => 'os_reader',
+        15 => 'os_software',
+        16 => 'harvard_courses',
       ),
       'site_frontpage' => 'home',
       'theme_default' => 'hwpi_classic',
@@ -223,56 +264,7 @@ function os_spaces_presets() {
   // Translatables
   // Included for use with string extractors like potx.
   t('Department Minimal');
-  t('Minimal');
   $export['os_department_minimal'] = $spaces_presets;
-
-  $spaces_presets = new stdClass();
-  $spaces_presets->disabled = FALSE; /* Edit this to true to make a default spaces_presets disabled initially */
-  $spaces_presets->api_version = 3;
-  $spaces_presets->name = 'os_scholar';
-  $spaces_presets->title = 'OS Scholar';
-  $spaces_presets->description = '';
-  $spaces_presets->space_type = 'og';
-  $spaces_presets->value = array(
-    'bundles' => array('personal'),
-    'variable' => array(
-      'spaces_features' => array(
-        'os' => '1',
-        'os_pages' => '1',
-        'os_classes' => '1',
-        'os_publications' => '1',
-        'os_biocv' => 1,
-      ),
-      'spaces_features_available' => array(
-        'os_biocv',
-        'os_blog',
-        'os_booklets',
-        'os_classes',
-        'os_dataverse',
-        'os_events',
-        'os_faq',
-        'os_files_private',
-        'os_image_gallery',
-        'os_links',
-        'os_news',
-        'os_pages',
-        'os_presentations',
-        'os_profiles',
-        'os_publications',
-        'os_reader',
-        'os_software',
-        'harvard_courses',
-      ),
-      'site_frontpage' => 'home',
-      'theme_default' => 'cleanblue',
-      'os_breadcrumbs_show_breadcrumbs' => 0,
-    ),
-  );
-
-  // Translatables
-  // Included for use with string extractors like potx.
-  t('OS Scholar');
-  $export['os_scholar'] = $spaces_presets;
 
   $spaces_presets = new stdClass();
   $spaces_presets->disabled = FALSE; /* Edit this to true to make a default spaces_presets disabled initially */
@@ -282,8 +274,30 @@ function os_spaces_presets() {
   $spaces_presets->description = '';
   $spaces_presets->space_type = 'og';
   $spaces_presets->value = array(
-    'bundles' => array('project'),
+    'bundles' => array(
+      0 => 'project',
+    ),
     'variable' => array(
+      'pathauto_node_biblio_pattern' => '[vsite:site-purl]/publications/[node:title]',
+      'pathauto_node_bio_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_blog_pattern' => '[vsite:site-purl]/blog/[node:original:created:custom:Y]/[node:original:created:custom:m]/[node:title]',
+      'pathauto_node_book_pattern' => '[vsite:site-purl]/book/[node:title]',
+      'pathauto_node_cv_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_class_pattern' => '[vsite:site-purl]/classes/[node:title]',
+      'pathauto_node_class_material_pattern' => '[vsite:site-purl]/classes/[node:field_class]/materials/[node:title]',
+      'pathauto_node_event_pattern' => '[vsite:site-purl]/event/[node:title]',
+      'pathauto_node_faq_pattern' => '[vsite:site-purl]/faq/[node:title]',
+      'pathauto_node_feed_pattern' => '[vsite:site-purl]/feeds/[node:title]',
+      'pathauto_node_feed_importer_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_link_pattern' => '[vsite:site-purl]/links/[node:title]',
+      'pathauto_node_media_gallery_pattern' => '[vsite:site-purl]/galleries/[node:title]',
+      'pathauto_node_news_pattern' => '[vsite:site-purl]/news/[node:title]',
+      'pathauto_node_page_pattern' => '[vsite:site-purl]/[node:title]',
+      'pathauto_node_person_pattern' => '[vsite:site-purl]/people/[node:title]',
+      'pathauto_node_presentation_pattern' => '[vsite:site-purl]/presentations/[node:title]',
+      'pathauto_node_software_project_pattern' => '[vsite:site-purl]/software/[node:title]',
+      'pathauto_node_software_release_pattern' => '[vsite:site-purl]/software/[node:field_software_project]/[node:field_software_version]',
+      'pathauto_taxonomy_term_pattern' => '[vsite:site-purl]/[term:vocabulary]/[term:name]',
       'spaces_features' => array(
         'os' => '1',
         'os_pages' => '1',
@@ -293,26 +307,26 @@ function os_spaces_presets() {
         'os_links' => '1',
       ),
       'spaces_features_available' => array(
-        'os_blog',
-        'os_booklets',
-        'os_classes',
-        'os_dataverse',
-        'os_events',
-        'os_faq',
-        'os_files_private',
-        'os_image_gallery',
-        'os_links',
-        'os_news',
-        'os_pages',
-        'os_presentations',
-        'os_profiles',
-        'os_publications',
-        'os_reader',
-        'os_software',
-        'harvard_courses',
+        0 => 'os_blog',
+        1 => 'os_booklets',
+        2 => 'os_classes',
+        3 => 'os_dataverse',
+        4 => 'os_events',
+        5 => 'os_faq',
+        6 => 'os_files_private',
+        7 => 'os_image_gallery',
+        8 => 'os_links',
+        9 => 'os_news',
+        10 => 'os_pages',
+        11 => 'os_presentations',
+        12 => 'os_profiles',
+        13 => 'os_publications',
+        14 => 'os_reader',
+        15 => 'os_software',
+        16 => 'harvard_courses',
       ),
       'site_frontpage' => 'home',
-      'theme_default' => 'cleanblue',
+      'theme_default' => 'hwpi_classic',
       'os_breadcrumbs_show_breadcrumbs' => 0,
     ),
   );
@@ -321,6 +335,88 @@ function os_spaces_presets() {
   // Included for use with string extractors like potx.
   t('Project Minimal');
   $export['os_project'] = $spaces_presets;
+
+  $spaces_presets = new stdClass();
+  $spaces_presets->disabled = FALSE; /* Edit this to true to make a default spaces_presets disabled initially */
+  $spaces_presets->api_version = 3;
+  $spaces_presets->name = 'os_scholar';
+  $spaces_presets->title = 'Personal Minimal';
+  $spaces_presets->description = '';
+  $spaces_presets->space_type = 'og';
+  $spaces_presets->value = array(
+    'bundles' => array(
+      0 => 'personal',
+    ),
+    'variable' => array(
+      'pathauto_node_biblio_pattern' => '[vsite:site-purl]/publications/[node:title]',
+      'pathauto_node_bio_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_blog_pattern' => '[vsite:site-purl]/blog/[node:original:created:custom:Y]/[node:original:created:custom:m]/[node:title]',
+      'pathauto_node_book_pattern' => '[vsite:site-purl]/book/[node:title]',
+      'pathauto_node_cv_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_class_pattern' => '[vsite:site-purl]/classes/[node:title]',
+      'pathauto_node_class_material_pattern' => '[vsite:site-purl]/classes/[node:field_class]/materials/[node:title]',
+      'pathauto_node_event_pattern' => '[vsite:site-purl]/event/[node:title]',
+      'pathauto_node_faq_pattern' => '[vsite:site-purl]/faq/[node:title]',
+      'pathauto_node_feed_pattern' => '[vsite:site-purl]/feeds/[node:title]',
+      'pathauto_node_feed_importer_pattern' => '[vsite:site-purl]/',
+      'pathauto_node_link_pattern' => '[vsite:site-purl]/links/[node:title]',
+      'pathauto_node_media_gallery_pattern' => '[vsite:site-purl]/galleries/[node:title]',
+      'pathauto_node_news_pattern' => '[vsite:site-purl]/news/[node:title]',
+      'pathauto_node_page_pattern' => '[vsite:site-purl]/[node:title]',
+      'pathauto_node_person_pattern' => '[vsite:site-purl]/people/[node:title]',
+      'pathauto_node_presentation_pattern' => '[vsite:site-purl]/presentations/[node:title]',
+      'pathauto_node_software_project_pattern' => '[vsite:site-purl]/software/[node:title]',
+      'pathauto_node_software_release_pattern' => '[vsite:site-purl]/software/[node:field_software_project]/[node:field_software_version]',
+      'pathauto_taxonomy_term_pattern' => '[vsite:site-purl]/[term:vocabulary]/[term:name]',
+      'spaces_features' => array(
+        'os' => '1',
+        'os_pages' => 1,
+        'os_classes' => 1,
+        'os_publications' => 1,
+        'os_biocv' => 1,
+        'os_blog' => 1,
+        'os_booklets' => 1,
+        'os_dataverse' => 1,
+        'os_events' => 1,
+        'os_faq' => 1,
+        'os_image_gallery' => 1,
+        'os_links' => 1,
+        'os_news' => 1,
+        'os_presentations' => 1,
+        'os_profiles' => 1,
+        'os_reader' => 1,
+        'os_software' => 1,
+      ),
+      'spaces_features_available' => array(
+        0 => 'os_biocv',
+        1 => 'os_blog',
+        2 => 'os_booklets',
+        3 => 'os_classes',
+        4 => 'os_dataverse',
+        5 => 'os_events',
+        6 => 'os_faq',
+        7 => 'os_files_private',
+        8 => 'os_image_gallery',
+        9 => 'os_links',
+        10 => 'os_news',
+        11 => 'os_pages',
+        12 => 'os_presentations',
+        13 => 'os_profiles',
+        14 => 'os_publications',
+        15 => 'os_reader',
+        16 => 'os_software',
+        17 => 'harvard_courses',
+      ),
+      'site_frontpage' => 'home',
+      'theme_default' => 'hwpi_classic',
+      'os_breadcrumbs_show_breadcrumbs' => 0,
+    ),
+  );
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Personal Minimal');
+  $export['os_scholar'] = $spaces_presets;
 
   return $export;
 }

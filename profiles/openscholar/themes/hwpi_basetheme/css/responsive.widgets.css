@@ -40,12 +40,15 @@
 #search-block-form input.form-submit, #search-block-form #edit-submit, #search-form #edit-submit {
     margin: 0 0 0 -49px !important;
 }
+
+
 }
 
 @media (max-width: 479px){
 	#boxes-box-site_info {
     padding-top: 0 !important;
 }
+	
 	
 }
 
@@ -60,7 +63,6 @@
     padding: 0!important;
 }
 }
-
 
 @media (max-width: 479px){
 

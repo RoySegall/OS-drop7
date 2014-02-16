@@ -20,3 +20,7 @@ function os_slideshow_update_7001() {
     ));
   }
 }
+
+function os_slideshow_update_7002() {
+  features_revert(array('os_slideshow' => array('field_instance')));
+}

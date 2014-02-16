@@ -964,6 +964,13 @@ function registration_send_broadcast($entity_type, $entity_id, $subject, $messag
       }
       $params['message'] = $message;
 
+      // Pass the entity type and ID to give modules implementing
+      // hook_mail_alter() more context.
+      $params['context'] = array(
+        'entity_type' => $entity_type,
+        'entity_id' => $entity_id,
+      );
+
       $result = drupal_mail('registration', 'broadcast',
         $wrapper->mail->value(), $language, $params, $from
       );

@@ -674,31 +674,3 @@ function os_breadcrumbs_cp_settings() {
   return $form;
 }
 
-/**
- * Implements hook_form_FORM_ID_alter() for cp_appearance_theme_picker_form.
- */
-function os_breadcrumbs_form_cp_appearance_theme_picker_form_alter(&$form, &$form_state, $form_id) {
-  $form['#submit'][] = 'os_breadcrumbs_theme_picker_form_submit';
-}
-
-/**
- * Submit callback for cp_appearance_theme_picker_form.
- */
-function os_breadcrumbs_theme_picker_form_submit($form, &$form_state) {
-  if (!isset($form_state['values']['theme_default'])) {
-    return;
-  }
-
-  // Determines if the new theme is HWPI.
-  $new_theme = $form_state['values']['theme_default'];
-  $value = (_is_hwpi_theme($new_theme)) ? 0 : 1;
-
-  // Sets the variable value.
-  $name = 'os_breadcrumbs_show_breadcrumbs';
-  if ($space = spaces_get_space()) {
-    $space->controllers->variable->set($name, $value);
-  }
-  else {
-    variable_set($name, $value);
-  }
-}

@@ -35,6 +35,11 @@ border-top:3px solid #DDD;
      color:#FFF;
 }
 
+#menu-bar ul.nice-menu ul .menuparent.over > a,
+#menu-bar ul.nice-menu ul .menuparent a:hover,
+#menu-bar ul.nice-menu ul .menuparent a.active {
+     color:#FFF;
+}
 
 .sidebar .block, .front #content-column .block, .node-person .block-inner, .comment-wrapper {
     border-top: none;

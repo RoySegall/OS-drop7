@@ -12,12 +12,35 @@ function os_boxes_ctools_plugin_api($module, $api) {
 }
 
 /**
+ * Implements hook_ctools_plugin_directory().
+ */
+function os_boxes_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'oembed' && $plugin == 'providers') {
+    return 'plugins/' . $plugin;
+  }
+}
+
+/**
  * Passthrough function so box plugin definitions are only loaded when they're needed
  * We don't need to include and process the file on every page
  */
 function os_boxes_boxes_plugins() {
   require_once ('os_boxes.plugins.inc');
   return _os_boxes_boxes_plugins();
+}
+
+/**
+ * Impements hook_oembedprovider().
+ *
+ * The provider established by this module will attempt to resolve every URL it can.
+ */
+function os_boxes_oembedprovider() {
+  $base_url = url('', array('absolute' => TRUE)) . 'box/*';
+  return array(
+    $base_url => array(
+      'callback' => 'os_boxes_box_provider',
+    ),
+  );
 }
 
 /**
@@ -58,6 +81,16 @@ function os_boxes_menu() {
     'file' => 'os_boxes.admin.inc',
     'weight' => 2,
   );
+
+  $items['widget/embed/%os_boxes/%'] = array(
+    'title' => 'Embed Widget',
+    'page callback' => 'os_boxes_embed_code',
+    'page arguments' => array(2, 3),
+    'access callback' => true,
+    'type' => MENU_CALLBACK,
+    'file' => 'os_boxes.admin.inc',
+  );
+
   return $items;
 }
 
@@ -231,6 +264,10 @@ function os_boxes_get_factories() {
         'block_config_path' => "os/widget/add/{$p}",
         'factory' => TRUE,
       );
+
+      if (isset($info['weight'])) {
+        $items[$tag]["boxes-boxes_add__$p"]['weight'] = $info['weight'];
+      }
     }
   }
   ksort($items);
@@ -239,7 +276,24 @@ function os_boxes_get_factories() {
   unset($items['Misc']);
   $items['Misc'] = $misc;
 
+  foreach ($items as $tag => $facts) {
+    uasort($items[$tag], '_os_boxes_sort_factories');
+  }
+
   return $items;
+}
+
+function _os_boxes_sort_factories($a, $b) {
+  $aw = isset($a['weight'])?$a['weight']:0;
+  $bw = isset($b['weight'])?$b['weight']:0;
+
+  if ($aw < $bw) {
+    return -1;
+  }
+  elseif ($aw > $bw) {
+    return 1;
+  }
+  return 0;
 }
 
 /**
@@ -298,8 +352,119 @@ function os_boxes_block_view_alter(&$array, &$block) {
  * Removes default boxes controls; we use our own.
  */
 function os_boxes_preprocess_boxes_box(&$variables) {
-  if(isset($variables['block']) && isset($variables['block']['controls'])){
+  if (!empty($variables['block']) && !empty($variables['block']['controls'])){
     unset($variables['block']['controls']);
+  }
+
+  $box = boxes_box_load($variables['block']['delta']);
+  if (!empty($variables['block']['embed_link']) && !empty($box->embed_as) && !web_widgets_inside_widget()) {
+    $delta = $variables['block']['delta'];
+    $base = url('widget/embed/'.$delta);
+
+    // copied from request_path() to do the same thing it does
+    $request_path = strtok($base, '?');
+    $base_path_len = strlen(rtrim(dirname($_SERVER['SCRIPT_NAME']), '\/'));
+    // Unescape and strip $base_path prefix, leaving q without a leading slash.
+    $base = substr(urldecode($request_path), $base_path_len);
+
+    $tab_links = array();
+    foreach ($box->embed_as as $v) {
+      $tab_links[$v] = array(
+        'title' => $box->embed_label($v),
+        'href' => '',
+        'external' => true,
+        'fragment' => $delta.'-'.$v
+      );
+    }
+
+    $purl = '';
+    if (module_exists('vsite') && $vsite = vsite_get_vsite()) {
+      if ($vsite->purl_provider != PURL_VSITE_DOMAIN) {
+        $purl = $vsite->group->purl.'/';
+      }
+    }
+
+    $output = array(
+      '#attached' => array(
+        'library' => array(
+          array('system', 'ui.tabs'),
+          array('system', 'ui.dialog'),
+        ),
+        'css' => array(
+          drupal_get_path('module', 'os_boxes').'/misc/os_boxes.embed.css',
+        ),
+        'js' => array(
+          drupal_get_path('module', 'os_boxes').'/misc/os_boxes.embed.js',
+        )
+      ),
+      'embed-links-button' => array(
+        '#markup' => l('<embed>', '', array('external' => true, 'attributes' => array('class' => array('os-embed-link'), 'data-delta' => $delta))),
+      ),
+      'embed-links' => array(
+        '#prefix' => '<div id="embed-popup-'.$delta.'" class="embed-popup">',
+        '#suffix' => '</div>',
+        'links' => array(
+          '#theme' => 'links',
+          '#links' => $tab_links
+        ),
+        'inline' => array(
+          '#prefix' => '<div id="'.$delta.'-inline">',
+          '#suffix' => '</div>',
+          '#markup' => web_widgets_render_embed_code('inline', array(
+            'path' => $base.'/inline',
+          )),
+          '#access' => in_array('inline', $box->embed_as)
+        ),
+        'iframe' => array(
+          '#prefix' => '<div id="'.$delta.'-iframe">',
+          '#suffix' => '</div>',
+          '#markup' => web_widgets_render_embed_code('iframe', array(
+            'path' => url(trim($base, '/').'/iframe', array('absolute' => true)),
+          )),
+          '#access' => in_array('iframe', $box->embed_as)
+        ),
+        'oembed' => array(
+          '#prefix' => '<div id="'.$delta.'-oembed">',
+          '#suffix' => '</div>',
+          '#markup' => theme('web_widgets_embed_code', array(
+            'code' => url('box/'.$purl.$delta, array('alias' => true, 'absolute' => true)),
+            'style' => 'inline',
+          )),
+          '#access' => in_array('oembed', $box->embed_as)
+        ),
+      )
+    );
+
+    $variables['block']['content'] .= drupal_render($output);
+  }
+}
+
+/**
+ * Implements hook_preprocess_web_widgets_inline
+ */
+function os_boxes_preprocess_web_widgets_inline(&$vars) {
+
+  $vars['script_url'] = url(trim($vars['script_url'], '/'), array(
+    'absolute' => true,
+  ));
+}
+
+/**
+ * Implements hook_preprocess_web_widgets_iframe.
+ */
+function os_boxes_preprocess_web_widgets_iframe(&$vars) {
+  $vars['content_url'] = $vars['path'];
+  $vars['script_url'] = $GLOBALS['base_url'].'/'.drupal_get_path('module', 'os_boxes').'/misc/os_boxes.resize_parent.js';
+}
+
+/**
+ * Implements hook_preprocess_block
+ *
+ * Adds a class to an embedded block so we can style it a little differently
+ */
+function os_boxes_preprocess_block(&$vars) {
+  if (web_widgets_inside_widget()) {
+    $vars['classes_array'][] = 'os-boxes-embedded';
   }
 }
 
@@ -336,4 +501,27 @@ function os_boxes_permission() {
   );
 
   return $perms;
+}
+
+/**
+ * Discards the default image when the user hits the "remove" button.
+ */
+function _os_image_remove_handler($form, $form_state) {
+  $parents = $form_state['triggering_element']['#array_parents'];
+  $element = drupal_array_get_nested_value($form, $parents);
+
+  // @see: file_managed_file_submit
+  if (isset($element['#file'])) {
+    $orig = _imagefield_crop_file_to_crop($element['#file']->fid);
+    file_usage_delete($orig, 'imagefield_crop', NULL, NULL, 0);
+    file_usage_delete($element['#file'], 'os_boxes', NULL, NULL, 0);
+    file_delete($orig);
+    file_delete($element['#file']);
+    $element['#value']['fid'] = NULL;
+    unset($element['#file']);
+
+    $values_element = $element['#extended'] ? $element['fid'] : $element;
+    form_set_value($values_element, NULL, $form_state);
+    drupal_array_set_nested_value($form_state['input'], $values_element['#parents'], NULL);
+  }
 }

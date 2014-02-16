@@ -1,7 +1,7 @@
 #edit-layout {
   /*width: 848px; */
   position: relative;
-  margin: 40px 0 0 0;
+  margin: 15px 0 0 0;
   font-size: 12px;
   background:#FFF;
 }
@@ -112,6 +112,12 @@
   border:1px solid #C0C7C7;
   min-height: 135px;
 
+}
+
+@-moz-document url-prefix() { 
+#edit-layout-unused-widgets {
+  clear: both;
+ }
 }
 
 #edit-layout-unused-widgets .widget-container {
@@ -336,7 +342,7 @@
   margin-bottom: 1px;
   margin-top: 0.1em;
   font-family: helvetica,Arial,Verdana,sans-serif;
-
+  float: left;
 }
 
 #widget-categories ul {
@@ -346,7 +352,7 @@
 #widget-categories li {
   list-style: none;
   display: inline;
-  margin: 0;
+  margin: 0 3px 0 0;
 }
 
 #widget-categories li a {
@@ -385,7 +391,7 @@
   height: 16px;
   left: 756px;
   position: relative;
-  top: 40px;
+  top: 15px;
   width: 99px;
   background: url('images/websiteLayoutBarLabel.png') no-repeat;
 }
@@ -396,10 +402,9 @@
   /*background: url("/sites/all/themes/openscholar/scholar_base/images/scholarbase-sprite.png") no-repeat scroll 3px -380px #A1D4A1 !important;*/
   border-radius: 5px 5px 0 0;
   float: right;
- margin: 21px -21px 0;
-  padding: 1px 8px 0 5px !important;
+  margin-right: -2px;
+  padding: 1px 8px 1px 5px !important;
   background:#52854C;
-
 }
 
 .page-cp-build-layout #cp-layout-full-form .ctools-dropdown .ctools-dropdown-link-wrapper a {
@@ -447,4 +452,20 @@ html.js .page-cp-build-layout div.ctools-dropdown div.ctools-dropdown-container 
   font-size: 1em;
   text-align: center;
   padding-bottom: 8px;
+}
+
+.form-item-context-selection label {
+    float: left;
+    margin-right: 0.5em !important;
+}
+
+.page-cp-build-layout #help {
+    position: absolute;
+    top: -45px;
+    left: 758px;
+    width: 95px;
+}
+
+.page-cp-build-layout #help a.advanced-help-link {
+    float: left;
 }

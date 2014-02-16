@@ -28,7 +28,7 @@ ul.mobile-buttons {
 .one-sidebar.sidebar-second  #content-column {
     -moz-box-sizing: border-box;
     background-color: #FFFFFF;
-    box-shadow: 1px 0 0 rgba(0, 0, 0, 0.05), -1px 0 0 rgba(0, 0, 0, 0.07);
+    box-shadow: none;
     margin: 0 auto;
 }
 
@@ -51,6 +51,10 @@ ul.mobile-buttons {
 
 .front.no-sidebars .region-content-top .block-boxes-os_slideshow_box:after {
   background: none !important;
+}
+
+.front.no-sidebars .region-content-top .block-boxes-os_slideshow_box {
+  margin-top:15px;
 }
 
 #layout_3_1_overlay .slide-copy h2 {
@@ -107,14 +111,27 @@ ul.mobile-buttons {
 
 #footer .block { margin: 0px ! important; }
 
-}
+} /*--------1008px breakpoint ends--------*/
+
+
 @media (max-width: 768px) {
 
-/*--------------------------------------------------------*/
+
 #columns .region-inner {
     margin-bottom: 100px;
     padding: 0 20px !important;
 }
+
+.breadcrumb {
+margin-top: 15px !important;
+}
+
+.page-node #content-column .content-inner, 
+#content-column .content-inner {
+padding: 22px 0 !important;
+}
+
+
 }
 
 

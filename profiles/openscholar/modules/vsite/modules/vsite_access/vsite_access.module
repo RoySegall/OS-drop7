@@ -98,25 +98,14 @@ function vsite_access_robotstxt() {
  */
 function vsite_access_node_access($node, $op, $account) {
   $type = is_string($node) ? $node : (is_array($node) ? $node['type'] : $node->type);
-
+  $vsite = vsite_get_vsite();
+  
   // Handle access to Group Content
-  if (og_is_group_content_type('node', $type)) {
-
-    if ($op != 'view' || !($vsite = spaces_get_space())) {
-      // If we are trying to create content outside a group and do not have permission to do so
-      if ($op == 'create' && og_is_group_content_type('node', $type) && !user_access('create ' . $type . ' content', $account)) {
-        return NODE_ACCESS_DENY;
-      }
-
-      // Do nothing
-      return NODE_ACCESS_IGNORE;
+  if (og_is_group_content_type('node', $type) && $op == 'view') {
+     // When trying to view group content, check the privacy of the site.
+     if ($vsite && is_object($vsite->group) && !og_is_group_content_type('node', $vsite->group->type) && !node_access('view', $vsite->group, $account)) {
+       return NODE_ACCESS_DENY;
     }
-
-    // When trying to view group content, check the privacy of the site.
-    if (is_object($vsite->group) && !og_is_group_content_type('node', $vsite->group->type) && !node_access('view', $vsite->group, $account)) {
-      return NODE_ACCESS_DENY;
-    }
-
     return NODE_ACCESS_IGNORE;
   }
 
@@ -456,5 +445,51 @@ function vsite_access_node_delete($node) {
   // Saves any changes that were made to the variable table.
   if ($modified) {
     variable_set('vsite_access_robotstxt_directives', $directives);
+  }
+}
+
+/**
+ * Stores flag
+ */
+function _vsite_access_denied($is_it = false) {
+  $denied = &drupal_static(__FUNCTION__, false);
+
+  return $denied = $denied || $is_it;
+}
+
+/**
+ * Implements hook_vsite_access_denied().
+ *
+ * Sets flag that the vsite is denying access
+ */
+function vsite_access_vsite_access_denied($vsite) {
+  _vsite_access_denied(true);
+}
+
+/**
+ * Implements hook_page_alter().
+ *
+ * Changes the Access Denied message when attempting to access a private vsite
+ */
+function vsite_access_page_alter(&$page) {
+  if (_vsite_access_denied()) {
+    drupal_set_title('Private Site');
+    $msg = array(
+      '#markup' => t('This is a private site. You must be a member of this site to view it. <br />If you are a member, you can ').
+        l('login here', 'user').'.',
+    );
+    drupal_set_page_content($msg);
+  }
+}
+
+/**
+ * Implements hook_preprocess_page().
+ *
+ * Sets $is_front to false when access is denied.
+ * A bunch of things don't get rendered when $is_front is true, so we force it to be false here
+ */
+function vsite_access_preprocess_page(&$vars) {
+  if (_vsite_access_denied()) {
+    $vars['is_front'] = false;
   }
 }

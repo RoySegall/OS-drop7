@@ -1,6 +1,4 @@
 <?php
-// $Id$
-
 /**
  * @file
  * os_classes.context.inc
@@ -13,9 +11,7 @@ function os_classes_context_default_contexts() {
   $export = array();
 
   $context = new stdClass();
-  /* Edit this to true to make a default context disabled initially */
-
-  $context->disabled = FALSE;
+  $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
   $context->api_version = 3;
   $context->name = 'classes_classes';
   $context->description = '';
@@ -64,4 +60,3 @@ function os_classes_context_default_contexts() {
 
   return $export;
 }
-

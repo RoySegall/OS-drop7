@@ -63,13 +63,8 @@ function os_classes_feeds_importer_default() {
             'unique' => FALSE,
           ),
           4 => array(
-            'source' => 'Start date',
+            'source' => 'Year',
             'target' => 'field_offered_year:start',
-            'unique' => FALSE,
-          ),
-          5 => array(
-            'source' => 'End date',
-            'target' => 'field_offered_year:end',
             'unique' => FALSE,
           ),
           6 => array(

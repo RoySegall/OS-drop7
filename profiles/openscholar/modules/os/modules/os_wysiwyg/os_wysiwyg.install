@@ -23,3 +23,10 @@ function os_wysiwyg_update_7001() {
     ->condition('module', 'os_wysiwyg')
     ->execute();
 }
+
+/**
+ * Uninstall deprecated modules.
+ */
+function os_wysiwyg_update_7002() {
+  module_disable(array('media_oembed', 'oembedcore'));
+}

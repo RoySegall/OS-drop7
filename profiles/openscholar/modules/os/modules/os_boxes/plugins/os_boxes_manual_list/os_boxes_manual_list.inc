@@ -2,10 +2,16 @@
 
 class os_boxes_manual_list extends os_boxes_default {
 
+  public $embed_as = array(
+    'iframe',
+    'oembed',
+  );
+
   public function options_defaults() {
-    return array(
+    return parent::options_defaults() + array(
       'nodes' => array(),
       'style' => 'titles',
+      'random' => false,
     );
   }
 
@@ -83,6 +89,13 @@ class os_boxes_manual_list extends os_boxes_default {
       '#default_value' => $this->options['style']
     );
 
+    $form['random'] = array(
+      '#type' =>'checkbox',
+      '#title' => t('Random Post'),
+      '#default_value' => $this->options['random'],
+      '#description' => t('Check this box to show one random post out of the list, instead of all of them.'),
+    );
+
     $form['count'] = array(
       '#type' => 'hidden',
       '#default_value' => count($this->options['nodes'])-1,
@@ -95,12 +108,15 @@ class os_boxes_manual_list extends os_boxes_default {
   }
 
   public function render() {
-    if (module_exists('vsite') && !vsite_get_vsite()) {
-      return;
-    }
     $block = parent::render();
     $links = array();
-    foreach ($this->options['nodes'] as $n) {
+
+    $nodes = $this->options['nodes'];
+    if ($this->options['random']) {
+      $nodes = array($nodes[array_rand($nodes)]);
+    }
+
+    foreach ($nodes as $n) {
       if ($node = node_load($n['nid'])) {
         if ($this->options['style'] == 'teasers') {
           // Theme the nodes as a teaser
@@ -122,7 +138,7 @@ class os_boxes_manual_list extends os_boxes_default {
       }
     }
     ksort($links);
-    if(empty($links)) {
+    if (empty($links)) {
       $block['title'] = '';
       $block['subject'] = '';
       return $block;

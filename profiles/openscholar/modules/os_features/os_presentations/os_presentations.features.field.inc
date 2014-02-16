@@ -236,7 +236,7 @@ function os_presentations_field_default_fields() {
       'settings' => array(
         'description_field' => 1,
         'file_directory' => '',
-        'file_extensions' => 'pdf doc docx odt xls ppt pptx key txt',
+        'file_extensions' => 'avi doc docx exe gif gz ico jpeg jpg m4a m4v mov mp3 mp4 mpeg odp ods odt oga ogg ogv pdf png pps ppsx tar tex tgz txt wmv wtml wtt wwtfig xls xlsx xml zip',
         'filefield_paths' => array(
           'active_updating' => 0,
           'file_name' => array(
@@ -268,13 +268,13 @@ function os_presentations_field_default_fields() {
             'public' => 'public',
           ),
           'allowed_types' => array(
-            'audio' => 0,
-            'default' => 0,
-            'html' => 0,
-            'image' => 'image',
-            'video' => 0,
+            'audio' => 'audio',
             'document' => 'document',
             'executable' => 'executable',
+            'html' => 'html',
+            'image' => 'image',
+            'undefined' => 0,
+            'video' => 'video',
           ),
           'browser_plugins' => array(
             'library' => 0,
@@ -418,7 +418,7 @@ function os_presentations_field_default_fields() {
       'settings' => array(
         'description_field' => 0,
         'file_directory' => '',
-        'file_extensions' => 'jpg jpeg gif png txt doc docx gz xls xlsx pdf ppt pptx pps odt ods odp tex tgz xml zip',
+        'file_extensions' => 'avi doc docx exe gif gz ico jpeg jpg m4a m4v mov mp3 mp4 mpeg odp ods odt oga ogg ogv pdf png pps ppsx tar tex tgz txt wmv wtml wtt wwtfig xls xlsx xml zip',
         'filefield_paths' => array(
           'active_updating' => 0,
           'file_name' => array(
@@ -451,9 +451,11 @@ function os_presentations_field_default_fields() {
           ),
           'allowed_types' => array(
             'audio' => 'audio',
-            'default' => 'default',
+            'document' => 'document',
+            'executable' => 'executable',
             'html' => 'html',
             'image' => 'image',
+            'undefined' => 0,
             'video' => 'video',
           ),
           'browser_plugins' => array(

@@ -39,7 +39,7 @@ function os_files_private_views_default_views() {
   $handler->display->display_options['header']['area']['table'] = 'views';
   $handler->display->display_options['header']['area']['field'] = 'area';
   $handler->display->display_options['header']['area']['empty'] = TRUE;
-  $handler->display->display_options['header']['area']['content'] = '<div class="cp-controls-wrapper"><ul><li><a href="../../file/add" class="add_new">Add private file</a></li></ul></div>';
+  $handler->display->display_options['header']['area']['content'] = '<div class="cp-controls-wrapper"><ul><li><a href="../../file/add/private" class="add_new">Add private file</a></li></ul></div>';
   $handler->display->display_options['header']['area']['format'] = 'full_html';
   /* Relationship: File Usage: Content */
   $handler->display->display_options['relationships']['file_to_node']['id'] = 'file_to_node';

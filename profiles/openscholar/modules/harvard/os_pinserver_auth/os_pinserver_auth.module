@@ -22,6 +22,14 @@ function os_pinserver_auth_menu_alter(&$items) {
   if(variable_get('os_pinserver_registration', FALSE)){
     _os_pinserver_auth_register_menu_alter($items);
   }
+
+  // Add wrapper for "pinserver/auth"
+  $items['pinserver/auth']['page callback'] = 'os_pinserver_auth_init_check_user';
+
+  if(isset($items['user/pin'])){
+    // Add wrapper for "user/pin"
+    $items['user/pin']['page callback'] = 'os_pinserver_auth_pin_user_login';
+  }
 }
 
 /**
@@ -59,7 +67,7 @@ function os_pinserver_auth_node_access($node, $op, $account) {
 function os_pinserver_auth_js() {
   // Ensure the stream wrappers are available
    drupal_load('module', 'system');
-   _os_pinserver_auth_init_variables();
+   _os_pinserver_auth_init_variables(TRUE);
 
   return array(
     'files' => array(
@@ -84,10 +92,7 @@ function os_pinserver_auth_js() {
  */
 function os_pinserver_auth_file_download($uri) {
 
-  //Checks if pinserver file protection is enabled.
-  if(variable_get('os_files_private_pinserver', 0)){
-    return _os_pinserver_auth_file_download($uri);
-  }
+  return _os_pinserver_auth_file_download($uri);
 }
 
 /**
@@ -100,7 +105,7 @@ function os_pinserver_auth_file_download($uri) {
 function os_pinserver_auth_stream_wrappers_alter(&$wrappers){
 
   // Use OS Pinserver Auth Stream Wrapper.
-  if (variable_get('os_files_private_pinserver', 0) && isset($wrappers['private'])) {
+  if (isset($wrappers['private'])) {
     $wrappers['private']['class'] = 'OSPinserverPrivateStreamWrapper';
   }
 }
@@ -168,3 +173,25 @@ function os_pinserver_auth_vsite_access_privacy_values_alter(&$privacy_options){
 function os_pinserver_auth_vsite_access_denied($vsite){
   _os_pinserver_auth_vsite_access_denied($vsite);
 }
+
+/**
+ * Provide wrapper for "pinserver/auth" pinserver_check_user()
+ */
+function os_pinserver_auth_init_check_user(){
+
+  //Init Domain specific pin variables
+  _os_pinserver_auth_init_variables();
+
+  return pinserver_check_user();
+}
+
+/**
+ * Provide wrapper for 'pin/user' to init domain specific variables
+ */
+ function os_pinserver_auth_pin_user_login(){
+
+   //Init Domain specific pin variables
+   _os_pinserver_auth_init_variables();
+
+   pinserver_authenticate_pin_user_login();
+ }

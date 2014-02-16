@@ -16,11 +16,24 @@ function os_profiles_os_app_info() {
 
   $apps['os_profiles'] = array(
     'path' => 'people',
-  	'nodetypes' => array(
-  	  'person',
+    'nodetypes' => array(
+      'person',
     ),
     'views tabs' => array(
       'os_profiles' => array('page'),
+    ),
+    'importers' => array(
+      'person' => array(
+        'csv' => 'os_people',
+      ),
+    ),
+    'browse_pages' => array(
+      'person' => array(
+        'url' => 'browse/people',
+        'title' => t('People'),
+        'display_mode' => 'teaser',
+        'menu_item' => 'people',
+      ),
     ),
   );
 
@@ -28,21 +41,155 @@ function os_profiles_os_app_info() {
 }
 
 /**
- * Implements hook_process_hook() for node.
- *
- * Enter description here...
+ * Implements hook_init().
+ */
+function os_profiles_init() {
+  if (!($uuid = variable_get('os_profiles_nodes_uuid'))) {
+    // Return if no UUID is set that is, no profile nodes need to be updated.
+    return;
+  }
+
+  if (!($time = variable_get('os_profiles_nodes_uuid_time'))) {
+    // Return if no time for the update of the profiles has been set.
+    return;
+  }
+
+  if (isset($_GET['REST_CALL'])) {
+    // If profiles that need to be updated are on the same installation return
+    // in order to avoid a loop of recurring calls to itself.
+    return;
+  }
+
+  // When the original node and the destination node are on the same installation
+  // and the original has been updated the updating of the destination node will
+  // be accomplished instantly. We need to wait approximately 5 seconds so a
+  // normal end user that updates a profile that was copied won't think the
+  // update of the node is slow.
+  if ($time + 5 >= time()) {
+    return;
+  }
+
+  // Load the nodes that need to be updated.
+  $query = new EntityFieldQuery();
+  $results = $query
+    ->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'person')
+    ->fieldCondition('field_uuid', 'value', $uuid)
+    ->execute();
+
+  if (empty($results['node'])) {
+    return;
+  }
+
+  $nids = array_keys($results['node']);
+  $nodes = node_load_multiple($nids);
+  $fields = os_profiles_profiles_fields();
+  $handler = restws_resource_controller('node');
+
+  foreach ($nodes as $node) {
+    if (empty($node->field_original_destination_url)) {
+      continue;
+    }
+
+    $data = os_profiles_get_origin_node_values($node->field_original_destination_url[LANGUAGE_NONE][0]['value'], $fields);
+
+    // The field person is an array. Remove him for the update method but keep
+    // it for later.
+    $person_photo = $data->values['field_person_photo'];
+    unset($data->values['field_person_photo']);
+    $handler->update($node->nid, $data->values);
+
+    // We need to replace the field ID in the field with the new file ID we got.
+    if ($person_photo) {
+      $file_info = os_profiles_get_origin_node_values($person_photo['file']['uri'] . '.json', array('url'));
+      $copy_file = os_copy_file($file_info->values['url'], TRUE);
+
+      if ($copy_file['type'] == 'file') {
+        os_profiles_insert_image($node, $copy_file['file'], $data->data['person_photo_dimension']);
+      }
+    }
+  }
+
+  // Delete the UUID that needs to be updated and the time in which the UUID
+  // was set.
+  variable_del('os_profiles_nodes_uuid');
+  variable_del('os_profiles_nodes_uuid_time');
+}
+
+/**
+ * Implements hook_menu().
+ */
+function os_profiles_menu() {
+  $items = array();
+
+  $items['cp/people/sync-profiles'] = array(
+    'title' => 'Sync',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('os_profiles_sync_profile'),
+    'access arguments' => array('create person content'),
+  );
+
+  $items['cp/people/profile_autocomplete'] = array(
+    'title' => 'Sync',
+    'page callback' => 'os_profile_return_auto_complete',
+    'access arguments' => array('access content'),
+  );
+
+  $items['cp/people/insert_profile'] = array(
+    'page callback' => 'os_profiles_insert_listeners',
+    'access callback' => TRUE,
+  );
+
+  $items['cp/people/update_profile'] = array(
+    'page callback' => 'os_profiles_update_listeners',
+    'access callback' => TRUE,
+  );
+
+  $items['cp/people/unlink_profile'] = array(
+    'page callback' => 'os_profiles_unlink_listeners',
+    'access callback' => TRUE,
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_admin_paths().
+ */
+function os_profiles_admin_paths() {
+  return array(
+    'cp/people/sync-profiles' => TRUE,
+  );
+}
+
+/**
+ * Implements hook_os_entity_view_modes().
+ */
+function os_profiles_os_entity_view_modes() {
+  return array('node' => array(
+    'person' => array('sidebar_teaser'),
+  ));
+}
+
+/**
+ * Implements hook_process_node().
  */
 function os_profiles_process_node(&$vars) {
   if ($vars['type'] !== 'person') {
     return;
   }
 
+  // Adding a header for determining the node ID.
+  drupal_add_http_header('node_json', url('node/' . $vars['nid'] . '.json', array('absolute' => TRUE)));
+
   // Helps poor theme developers find these changes to $variables
   $vars['classes'] .= ' modified-in-os_profiles_process_node';
-  
+
   // Moves the profile photo thumbnail before teaser title (full name)
   if (isset($vars['content']['field_person_photo'])) {
-    $vars['title_prefix'] = $vars['content']['field_person_photo'];
+    if ($vars['view_mode'] != 'slide_teaser') {
+      $vars['title_prefix'] += $vars['content']['field_person_photo'];
+    }
     unset($vars['content']['field_person_photo']);
   }
 
@@ -63,6 +210,16 @@ function os_profiles_process_node(&$vars) {
     $vars['title'] = NULL;
   }
 
+  // No image teaser.
+  if ($vars['view_mode'] == 'no_image_teaser') {
+    // Move the title inside.
+    $vars['content']['node_title'] = array(
+      '#weight' => -99,
+      '#markup' => '<h1 ' . $vars['title_attributes'] . '><a href="' . $vars['node_url'] . '">' . $vars['title'] . '</a></h1>'
+    );
+    $vars['title'] = NULL;
+  }
+
   // Includes custom CSS
   $vars['title_prefix']['#attached'] = array(
     'css' => array(
@@ -71,7 +228,7 @@ function os_profiles_process_node(&$vars) {
     ),
   );
 
-  if (!$vars['teaser'] && $vars['view_mode'] != 'sidebar_teaser') {
+  if (!$vars['teaser'] && !in_array($vars['view_mode'], array('sidebar_teaser', 'title', 'full'))) {
     $vars['title_prefix']['#suffix'] = '<h2>' . $vars['title'] . '</h2>';
   }
 
@@ -98,7 +255,7 @@ function os_profiles_process_node(&$vars) {
 /**
  * Implements hook_node_presave().
  *
- * Generates node title for Person nodes
+ * Generates node title for Person nodes.
  */
 function os_profiles_node_presave($node) {
   if ($node->type !== 'person') {
@@ -132,10 +289,22 @@ function os_profiles_field_display_node_alter(&$display, $context) {
 }
 
 /**
- * Restrict access to the redirect field on the person node.
- * @return boolean
+ * Implements hook_field_access().
  */
 function os_profiles_field_access($op, $field, $entity_type, $entity, $account) {
+  if ($entity_type == 'node' && !empty($entity->type) && $entity->type == 'person') {
+    $fields = array('field_uuid', 'field_original_destination_url', 'field_destination_url');
+
+    // When the node is listening to other node, hide the field we syncing.
+    if (!empty($entity->field_original_destination_url[$entity->language])) {
+      $fields = array_merge($fields, os_profiles_profiles_fields());
+    }
+
+    if (in_array($field['field_name'], $fields) && $op == 'edit') {
+      return FALSE;
+    }
+  }
+
   if (!empty($entity) && $field['field_name'] == 'field_url' && $entity_type == 'node' && $entity->type == 'person' && $op == 'edit') {
     return user_access('bypass redirection', $account);
   }
@@ -165,11 +334,11 @@ function _os_profiles_person_node_title($node) {
 function os_profiles_field_attach_load($entity_type, $entities, $view_mode) {
   if ($entity_type == 'node') {
     foreach ($entities as $e_id => $e) {
-      if ($e->type != 'person') continue;
+      if ($e->type != 'person' || !isset($e->title)) continue;
 
-      if (!empty($e->field_person_photo) && isset($e->title)) {
-        $e->field_person_photo[LANGUAGE_NONE][0]['alt'] = $e->title;
-        $e->field_person_photo[LANGUAGE_NONE][0]['title'] = $e->title;
+      if (!empty($e->field_person_photo)) {
+        $e->field_person_photo[LANGUAGE_NONE][0]['alt'] = entity_label('node', $e) ? entity_label('node', $e) : '';
+        $e->field_person_photo[LANGUAGE_NONE][0]['title'] = entity_label('node', $e) ? entity_label('node', $e) : '';
       }
 
       if (!empty($e->field_website[LANGUAGE_NONE])) {
@@ -181,3 +350,1209 @@ function os_profiles_field_attach_load($entity_type, $entities, $view_mode) {
   }
 }
 
+/**
+ * Implements hook_os_add_new_links_alter().
+ */
+function os_profiles_os_add_new_links_alter(&$links) {
+  // In order to display the sync button in the profile page and profiles node
+  // pages we'll use context. The people context will be available in the node
+  // pages and people page and this will help us by not using the menu_get_item
+  // and menu_get_object functions.
+  $active = context_active_contexts();
+
+  if (!in_array('profiles_profiles', array_keys($active))) {
+    return;
+  }
+
+  // Verify the user can create person node.
+  if (module_exists('vsite') && $vsite = vsite_get_vsite()) {
+    $access = og_user_access('node', $vsite->id, "create person content");
+  }
+  else {
+    $access = user_access("create person content");
+  }
+
+  if (!$access) {
+    return;
+  }
+
+  $links['sync'] = array(
+    'title' => t('Sync'),
+    'href' => 'cp/people/sync-profiles',
+  );
+}
+
+/**
+ * Page callback; Allow user to sync profile from external source.
+ */
+function os_profiles_sync_profile($form, $form_state) {
+  $form = array();
+
+  $form['autocomplete'] = array(
+    '#type' => 'textfield',
+    '#title' => '',
+    '#description' => t('Search the person by the first or last name.'),
+    '#autocomplete_path' => 'cp/people/profile_autocomplete',
+  );
+
+  $form['or'] = array(
+    '#type' => 'markup',
+    '#markup' => t('<b>OR</b>'),
+  );
+
+  $form['url'] = array(
+    '#type' => 'textfield',
+    '#title' => '',
+    '#description' => t('Enter the URL of the profile from another site. For example: http://www.example.com/people/john-doe'),
+  );
+
+  $form['actions'] = array(
+    '#type' => 'actions',
+    'submit' => array(
+      '#type' => 'submit',
+      '#value' => t('Submit'),
+    ),
+  );
+
+  return $form;
+}
+
+/**
+ * Page callback; Return auto complete list of people for auto complete field.
+ */
+function os_profile_return_auto_complete($string = '') {
+  // Get the fields table name,
+  $field_info = field_info_field('field_first_name');
+  $first_name_field = _field_sql_storage_tablename($field_info);
+
+  $field_info = field_info_field('field_last_name');
+  $last_name_field = _field_sql_storage_tablename($field_info);
+
+  // Create the DB or condition we'll pass to the query.
+  $db_or = db_or()
+    ->condition('first.field_first_name_value', '%' . $string . '%', 'LIKE')
+    ->condition('last.field_last_name_value', '%' . $string . '%', 'LIKE');
+
+  // Build the SQL query. We use DB select and not EFQ due to lack of support
+  // EFQ has with NULL values.
+  $query = db_select('node', 'n');
+  $query->leftJoin($first_name_field, 'first', 'first.entity_id = n.nid');
+  $query->leftJoin($last_name_field, 'last', 'last.entity_id = n.nid');
+
+  // Exclude results from the current site.
+  if (module_exists('vsite') && $vsite = vsite_get_vsite()) {
+    $query->join('og_membership', 'ogm', 'ogm.etid = n.nid');
+    $query->condition('ogm.gid', $vsite->id, '<>');
+
+    // Exclude results of private sites.
+    if ($field = field_info_field(VSITE_ACCESS_FIELD)) {
+      $access_field_table = _field_sql_storage_tablename($field);
+      $query->leftJoin($access_field_table, 'access', 'access.entity_id = ogm.gid');
+      $query->condition('access.group_access_value', VSITE_ACCESS_PUBLIC);
+    }
+  }
+
+  $results = $query
+    ->condition('n.type', 'person')
+    ->condition($db_or)
+    ->condition('n.status', NODE_PUBLISHED)
+    ->fields('n', array('nid', 'title'))
+    ->range(0, 25)
+    ->orderBy('n.nid')
+    ->execute()
+    ->fetchAllAssoc('nid');
+
+  $output = array();
+  foreach ($results as $result) {
+    $params = array(
+      '@title' => $result->title,
+      '@nid' => $result->nid,
+    );
+    $name = format_string('@title (@nid)', $params);
+    $output[$name] = $name;
+  }
+
+  drupal_json_output($output);
+}
+
+/**
+ * Validate handler; Verify the user enter the form a valid way.
+ */
+function os_profiles_sync_profile_validate($form, &$form_state) {
+  if (empty($form_state['values']['url']) && empty($form_state['values']['autocomplete'])) {
+    form_set_error('', t('You must enter a single source.'));
+    return;
+  }
+
+  if (!empty($form_state['values']['url']) && !empty($form_state['values']['autocomplete'])) {
+    form_set_error('', t("You can't import a profile from two sources."));
+    return;
+  }
+
+  if (!empty($form_state['values']['url'])) {
+    // If the URL doesn't include the word "people" don't make the request.
+    if (strpos($form_state['values']['url'],'people') == FALSE) {
+      form_set_error('url', t('Make sure the URL is correct and that it includes the term "/people/"'));
+      return;
+    }
+
+    $headers = get_headers($form_state['values']['url']);
+
+    //if (!in_array('X-Generator: Drupal 7 (http://drupal.org)', $headers)) {
+    //  form_set_error('url', t('The address you provided is not recognized as an OpenScholar profile page.'));
+    //  return;
+    //}
+
+    // When addressing the URL of the profile that is imported, an http header
+    // named "node_json" is added to the response. This is done in order for the
+    // importing side to get the JSON address of the node. It will be saved in
+    // the field "field_original_destination_url".
+    foreach ($headers as $header) {
+      if (strpos($header, 'node_json: ') === 0) {
+        $form_state['json_address'] = str_replace('node_json: ', '', $header);
+        return;
+      }
+    }
+
+    // A JSON address was not found in the header.
+    form_set_error('url', t('Make sure you have an updated OpenScholar installation.'));
+  }
+
+  if (!empty($form_state['values']['autocomplete'])) {
+    preg_match("/.+\((\d+)\)/", $form_state['values']['autocomplete'], $matches);
+    if (empty($matches[1])) {
+      $params = array(
+        '%label' => $form_state['values']['autocomplete'],
+      );
+      form_set_error('autocomplete', t("There isn't any node with the name %label", $params));
+    }
+    else {
+      $form_state['autocomplete_nid'] = $matches[1];
+    }
+  }
+}
+
+/**
+ * List of fields which holds the person information.
+ */
+function os_profiles_profiles_fields() {
+  return array(
+    'title',
+    'body',
+    'field_first_name',
+    'field_last_name',
+    'field_address',
+    'field_phone',
+    'field_email',
+    'field_middle_name_or_initial',
+    'field_professional_title',
+    'field_website',
+    'field_person_photo',
+  );
+}
+
+/**
+ * Submit handler; Importing person profile from external source.
+ */
+function os_profiles_sync_profile_submit($form, $form_state) {
+  global $base_url, $user;
+  $keys = os_profiles_profiles_fields();
+  $values = $data = array();
+
+  // Import a person node using URL field.
+  if (!empty($form_state['values']['url'])) {
+    $origin = os_profiles_get_origin_node_values($form_state['json_address'], $keys);
+    $values = $origin->values;
+    $data = $origin->data;
+
+    // Get the URL of the original node.
+    $url = str_replace('/node/' . $data['nid'] . '.json', '', $form_state['json_address']);
+
+    // Get the original node's UUID.
+    $values['field_uuid'] = $data['field_uuid'];
+
+    // Save the original address of the JSON.
+    $values['field_original_destination_url'] = $form_state['json_address'];
+
+    // Set the file JSON url.
+    $file_json_url = !empty($values['field_person_photo']) ? $values['field_person_photo']['file']['uri'] . '.json' : '';
+    $photo_dimension = $data['person_photo_dimension'];
+  }
+  else {
+    // Import a person node using the auto-complete field.
+    $wrapper = entity_metadata_wrapper('node', $form_state['autocomplete_nid']);
+    foreach ($keys as $key) {
+      if (isset($wrapper->{$key}) && $value = $wrapper->{$key}->value()) {
+        $values[$key] = $value;
+      }
+    }
+
+    // Get the URL of the original node.
+    $vsite = vsite_get_vsite($wrapper->og_group_ref->get(0)->value()->nid);
+    $url = $vsite->get_absolute_url();
+
+    // Get the original node's UUID if it exist. Else, generate it.
+    $values['field_uuid'] = isset($wrapper->field_uuid) && $wrapper->field_uuid->value() ? $wrapper->field_uuid->value() : md5($form_state['autocomplete_nid']);
+
+    // Set the UUID for the original node as well.
+    _os_profiles_restws_request_alter($form_state['autocomplete_nid']);
+
+    // Save the original address of the JSON.
+    $values['field_original_destination_url'] = $url . '/node/' . $form_state['autocomplete_nid'] . '.json';
+
+    // Set the file JSON url.
+    $file_json_url = !empty($values['field_person_photo']) ? $base_url . '/file/' . $values['field_person_photo']['fid'] . '.json' : '';
+
+    $photo_dimension = $wrapper->person_photo_dimension->value();
+  }
+
+  // Retrieve the file from the original node.
+  $file = NULL;
+  if (!empty($file_json_url)) {
+    $file_info = os_profiles_get_origin_node_values($file_json_url, array('url'));
+    $copy_file = os_copy_file($file_info->values['url'], TRUE);
+
+    if ($copy_file['type'] == 'file') {
+      $file = $copy_file['file'];
+    }
+
+    unset($values['field_person_photo']);
+  }
+
+  // Set up default values.
+  $values += array(
+    'type' => 'person',
+    'author' => $user->uid,
+  );
+
+  // When there is a node in the current VSite with the title of the source node
+  // we need to update the current node.
+  $method = 'create';
+  $arguments = array($values);
+  if (module_exists('vsite') && $vsite = vsite_get_vsite()) {
+    $query = new EntityFieldQuery();
+    $result = $query
+      ->entityCondition('entity_type', 'node')
+      ->propertyCondition('title', $values['title'])
+      ->propertyCondition('type', 'person')
+      ->fieldCondition(OG_AUDIENCE_FIELD, 'target_id', $vsite->id)
+      ->range(0, 1)
+      ->execute();
+
+    if (!empty($result)) {
+      $method = 'update';
+      $arguments = array(reset($result['node'])->nid, $values);
+    }
+  }
+
+  $handler = restws_resource_controller('node');
+
+  $nid = call_user_func_array(array($handler, $method), $arguments);
+
+  if ($method == 'update') {
+    $nid = $arguments[0];
+  }
+  else {
+    // Write the current site as a listener in the node's origin site.
+    $arguments = array(
+      'action' => 'insert_person',
+      'UUID' => $values['field_uuid'],
+      'listener' => $base_url,
+    );
+    os_profiles_manage_synced_profiles($url, $arguments);
+  }
+
+  $node = node_load($nid);
+
+  if ($file) {
+    os_profiles_insert_image($node, $file, $photo_dimension);
+  }
+
+  $params = array(
+    '@title' => $node->title,
+    '@url' => url('node/' . $node->nid),
+    '@op' => $method == 'update' ? t('updated') : t('created'),
+  );
+
+  drupal_set_message(t('The person @title has @op. You can <a href="@url">visit</a> their page.', $params));
+}
+
+/**
+ * Copy the image from the source node to any node.
+ *
+ * @param $node
+ *  The node object.
+ * @param $file
+ *  The file object.
+ * @param $dimensions
+ *  The image field crop settings.
+ */
+function os_profiles_insert_image($node, $file, $dimensions) {
+  $node->field_person_photo[$node->language][0] = array(
+    'fid' => $file->fid,
+    'display' => 1,
+    'description' => '',
+    'cropbox_x' => $dimensions['cropbox_x'],
+    'cropbox_y' => $dimensions['cropbox_y'],
+    'cropbox_height' => $dimensions['cropbox_height'],
+    'cropbox_width' => $dimensions['cropbox_width'],
+  );
+
+  node_save($node);
+}
+
+/**
+ * Build the original node values from the source node JSON output.
+ *
+ * @param $address
+ *  The JSON address of the node.
+ * @param $fields
+ *  The fields which holds the values we need.
+ *
+ * @return stdClass
+ *  Return an object with the values and the full JSON of the original node.
+ */
+function os_profiles_get_origin_node_values($address, $fields) {
+  // When accessing the json format of the node multiple times we get cached
+  // data. This won't allow us to pull the updated data of the node. In order
+  // to get un-cached node we need to add the time stamp to the query string.
+  $request = drupal_http_request(url($address, array('query' => array('REST_CALL' => 1, 'override_cache' => time()))));
+  $data = drupal_json_decode($request->data);
+
+  foreach ($fields as $key) {
+    if (empty($data[$key])) {
+      continue;
+    }
+
+    $values[$key] = $data[$key];
+  }
+
+  return (object) array(
+    'values' => $values,
+    'data' => $data,
+  );
+}
+
+/**
+ * A new site synced a profile. Get the node with the provided UUID and add the
+ * listener listeners fields.
+ */
+function os_profiles_insert_listeners() {
+  $query = new EntityFieldQuery();
+  $results = $query
+    ->entityCondition('entity_type', 'node')
+    ->propertyCondition('type', 'person')
+    ->fieldCondition('field_uuid', 'value', $_GET['UUID'])
+    ->execute();
+
+  if (empty($results['node'])) {
+    return;
+  }
+
+  $nid = reset($results['node'])->nid;
+
+  $wrapper = entity_metadata_wrapper('node', $nid);
+  $destinations = isset($wrapper->field_destination_url) ? $wrapper->field_destination_url->value() : array();
+
+  if (in_array($_GET['listener'], $destinations)) {
+    // The destination is already in the field.
+    return;
+  }
+
+  // Add the site to the list of destinations.
+  $wrapper->field_destination_url[] = $_GET['listener'];
+  $wrapper->save();
+}
+
+/**
+ * Set the received UUID that matches the nodes that need to be updated.
+ */
+function os_profiles_update_listeners($uuid = NULL) {
+  $uuid = $uuid ? $uuid : $_GET['UUID'];
+
+  // Set the received UUID in a variable. This way we can pull the nodes
+  // that need to be updated later.
+  variable_set('os_profiles_nodes_uuid', $uuid);
+
+  // Set the time for receiving the UUID. This is used in os_profiles_init() in
+  // order to allow the saving of the node before "signaling" the listening sites
+  // about a node update.
+  variable_set('os_profiles_nodes_uuid_time', time());
+}
+
+/**
+ * A site deleted a profile. Get the node with the provided UUID and
+ * according to the query string do the following:
+ *
+ * 1. If $_GET['origin_deleted'] is TRUE, delete the original destination
+ *    field entry as this node no longer exist in the origin site.
+ * 2. If $_GET['origin_deleted'] is FALSE, delete the destination of
+ *    the deleted node from the list of destinations in the destination field.
+ */
+function os_profiles_unlink_listeners() {
+  $query = new EntityFieldQuery();
+  $results = $query
+    ->entityCondition('entity_type', 'node')
+    ->propertyCondition('type', 'person')
+    ->fieldCondition('field_uuid', 'value', $_GET['UUID'])
+    ->execute();
+
+  if (!$results['node']) {
+    return;
+  }
+
+  $nid = reset($results['node'])->nid;
+  $wrapper = entity_metadata_wrapper('node', $nid);
+
+  if ($_GET['origin_deleted']) {
+    // Origin profile node was deleted. Stop "listening" for changes
+    // from that node.
+    if (isset($wrapper->field_original_destination_url)){
+      $wrapper->field_original_destination_url->set('');
+      $wrapper->save();
+    }
+  }
+  elseif (isset($wrapper->field_destination_url)) {
+    // The deleted node was not an origin node. That means it was a "listener"
+    // in some site that is, a node that was imported from the current site.
+    // In that case remove that destination from the list of destinations.
+    $destinations = $wrapper->field_destination_url->value();
+    if (($destination = array_search($_GET['remove_destination'], $destinations)) !== FALSE) {
+      unset($destinations[$destination]);
+      $wrapper->field_destination_url->set($destinations);
+      $wrapper->save();
+    }
+  }
+}
+
+/**
+ * When need to update a profile node with listeners or ping to update the
+ * listeners. This page callback will handle it.
+ *
+ * In order to notify Drupal to update the synced profile nodes we will
+ * need to access the server with the next $_GET:
+ * @code
+ *  $_GET = array(
+ *    'action' => 'update',
+ *    'uuid' => 'foobar',
+ *  );
+ * @endcode
+ *
+ * When a node person is being updated he need to ping all his listeners.
+ * In order to add listeners we will need to access the server with the next
+ * $_GET:
+ * @code
+ *  array(
+ *    'action' => 'insert',
+ *    'UUID' => 'foobar',
+ *    'listener' => 'http://www.harvard.edu/',
+ *  );
+ * @endcode
+ *
+ * In order to notify Drupal to unlink the synced profile node we will
+ * need to access the server with the next $_GET when the original node is
+ * deleted:
+ * @code
+ *  $_GET = array(
+ *    'action' => 'unlink',
+ *    'uuid' => 'foobar',
+ *    'origin_deleted' => TRUE,
+ *  );
+ * @endcode
+ *
+ * When a listener profile (that is, a profile that was imported) is deleted
+ * we will need to access the server with the next $_GET:
+ * @code
+ *  $_GET = array(
+ *    'action' => 'unlink',
+ *    'uuid' => 'foobar',
+ *    'origin_deleted' => FALSE,
+ *    'remove_destination' => http://www.example.com,
+ *  );
+ * @endcode
+ *
+ *
+ * @param $url
+ *  The address of the server.
+ * @param $values
+ *  The values of the $_GET. No need to pass the q index.
+ */
+function os_profiles_manage_synced_profiles($url, $values) {
+  switch ($values['action']) {
+    case 'insert_person':
+      $path = $url . '/cp/people/insert_profile';
+      break;
+    case 'update':
+      $path = $url . '/cp/people/update_profile';
+      break;
+    case 'unlink':
+      $path = $url . '/cp/people/unlink_profile';
+      break;
+    default:
+      $path = NULL;
+      break;
+  }
+
+  $values['REST_CALL'] = TRUE;
+
+  if ($path) {
+    drupal_http_request(url($path, array('query' => $values)));
+  }
+}
+
+/**
+ * Implements hook_restws_request_alter().
+ *
+ * Setting the person node UUID when accessing the node via JSON and the UUID
+ * field is not populate.
+ */
+function os_profiles_restws_request_alter(&$request) {
+  if ($request['resource']->resource() != 'node') {
+    return;
+  }
+
+  _os_profiles_restws_request_alter($request['id']);
+}
+
+/**
+ * Setting the UUID field of the node.
+ *
+ * @param $nid
+ *  The node ID.
+ */
+function _os_profiles_restws_request_alter($nid) {
+  $wrapper = entity_metadata_wrapper('node', $nid);
+
+  if (isset($wrapper->field_uuid) && !$wrapper->field_uuid->value()) {
+    // No UUID in the UUID field. Set it.
+    $wrapper->field_uuid->set(md5($nid));
+    $wrapper->save();
+  }
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ *
+ * Adds additional display settings for the os_profiles app.
+ */
+function os_profiles_form_cp_app_settings_form_alter(&$form, &$form_state) {
+  if ($form['#feature'] != 'os_profiles') {
+    return;
+  }
+
+  $vsite = vsite_get_vsite();
+
+  // Form element for disabling the use of a default image.
+  $form['os_profiles_disable_default_image'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Disable default image for people profiles'),
+    '#default_value' => variable_get('os_profiles_disable_default_image', FALSE),
+    '#description' => t('If checked no image will be used when viewing the "/people" page.'),
+    '#weight' => -99,
+  );
+
+  $profile_styles = array(
+    'title' => t('Name only'),
+    'teaser' => t('Teaser'),
+    'sidebar_teaser' => t('Name, image, and professional title'),
+    'no_image_teaser' => t('No image teaser'),
+  );
+
+  $profile_styles_hover = array();
+  $counter = 0;
+
+  // Create markup for style examples when hovering over each style.
+  foreach ($profile_styles as $style => $name) {
+    $counter ++;
+    // Prepare the popup and the style name.
+    $profile_example_link = '<a href="#" class="profile-pop" data-popbox="pop'.$counter.'">' . check_plain($name) . '</a>';
+    $profile_example_title = '<h2>' . $name . '</h2>';
+    // Prepare the profile style example for the popup.
+    $profile_example = _os_profiles_build_display_style_example($style);
+    $profile_example_text = '<p>' . $profile_example . '</p>';
+    $profile_example_output = $profile_example_link . '<div id="pop'.$counter.'" class="stylebox">' . $profile_example_title . $profile_example_text . '</div>';
+    $profile_styles_hover[$style] = $profile_example_output;
+  }
+
+  // Form element to choose display type. We use a "dummy" variable to be able
+  // to get the value that is set in the vsite level and not the site-wide
+  // level value.
+  $form['dummy__os_profiles_display_type'] = array(
+    '#type' => 'radios',
+    '#title' => t('Display Types'),
+    '#default_value' => variable_get('os_profiles_display_type', 'teaser'),
+    '#options' => $profile_styles_hover,
+    '#description' => t('Choose the display type of a person in the "/people" page.'),
+    '#weight' => -999,
+    '#attached' => array(
+      'css' => array(
+        drupal_get_path('module', 'os_profiles') . '/misc/os_profiles_settings.css',
+      ),
+      'js' => array(
+        drupal_get_path('module', 'os_profiles') . '/misc/os_profiles_settings_hover.js',
+      )
+    ),
+  );
+
+  // Get properties of the image if there's a custom default image.
+  if (module_exists('vsite') && $vsite = vsite_get_vsite() && $fid = variable_get('os_profiles_default_image_file', NULL)) {
+    $dimensions = variable_get('os_profiles_default_image_properties', array());
+
+    $instance = field_info_instance('node', 'field_person_photo', 'person');
+    if ($instance['widget']['settings']['resolution']) {
+      $ratio = explode('x', $instance['widget']['settings']['resolution']);
+      $ratio = $ratio[0]/$ratio[1];
+    }
+  }
+
+  // Show the default image used before a custom default image has been uploaded.
+  $path = drupal_get_path('theme', 'hwpi_basetheme') . '/images/person-default-image.png';
+  $image = '<div class="field-name-field-person-photo">' . theme('image',  array('path' => $path)) . '</div>';
+
+  // Form element for uploading a default image.
+  $allowed_file_types = 'gif png jpg jpeg';
+  $form['file'] = array(
+    '#type' => 'managed_file',
+    '#title' => t('Default image'),
+    '#field_prefix' => '<div class="">',
+    '#field_suffix' => '</div>' . $image,
+    '#default_value' => variable_get('os_profiles_default_image_file', NULL),
+    '#description' => t('The default image will be used if a profile photo is not available. Instead, you can upload your own default image.<br/>Position the cropping tool over it if necessary. Allowed file types: <strong> @allowed_file_types </strong>', array('@allowed_file_types' => $allowed_file_types)),
+    '#upload_validators' => array(
+      'file_validate_extensions' => array($allowed_file_types),
+    ),
+    '#process' => array('_os_profiles_default_image_process'),
+    '#dimensions' => array(
+      'x' => isset($dimensions['x']) ? $dimensions['x'] : 0,
+      'y' => isset($dimensions['y']) ? $dimensions['y'] : 0,
+      'height' => isset($dimensions['height']) ? $dimensions['height'] : 140,
+      'width' => isset($dimensions['width']) ? $dimensions['width'] : 180,
+      'ratio' => isset($ratio) ? $ratio : 0,
+    ),
+    '#attached' => array(
+      'css' => array(
+        '.form-managed-file img { max-width: none; }' => array(
+          'type' => 'inline'
+        )
+      ),
+    ),
+    '#weight' => -100,
+  );
+
+  // Set upload location.
+  if (module_exists('vsite') && $space = spaces_get_space()) {
+    $form['file']['#upload_location'] = 'public://' . $space->group->purl . '/files';
+  }
+
+  $form['#submit'][] = 'os_profiles_display_settings_submit';
+}
+
+/**
+ * Process function; For uploading a default profile image.
+ */
+function _os_profiles_default_image_process($element, $form_state, $form) {
+  $element = file_managed_file_process($element, $form_state, $form);
+  $element = os_files_imagefield_crop_process($element, $form_state, $form);
+  $element['remove_button']['#submit'][] = '_os_image_remove_handler';
+
+  // When pressing "remove" call the original form's submit handler in order to
+  // set the default image file id to 0.
+  $element['remove_button']['#submit'][] = 'os_profiles_display_settings_submit';
+
+  module_load_include('inc', 'comment_sources', 'comment_sources.admin');
+  $fid = isset($element['#value']['fid']) ? $element['#value']['fid'] : 0;
+
+  // A custom default image has been uploaded.
+  if ($fid && $element['#file']) {
+    // Remove the preview of the default image.
+    unset($element['#field_prefix']);
+    unset($element['#field_suffix']);
+
+    unset($element['filename']);
+    // file_to_crop() take the cropped image and gets the original back
+    $file_to_crop = _imagefield_crop_file_to_crop($element['#file']->fid);
+    $element['preview'] = array(
+      '#type' => 'markup',
+      '#file' => $file_to_crop, // This is used by the #process function
+      '#prefix' => '<div class="imagefield-crop-preview">',
+      '#suffix' => '</div>',
+      '#process' => array('_os_profiles_default_image_preview_process'),
+      '#theme' => 'imagefield_crop_preview',
+      '#markup' => theme('image', array(
+          'path' => $element['#file']->uri,
+          'getsize' => FALSE,
+          'attributes' => array('class' => 'preview-existing'))
+      ),
+    );
+    $element['cropbox'] = array(
+      '#markup' => theme('image', array(
+          'path' => $file_to_crop->uri,
+          'attributes' => array(
+            'class' => 'cropbox',
+            'id' => $element['#id'] . '-cropbox',
+          )
+        )
+      ),
+    );
+    $settings = array(
+      $element['#id'] => array(
+        'box' => array(
+          'ratio' => $element['#dimensions']['ratio'],
+          'box_width' => 400,
+          'box_height' => 400,
+        ),
+        'minimum' => array(
+          'width' => NULL,
+          'height' => NULL,
+        ),
+      ),
+    );
+    $element['#attached']['js'][] = array(
+      'data' => array('imagefield_crop' => $settings),
+      'type' => 'setting',
+      'scope' => 'header',
+    );
+    $element['#attached']['js'][] = drupal_get_path('module', 'imagefield_crop').'/Jcrop/js/jquery.Jcrop.js';
+    $element['#attached']['js'][] = drupal_get_path('module', 'imagefield_crop').'/imagefield_crop.js';
+    $element['#attached']['css'][] = drupal_get_path('module', 'imagefield_crop').'/Jcrop/css/jquery.Jcrop.css';
+
+    $element['x'] = array(
+      '#type' => 'hidden',
+      '#default_value' => $element['#dimensions']['x'],
+      '#attributes' => array(
+        'class' => array(
+          'edit-image-crop-x'
+        )
+      )
+    );
+
+    $element['y'] = array(
+      '#type' => 'hidden',
+      '#default_value' => $element['#dimensions']['y'],
+      '#attributes' => array(
+        'class' => array(
+          'edit-image-crop-y'
+        )
+      )
+    );
+
+    $element['height'] = array(
+      '#type' => 'hidden',
+      '#default_value' => $element['#dimensions']['height'],
+      '#attributes' => array(
+        'class' => array(
+          'edit-image-crop-height'
+        )
+      )
+    );
+
+    $element['width'] = array(
+      '#type' => 'hidden',
+      '#default_value' => $element['#dimensions']['width'],
+      '#attributes' => array(
+        'class' => array(
+          'edit-image-crop-width'
+        )
+      )
+    );
+  }
+
+  return $element;
+}
+
+/**
+ * Preview process function; For previewing an uploaded default profile image.
+ */
+function _os_profiles_default_image_preview_process($element, $form_state, $form) {
+  $element = @imagefield_crop_widget_preview_process($element, $form_state, $form);
+
+  $scale = null;
+  if (module_exists('vsite') && $vsite = spaces_get_space()) {
+    $instance = field_info_instance('node', 'field_person_photo', 'person');
+    if ($instance['widget']['settings']['resolution']) {
+      $scale = explode('x', $instance['widget']['settings']['resolution']);
+      $scale = array(
+        'width' => $scale[0],
+        'height' => $scale[1],
+      );
+    }
+  }
+
+  $element['#attached']['js'][0]['data']['imagefield_crop']['edit-file']['preview']['width'] = isset($scale) ? $scale['width'] : 0;
+  $element['#attached']['js'][0]['data']['imagefield_crop']['edit-file']['preview']['height'] = isset($scale) ? $scale['height'] : 0;
+
+  $element['#imagefield_crop']['#width'] = isset($scale) ? $scale['width'] : 0;
+  $element['#imagefield_crop']['#height'] = isset($scale) ? $scale['height'] : 0;
+
+  return $element;
+}
+
+/**
+ * Submit handler for uploading a custom default profile image.
+ */
+function os_profiles_display_settings_submit($form, $form_state) {
+  $file_data = $form_state['input']['file'];
+
+  $vsite = vsite_get_vsite();
+
+  // When removing an uploaded picture set the default image file id to 0.
+  if ($form_state['triggering_element']['#value'] == 'remove') {
+    $vsite->controllers->variable->set('os_profiles_default_image_file', 0);
+    return;
+  }
+
+  if ($file_data['fid']) {
+    // An image was uploaded.
+    $file = file_load($file_data['fid']);
+
+    $item = array(
+      'cropbox_x' => $file_data['x'],
+      'cropbox_y' => $file_data['y'],
+      'cropbox_height' => $file_data['height'],
+      'cropbox_width' => $file_data['width'],
+    );
+
+    $scale = null;
+    if (module_exists('vsite') && $vsite = vsite_get_vsite()) {
+      $instance = field_info_instance('node', 'field_person_photo', 'person');
+      if ($instance['widget']['settings']['resolution']) {
+        $scale = explode('x', $instance['widget']['settings']['resolution']);
+        $scale = array(
+          'width' => $scale[0],
+          'height' => $scale[1],
+        );
+      }
+    }
+
+    // This creates two images. $orig is the original, unmodified image. It is
+    // saved so we can refer to it later. $file is original uploaded image that
+    // is then cropped and is displayed in the rendered output.
+    // It relates to the original file, through the file usage table.
+    $orig = _imagefield_crop_file_to_crop($file->fid);
+    if ($orig->fid == $file->fid) {
+      $orig = imagefield_crop_create_copy($file);
+      file_usage_add($orig, 'imagefield_crop', 'file', $file->fid);
+    }
+    _imagefield_crop_resize(drupal_realpath($orig->uri), $item, $scale, $file);
+    file_save($file);
+
+    if (module_exists('vsite') && $space = spaces_get_space() && $file->fid) {
+      // Save the state of the crop tool image.
+      $vsite->controllers->variable->set('os_profiles_default_image_file', $file_data['fid']);
+      $dimensions = array(
+        'x' => $file_data['x'],
+        'y' => $file_data['y'],
+        'width' => $file_data['width'],
+        'height' => $file_data['height'],
+      );
+      $vsite->controllers->variable->set('os_profiles_default_image_properties', $dimensions);
+    }
+  }
+  else {
+    // No file is uploaded.
+    $vsite->controllers->variable->set('os_profiles_default_image_file', 0);
+  }
+
+  // Set the display style for the profiles in the "/people" path.
+  $vsite->controllers->variable->set('os_profiles_display_type', $form_state['values']['dummy__os_profiles_display_type']);
+
+  // Clear the os_profiles view cache so the setting will take effect.
+  if (module_exists('vsite') && $vsite = vsite_get_vsite()) {
+    cache_clear_all('og:node:' . $vsite->id . ':', 'cache_views_data', TRUE);
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function os_profiles_node_update($node) {
+  if ($node->type != 'person') {
+    return;
+  }
+
+  if (!os_profiles_profile_changed($node)) {
+    // Fields in the profile are not changed: if no data fields (returned in
+    // os_profiles_profiles_fields()) were changed during the update don't
+    // send a request to the listeners.
+    return;
+  }
+
+  $wrapper = entity_metadata_wrapper('node', $node);
+  if (!$destinations = $wrapper->field_destination_url->value()) {
+    return;
+  }
+
+  foreach ($destinations as $destination) {
+    $arguments = array(
+      'action' => 'update',
+      'UUID' => $wrapper->field_uuid->value(),
+    );
+
+    os_profiles_manage_synced_profiles($destination, $arguments);
+  }
+}
+
+/**
+ * Helper function; Return TRUE if the a data field changed in a profile.
+ *
+ * @param $node
+ *  The node to check.
+ * @return bool
+ *  TRUE - A field was changed.
+ *  FALSE - No fields were changed.
+ */
+function os_profiles_profile_changed($node) {
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $wrapper_original = entity_metadata_wrapper('node', $node->original);
+  foreach (os_profiles_profiles_fields() as $field) {
+    if ($wrapper->$field->value() !== $wrapper_original->$field->value()) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_node_delete().
+ *
+ * When a profile that was copied is deleted we have two cases:
+ *
+ * 1. The deleted node was copied from another site. In that case the origin site
+ *    will need to remove the current site from the node's destinations list.
+ * 2. The deleted node was copied to another site. In that case the listeners
+ *    will need to remove the current site as an original node's destination.
+ */
+function os_profiles_node_delete($node) {
+  global $base_url;
+
+  if ($node->type != 'person') {
+    return;
+  }
+
+  $wrapper = entity_metadata_wrapper('node', $node);
+  $arguments = array(
+    'action' => 'unlink',
+    'UUID' => $wrapper->field_uuid->value(),
+  );
+
+  // Check if the node was imported from another site.
+  // If it was, "inform" the original node that the current site
+  // is no longer on of its destinations. This will prevent from
+  // the origin site to signal about a node's update.
+  if ($destination = $wrapper->field_original_destination_url->value()) {
+    $arguments['origin_deleted'] = FALSE;
+
+    // The destination to be removed.
+    $arguments['remove_destination'] = $base_url;
+
+    // $destination is the JSON address that is,
+    // http://www.example.com/vsite/node/1.json and we need just the
+    // http://www.example.com/vsite part of that address.
+    $destination = preg_replace("/\/node\/\d{1,}\.json/", "", $destination);
+    os_profiles_manage_synced_profiles($destination, $arguments);
+  }
+
+  // Check if the node was imported to another site.
+  // If it was, "inform" the destination sites which copied the node
+  // (that is, the listeners) to clear the original destination field
+  // to avoid making requests for update of a deleted node later on.
+  if (!$destinations = $wrapper->field_destination_url->value()) {
+    return;
+  }
+  else {
+    foreach ($destinations as $destination) {
+      $arguments['origin_deleted'] = TRUE;
+      os_profiles_manage_synced_profiles($destination, $arguments);
+    }
+  }
+}
+
+/**
+ * Provide display style examples for the os_profiles app settings.
+ */
+function _os_profiles_build_display_style_example($style) {
+  // Use custom default image if available.
+  if ($custom_default_image = variable_get('os_profiles_default_image_file', 0)) {
+    $image_file = file_load($custom_default_image);
+    $path = $image_file->uri;
+    $options = array(
+      'path' => $path,
+      'style_name' => 'profile_thumbnail',
+    );
+    $image = '<div class="field-name-field-person-photo">' . theme('image_style',  $options) . '</div>';
+  }
+  else {
+    // Use default image.
+    $path = variable_get('os_person_default_image', drupal_get_path('theme', 'hwpi_basetheme') . '/images/person-default-image.png');
+    $image = '<div class="field-name-field-person-photo">' . theme('image',  array('path' => $path)) . '</div>';
+  }
+
+  switch ($style) {
+    case 'title':
+      $result = '
+        <div class="dummy-content">
+          <h1><a>John Fitzgerald Kennedy</a></h1>
+        </div>
+      ';
+      break;
+    case 'teaser':
+      $result = '
+        <div class="dummy-person-photo">
+          ' . $image . '
+        </div>
+        <div class="dummy-content">
+          <h1><a>John Fitzgerald Kennedy</a></h1>
+				  <div class="dummy-professional-title">Drupal developer at Gizra.inc<br>QA person at Gizra.inc</div>
+				  <div>Often referred to by his initials JFK, was the 35th President of the United States, serving from 1961 until his assassination in 1963.</div>
+				  <div>555-1234</div>
+				  <div><a>example@address.com</a></div>
+        </div>
+      ';
+      break;
+    case 'sidebar_teaser':
+      $result = '
+        <div class="dummy-person-photo">
+          ' . $image . '
+        </div>
+        <div class="dummy-content">
+          <h1><a>John Fitzgerald Kennedy</a></h1>
+				  <div class="dummy-professional-title">Drupal developer at Gizra.inc, QA person at Gizra.inc</div>
+        </div>
+      ';
+      break;
+    case 'no_image_teaser':
+      $result = '
+        <div class="dummy-content">
+          <h1><a>John Fitzgerald Kennedy</a></h1>
+				  <div class="dummy-professional-title">Drupal developer at Gizra.inc<br>QA person at Gizra.inc</div>
+				  <div>Often referred to by his initials JFK, was the 35th President of the United States, serving from 1961 until his assassination in 1963.</div>
+       	  <div>555-1234</div>
+				  <div><a>example@address.com</a></div>
+        </div>
+      ';
+      break;
+    default:
+      $result = '';
+  }
+
+  return $result;
+}
+
+/**
+ * Implements hook_entity_view_mode_alter().
+ *
+ * Changes the display type for profiles in the "/people" page or in a person
+ * term page according to the settings in os_profiles app settings.
+ */
+function os_profiles_entity_view_mode_alter(&$view_mode, $context) {
+  $args = explode('/', $_GET['q']);
+
+  if ($args[0] != 'people') {
+    // The first part of the path in not "/people".
+    return;
+  }
+
+  if (!empty($args[1]) && !_os_profiles_is_term_page($args[1])) {
+    // The second part of the path after "/people" is not a vocabulary or a term
+    // related to a person (that is, not a term page).
+    return;
+  }
+
+  if (!isset($context['entity']->view)) {
+    // No view is used.
+    return;
+  }
+
+  if ($context['entity']->view->name != 'os_profiles') {
+    // The view in use is not the os_profiles view.
+    return;
+  }
+
+  // Don't change the view mode if the profiles are in a box.
+  if (empty($context['entity']->sv_list)) {
+    $view_mode = variable_get('os_profiles_display_type', 'teaser');
+  }
+}
+
+/**
+ * Helper function. Checks if a page is a people term page.
+ *
+ * The function checks if the current page is a term page that is, the URL is
+ * in the form "john/people/science" where "science" is a vocabulary or if the URL is
+ * in the form "john/people/faculty" where "faculty" is a term.
+ *
+ * @param $arg
+ *  The part of $_GET['q] that comes after "people"
+ *  up to a "/".
+ */
+function _os_profiles_is_term_page($arg) {
+  $vocabs = os_sv_list_get_content_type_vocabs('person');
+
+  if (in_array($arg, $vocabs)) {
+    // Path is in the form "john/people/<vocab-name>".
+    return TRUE;
+  }
+  if (module_exists('vsite') && $vsite = vsite_get_vsite()) {
+    $source = drupal_lookup_path('source', $vsite->group->purl . '/' . $arg);
+    if (strpos($source, 'taxonomy/term') == 0) {
+      // Path is in the form "john/people/<term-name>".
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Implements hook_field_info_alter().
+ *
+ * Adding entity metadata wrapper support for the image field crop module.
+ */
+function os_profiles_field_info_alter(&$info) {
+  $info['imagefield_crop'] += array(
+    'default_token_formatter' => 'file_url_plain',
+    'property_type' => 'field_item_image',
+    'property_callbacks' => array('entity_metadata_field_image_callback', 'entity_metadata_field_file_callback'),
+  );
+}
+
+/**
+ * Implements hook_entity_property_info_alter().
+ */
+function os_profiles_entity_property_info_alter(&$info) {
+  $info['node']['bundles']['person']['properties']['person_photo_dimension'] = array(
+    'label' => t('Person picture dimension'),
+    'getter callback' => 'os_profiles_image_dimension',
+  );
+}
+
+/**
+ * Getter callback; Return the cropped image dimension.
+ */
+function os_profiles_image_dimension($entity, array $options, $name, $type) {
+  $wrapper = entity_metadata_wrapper($type, $entity);
+  $info = $wrapper->field_person_photo->value();
+
+  return array(
+    'cropbox_height' => $info['cropbox_height'],
+    'cropbox_width' => $info['cropbox_width'],
+    'cropbox_x' => $info['cropbox_x'],
+    'cropbox_y' => $info['cropbox_y'],
+  );
+}
+
+/**
+ * Implements hook_preprocess_image_formatter().
+ *
+ * When the synced node was updated and the user visit the node page after the
+ * pulling the info the file was not fully loaded. In that case, loading the
+ * file will fix that.
+ */
+function os_profiles_preprocess_image_formatter(&$variables) {
+  if (!empty($variables['item']['uri'])) {
+    return;
+  }
+
+  $variables['item'] = (array)file_load($variables['item']['fid']);
+}

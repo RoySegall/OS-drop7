@@ -1,5 +1,11 @@
 <?php
 /**
+ * @file
+ * Code for the Control Panel: Content feature.
+ */
+
+include_once 'cp_content.features.inc';
+/**
  * Implements hook_menu().
  */
 function cp_content_menu() {
@@ -14,16 +20,6 @@ function cp_content_menu() {
   );
 
   return $items;
-}
-
-/**
- * Implements hook_views_api().
- */
-function cp_content_views_api() {
-  return array(
-    'version' => '3.0',
-    'path' => drupal_get_path('module', 'cp_content') . '/views',
-  );
 }
 
 /**
@@ -83,7 +79,43 @@ function cp_content_views_default_views_alter(&$views) {
 
   //Change the default CP Content view to display private files
   if (isset($views['cp_files']->display->display_options['filters']['schema_type']['schema_type'])) {
-    //Remove the schemea filter all it currently does is exclude private.
+    //Remove the schema filter all it currently does is exclude private.
     unset($views['cp_files']->display->display_options['filters']['schema_type']);
   }
+}
+
+/**
+ * Implements hook_batch_alter().
+ *
+ * When selecting all the entities in the views including nodes from other pages
+ * we need to remove entities that don't belong to the current vsite.
+ */
+function cp_content_batch_alter(&$batch) {
+  if (!isset($batch['sets'][0]['finished'])) {
+    // Batch process didn't finish properly.
+    return;
+  }
+
+  if ($batch['sets'][0]['finished'] != '_views_bulk_operations_execute_finished') {
+    // Not a VBO action we need to alter.
+    return;
+  }
+
+  if (module_exists('vsite') && !$vsite = vsite_get_vsite()) {
+    return;
+  }
+
+  // Define an easy access to the arguments of the batch operation.
+  $arguments = &$batch['sets'][0]['operations'][0][1];
+  $entity_type = $arguments[1]->entityType;
+  $ids = array();
+
+  foreach ($arguments[0] as $entity_info) {
+    if (og_get_membership('node', $vsite->id, $entity_type, $entity_info['entity_id'])) {
+      $ids[] = $entity_info;
+    }
+  }
+
+  // Update the entities batch to the entities of the current vsite.
+  $arguments[0] = $ids;
 }

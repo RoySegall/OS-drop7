@@ -12,7 +12,6 @@ class eva_plugin_display_entity extends views_plugin_display {
     $options['argument_mode'] = array('default' => 'id');
     $options['default_argument'] = array('default' => '');
     $options['show_title'] = 0;
-    $options['exposed_form_as_field'] = 0;
 
     return $options;
   }
@@ -52,7 +51,7 @@ class eva_plugin_display_entity extends views_plugin_display {
     $options['bundles'] = array(
       'category' => 'entity_view',
       'title' => t('Bundles'),
-      'value' => empty($bundle_names) ? t('All') : implode(', ', $bundle_names),
+      'value' => empty($bundle_names) ? t('None') : implode(', ', $bundle_names),
     );
 
     $argument_mode = $this->get_option('argument_mode');
@@ -66,12 +65,6 @@ class eva_plugin_display_entity extends views_plugin_display {
       'category' => 'entity_view',
       'title' => t('Show title'),
       'value' => $this->get_option('show_title') ? t('Yes') : t('No'),
-    );
-    
-    $options['exposed_form_as_field'] = array(
-      'category' => 'entity_view',
-      'title' => t('Exposed Form as Field'),
-      'value' => $this->get_option('exposed_form_as_field') ? t('Yes') : t('No'),
     );
 
     if (module_exists('token')) {
@@ -117,7 +110,7 @@ class eva_plugin_display_entity extends views_plugin_display {
         $form['#title'] .= t('Bundles');
         $form['bundles'] = array(
           '#type' => 'checkboxes',
-          '#title' => t("Attach this display to the following bundles.  If no bundles are selected, the display will be attached to all."),
+          '#title' => t("Attach this display to the following bundles"),
           '#options' => $options,
           '#default_value' => $this->get_option('bundles'),
         );
@@ -173,14 +166,6 @@ class eva_plugin_display_entity extends views_plugin_display {
           '#default_value' => $this->get_option('show_title'),
         );
         break;
-      case 'exposed_form_as_field':
-        $form['#title'] .= t('Exposed Form as Field');
-        $form['exposed_form_as_field'] = array(
-          '#type' => 'checkbox',
-          '#title' => t('Split off Exposed Form as Separate Field'),
-          '#default_value' => $this->get_option('exposed_form_as_field'),
-          '#description' => t('Check this box to have a separate field for this view\'s exposed form on the "Manage Display" tab'),
-        );
     }
 
   }
@@ -224,10 +209,6 @@ class eva_plugin_display_entity extends views_plugin_display {
       case 'show_title':
         $this->set_option('show_title', $form_state['values']['show_title']);
         break;
-      case 'exposed_form_as_field':
-        $this->set_option('exposed_form_as_field', $form_state['values']['exposed_form_as_field']);
-        break;
-      
     }
   }
 
@@ -238,6 +219,12 @@ class eva_plugin_display_entity extends views_plugin_display {
     if (empty($entity_type)) {
       $errors[] = t('Display @display must have an entity type selected.', array('@display' => $this->display->display_title));
     }
+
+    $bundles = $this->get_option('bundles');
+    if (empty($bundles)) {
+      $errors[] = t('Display @display must have at least one bundle selected.', array('@display' => $this->display->display_title));
+    }
+
     return $errors;
   }
 

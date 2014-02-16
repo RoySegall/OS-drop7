@@ -276,7 +276,13 @@ function cp_toolbar_fill_drawer() {
   asort($bundles);
 
   $links = array();
+  $app_info = os_app_info();
   foreach ($bundles as $type => $name) {
+    foreach ($app_info as $info) {
+      if (!empty($info['require_parent_node'][$type])) {
+        continue 2;
+      }
+    }
     $url_str = str_replace('_', '-', $type);
     foreach ($content as $link) {
       if ($link['access'] && $link['link_path'] == 'node/add/'.$url_str) {

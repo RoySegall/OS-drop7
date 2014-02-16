@@ -5,5 +5,5 @@ package = Features
 dependencies[] = contextual_annotation
 dependencies[] = features
 dependencies[] = nodeorder
-features[features_api][] = api:1
+features[features_api][] = api:2
 features[user_permission][] = order nodes within categories

@@ -36,6 +36,6 @@ function password_policy_consecutive_admin_form($form, &$form_state, $constraint
  * Admin form callback for consecutive character count constraint.
  */
 function password_policy_consecutive_constraint($password, $account, $constraint) {
-  $pattern = '/(.)[\1]{' . ($constraint->config['consecutive_char_count'] - 1) . '}/';
+  $pattern = '/(.)\1{' . ($constraint->config['consecutive_char_count'] - 1) . '}/';
   return !preg_match($pattern, $password);
 }

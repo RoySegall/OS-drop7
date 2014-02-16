@@ -93,19 +93,35 @@ function _vsite_register_welcome_title() {
  * Gets the node title from the welcome message node.
  */
 function _vsite_register_welcome_page() {
+  // Prepares an empty build array.
+  $path = drupal_get_path('module', 'vsite_register');
+  $build = array(
+    'welcome_page' => array(
+      '#markup' => '',
+    ),
+  );
+
+  // Prepares the page content markup.
   $nid = variable_get('vsite_register_welcome_message');
   $node = node_load($nid);
   $items = field_get_items('node', $node, 'body');
-  $body = array_shift($items);
+  if (is_array($items) && count($items)) {
+    $body = array_shift($items);
+    if (isset($body['value']) && !empty($body['value'])) {
+      $build['welcome_page']['#markup'] = $body['value'];
+    }
+    // Returns an empty string if no body value found.
+    else {
+      return $build;
+    }
+  }
+
   // Optionally prepares a button "Okay" to dismiss the overlay.
   if (overlay_get_mode() == 'child') {
-    $suffix = '<div class="vsite-welcome-okay"><a class="overlay-close os-blue-button" href="#">' . t('Okay') . '</a></div>';
+    $build['welcome_page']['#suffix'] = '<div class="vsite-welcome-okay"><a class="overlay-close os-blue-button" href="#">' . t('Okay') . '</a></div>';
   }
-  if (isset($body['value'])) {
-    // Only shows the "Okay" dismiss button if the page is viewed in overlay.
-    return isset($suffix) ? $body['value'] . $suffix : $body['value'];
-  }
-  return '';
+
+  return $build;
 }
 
 /**
@@ -138,23 +154,37 @@ function vsite_register_block_view($delta = '') {
 
   switch ($delta) {
     case 'get_your_site_block':
-      if (vsite_vsite_exists_access()) {
-        $content = l(t('Create your site'), 'site/register', array());
+      $path = 'site/register';
+      if (user_access('access administration pages')) {
+        $text = t('Create a site');
+      }
+      elseif (vsite_vsite_exists_access()) {
+        $text = variable_get('vsite_register_get_site_text', t('Create your site'));
       }
       elseif (isset($vsites) && user_is_logged_in()) {
         if (count($vsites) > 1) {
-          $content = l(t('Go to your sites'), 'user');
+          $text = variable_get('vsite_register_max_site_text_single', t('Go to your sites'));
+          $path = 'user';
         }
         else {
-          $content = l(t('Go to your site'), $vsites[0]->og->purl);
+          $text = variable_get('vsite_register_max_site_text_plural', t('Go to your site'));
+          $path = $vsites[0]->og->purl;
         }
       }
       break;
   }
 
-  if (isset($content)) {
+  if (isset($text)) {
+    $options = array(
+      'attributes' => array(
+        'class' => array('get-your-site-button'),
+        'id' => 'get-your-site-block',
+      ),
+    );
     $block['content'] = array(
-      'content' => array('#markup' => $content),
+      'content' => array(
+        '#markup' => l($text, $path, $options),
+      ),
     );
   }
 
@@ -356,4 +386,28 @@ function vsite_register_get_purls() {
 
   print drupal_json_encode($output);
   exit;
+}
+
+/**
+ * Implements hook_contextual_links_view_alter().
+ *
+ * Adds a link for sitewide admins to configure Vsite Register from widget.
+ */
+function vsite_register_contextual_links_view_alter(&$element, $items) {
+  if (!isset($element['#element']['#block']->bid) || $element['#element']['#block']->bid != 'vsite_register-get_your_site_block') {
+    return;
+  }
+  if (!user_access('access administration pages')) {
+    return;
+  }
+
+  foreach ($element['#contextual_links'] as $delta => $links) {
+    $element['#links']['configure'] = array(
+      'title' => t('Configure'),
+      'href' => 'admin/config/openscholar/vsite_register',
+      'attributes' => array(
+        'class' => array('ctools-use-modal'),
+      ),
+    );
+  }
 }

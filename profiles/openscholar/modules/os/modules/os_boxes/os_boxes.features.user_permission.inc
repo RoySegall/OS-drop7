@@ -10,23 +10,24 @@
 function os_boxes_user_default_permissions() {
   $permissions = array();
 
-  // Exported permission: administer boxes.
+  // Exported permission: 'administer boxes'.
   $permissions['administer boxes'] = array(
     'name' => 'administer boxes',
     'roles' => array(
-      0 => 'administrator',
-      1 => 'manager',
+      'administrator' => 'administrator',
+      'manager' => 'manager',
     ),
     'module' => 'boxes',
   );
 
-  // Exported permission: edit boxes.
+  // Exported permission: 'edit boxes'.
   $permissions['edit boxes'] = array(
     'name' => 'edit boxes',
     'roles' => array(
-      0 => 'administrator',
-      1 => 'manager',
-      2 => 'vsite admin',
+      'administrator' => 'administrator',
+      'content editor' => 'content editor',
+      'manager' => 'manager',
+      'vsite admin' => 'vsite admin',
     ),
     'module' => 'boxes',
   );

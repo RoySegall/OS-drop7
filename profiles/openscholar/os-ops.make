@@ -26,3 +26,4 @@ libraries[composer][download][url] = "https://github.com/openscholar/integrated_
 libraries[php-trello][type] = "libraries"
 libraries[php-trello][download][type] = "file"
 libraries[php-trello][download][url] = "https://bitbucket.org/mattzuba/php-trello/get/v1.1.1.zip"
+

@@ -1,6 +1,4 @@
 <?php
-// $Id$
-
 /**
  * @file
  * os_profiles.context.inc
@@ -13,9 +11,7 @@ function os_profiles_context_default_contexts() {
   $export = array();
 
   $context = new stdClass();
-  /* Edit this to true to make a default context disabled initially */
-
-  $context->disabled = FALSE;
+  $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
   $context->api_version = 3;
   $context->name = 'profiles_profiles';
   $context->description = '';
@@ -57,4 +53,3 @@ function os_profiles_context_default_contexts() {
 
   return $export;
 }
-

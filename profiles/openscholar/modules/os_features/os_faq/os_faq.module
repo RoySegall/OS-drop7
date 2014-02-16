@@ -22,6 +22,19 @@ function os_faq_os_app_info() {
     'views tabs' => array(
       'os_faq' => array('page'),
     ),
+    'importers' => array(
+      'faq' => array(
+        'csv' => 'os_faq',
+      ),
+    ),
+    'browse_pages' => array(
+      'faq' => array(
+        'url' => 'browse/faq',
+        'title' => t('Frequently Asked Questions'),
+        'display_mode' => 'teaser',
+        'menu_item' => 'faq',
+      ),
+    ),
   );
 
   return $apps;
@@ -98,4 +111,13 @@ function os_faq_preprocess_node(&$vars) {
     $vars['links_attributes_array']['class'][] = 'os-slider';
     drupal_add_js(drupal_get_path('module', 'os').'/theme/os_toggle.js');
   }
+}
+
+/**
+ * Implements hook_os_entity_view_modes_alter
+ *
+ * Slide teaser is redundant with the default faq teaser so remove it
+ **/
+function os_faq_os_entity_view_modes_alter(&$info) {
+  $info['node']['faq'] = array_diff($info['node']['faq'], array('slide_teaser'));
 }

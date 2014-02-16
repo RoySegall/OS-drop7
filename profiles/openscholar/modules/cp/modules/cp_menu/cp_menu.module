@@ -1,5 +1,13 @@
 <?php
 
+/**
+ * @file
+ * Provides OpenScholar site menu management.
+ */
+
+/**
+ * Implements hook_menu().
+ */
 function cp_menu_menu() {
   $items = array();
 
@@ -89,6 +97,9 @@ function cp_menu_admin_paths() {
   return $paths;
 }
 
+/**
+ * Implements hook_theme().
+ */
 function cp_menu_theme() {
   $items = array();
 
@@ -100,7 +111,11 @@ function cp_menu_theme() {
   return $items;
 }
 
-//save new nodes to menus using os api instead of core
+/**
+ * Implements hook_node_insert().
+ *
+ * Saves new nodes to menus using os api instead of core.
+ */
 function cp_menu_node_insert($node) {
   if (isset($node->os_menu) && $node->os_menu['enabled']) {
     ctools_include('menu','os');
@@ -123,7 +138,11 @@ function cp_menu_node_insert($node) {
   }
 }
 
-//delete old links, insert new ones.
+/**
+ * Implements hook_node_update().
+ *
+ * Deletes old menu links, inserts new ones.
+ */
 function cp_menu_node_update($node) {
   ctools_include('menu', 'os');
 
@@ -155,7 +174,11 @@ function cp_menu_node_update($node) {
   }
 }
 
-//delete menu links when their node is deleted
+/**
+ * Implements hook_node_delete().
+ *
+ * Deletes menu links when their node is deleted.
+ */
 function cp_menu_node_delete($node) {
   ctools_include('menu', 'os');
   if ($link = os_menu_load_link_path('node/' . $node->nid)) {
@@ -163,7 +186,11 @@ function cp_menu_node_delete($node) {
   }
 }
 
-//add contextual links to menu to create new links
+/**
+ * Implements hook_contextual_links_view_alter().
+ *
+ * add contextual links to menu to create new links.
+ */
 function cp_menu_contextual_links_view_alter(&$element, $items) {
   ctools_include('menu','os');
   $menus = array_keys(os_get_menus());
@@ -185,11 +212,12 @@ function cp_menu_contextual_links_view_alter(&$element, $items) {
 }
 
 /**
- * @function cp_form_node_form_alter
- * Implements hook_BASE_ID_form_alter().
+ * Implements hook_BASE_ID_form_alter() for node_form().
  *
- * Prepopulates node/add/* with menu link data when a new node is created for the link.
- * Moves menu to os_menu for later processing during node_insert (is this really necessary?  shouldn't it happen elsewhere?)
+ * Prepopulates node/add/* with menu link data when a new node is created for
+ * the link. Moves menu to os_menu for later processing during node_insert.
+ *
+ * @fixme is this really necessary? shouldn't it happen elsewhere?
  */
 function cp_menu_form_node_form_alter(&$form, &$form_state, $form_id) {
   ctools_include('menu', 'os');
@@ -290,11 +318,12 @@ function cp_menu_form_node_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
- * implementation of hook_node_submit
+ * Implements hook_node_submit().
  *
- * When a link is updated or a node's link is enabled, flag it as dirty so hook_node_update can create/update the link
- * Can't update changes across menus though - those need a delete.
- **/
+ * When a link is updated or a node's link is enabled, flag it as dirty so
+ * hook_node_update() can create/update the link. Can't update changes across
+ * menus though - those need a delete.
+ */
 function cp_menu_node_submit($node, $form, &$state) {
   if (is_array($state['values']['os_menu'])) {
     if ($state['values']['os_menu']['parent'] != $form['os_menu']['link']['parent']['#default_value']) {
@@ -315,7 +344,11 @@ function cp_menu_node_submit($node, $form, &$state) {
   }
 }
 
-//validation for os menu.  when menu link is enabled, it should have a title.
+/**
+ * Validate callback for node_form().
+ *
+ * When menu link is enabled, it should have a title.
+ */
 function cp_menu_node_validate($node, $form, &$form_state) {
   if ($os_menu = &$form_state['values']['os_menu']) {
     $os_menu['link_title'] = trim($os_menu['link_title']);
@@ -326,6 +359,13 @@ function cp_menu_node_validate($node, $form, &$form_state) {
   }
 }
 
+/**
+ * Page callback; AJAX form wrapper for menu link edit form.
+ *
+ * @param $link
+ * @param $js
+ * @return array|mixed
+ */
 function cp_menu_edit_link($link, $js) {
   ctools_include('menu', 'os');
   $link = os_menu_link_load($link);
@@ -371,10 +411,8 @@ function cp_menu_edit_link($link, $js) {
   }
 }
 
-/*
- * @function cp_menu_delete_link
- *
- * Menu callback function for deleting a link from cp/build/menu
+/**
+ * Page callback; AJAX form wrapper for menu link edit form.
  */
 function cp_menu_delete_link($link, $js) {
   ctools_include('menu', 'os');
@@ -412,6 +450,11 @@ function cp_menu_delete_link($link, $js) {
   }
 }
 
+/**
+ * Form builder for delete link form.
+ *
+ * @see cp_menu_delete_link()
+ */
 function cp_menu_delete_link_form($form, $form_state, $link) {
   $form['text'] = array(
     '#type' => 'markup',
@@ -436,7 +479,9 @@ function cp_menu_delete_link_form($form, $form_state, $link) {
   return $form;
 }
 
-
+/**
+ * Submit callback for delete link form.
+ */
 function cp_menu_delete_link_form_submit($form, $form_state) {
   ctools_include('menu', 'os');
   $link = $form['#link'];
@@ -446,6 +491,11 @@ function cp_menu_delete_link_form_submit($form, $form_state) {
   }
 }
 
+/**
+ * Form builder for edit link form.
+ *
+ * @see cp_menu_edit_link()
+ */
 function cp_menu_edit_link_form($form, $form_state, $link) {
   $form_state['title'] = t('Title');
 
@@ -494,6 +544,9 @@ function cp_menu_edit_link_form($form, $form_state, $link) {
   return $form;
 }
 
+/**
+ * Validate callback for edit link form.
+ */
 function cp_menu_edit_link_form_validate($form, &$form_state) {
   if ($form_state['values']['op'] == t('Save')) {
     if (empty($form_state['values']['title'])) {
@@ -502,6 +555,9 @@ function cp_menu_edit_link_form_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Submit callback for edit link form.
+ */
 function cp_menu_edit_link_form_submit($form, $form_state) {
   ctools_include('menu', 'os');
   $link = $form['#link'];

@@ -1,35 +1,44 @@
 <?php
 /**
- * Defines a form to display the various settings that have nowhere else to go
+ * @file
+ * cp.form.inc
+ */
+
+/**
+ * Form builder; merges various site settings into a single "Settings" form.
  */
 function cp_settings_form($form_state) {
   $form = array();
   $form['#submit'] = array();
+  $form['#after_build'] = array();
 
+  // Loops over all implementations of hook_cp_settings().
   $settings = cp_get_setting_forms();
-  foreach ($settings as $key => $s) {
-    if (!isset($s['form'])) continue;
+  foreach ($settings as $key => $setting) {
+    if (!isset($setting['form'])) {
+      continue;
+    }
 
-    // if the setting defines a group for itself,
-    // that group should be created and the form placed
-    // in the group
-    if (isset($s['group'])) {
-      $id = $s['group']['#id'];
+    // Creates any non-existing fieldgroup for this setting, if specified.
+    if (isset($setting['group'])) {
+      $id = $setting['group']['#id'];
       if (!isset($form[$id])) {
-        $form[$id] = $s['group'];
+        $form[$id] = $setting['group'];
         $form[$id]['#type'] = 'fieldset';
       }
 
-      $form[$id][$key] = $s['form'];
+      $form[$id][$key] = $setting['form'];
     }
     else {
-      $form[$key] = $s['form'];
+      $form[$key] = $setting['form'];
     }
 
-    // if the form includes its own submit handlers,
-    // merge them into the existing
-    if (isset($s['submit'])) {
-      $form['#submit'] = array_merge($form['#submit'], $s['submit']);
+    // Merges any submit handler(s) into the existing value.
+    if (isset($setting['submit'])) {
+      $form['#submit'] = array_merge($form['#submit'], $setting['submit']);
+    }
+    if (isset($setting['after_build'])) {
+      $form['#after_build'] = array_merge($form['#after_build'], $setting['after_build']);
     }
   }
 

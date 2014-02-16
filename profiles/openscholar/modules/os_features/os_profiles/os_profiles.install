@@ -16,3 +16,10 @@ if (module_exists('field_redirection')) {
     module_enable(array('field_redirection'));
   }
 }
+
+/**
+ * Add description to image fields
+ */
+function os_profiles_update_7002() {
+  features_revert(array('os_profiles' => array('field_instance')));
+}

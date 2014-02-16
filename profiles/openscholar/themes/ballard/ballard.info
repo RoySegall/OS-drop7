@@ -1,7 +1,7 @@
 
 ;----------// Theme Information
 
-  name        = Ballard (HPAC)
+  name        = Ballard
   description = A public theme for use in OpenScholar.
   core        = 7.x
   base theme  = os_basetheme

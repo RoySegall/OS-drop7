@@ -109,6 +109,12 @@ div.messages {
   margin-right: 15px;
 }
 
+/*** SOME BASE STLYES FOR THE COLUMNS WIDGET ***/
+.block-boxes-os_boxes_columns .region .region-inner {padding-right:25px;}
+
+.block-boxes-os_boxes_columns .region:last-child .region-inner {padding-right:0;}
+
+
 /*** FRONTPAGE PANELS ***/
 
 .content-left .at-panel .region.region-content-first, 
@@ -136,6 +142,9 @@ div.messages {
     float:none;
 }
 
+
+/* FOR DISPLAYING EMBEDDABLE BLOCK OF CONTENT THROUGH <embed> */
+body#widget {display: inline-block;}
 
   /* Footer panels */
 
@@ -463,21 +472,26 @@ ul.class_material_field_class a.class_material_field_class_anchor {
     position: relative;
 }
 
+
 .video-indicator {
 	background: url("../images/movie_file_icon.png") no-repeat;
- 	bottom: 5px;
-    display: block;
-    height: 13%;
-    left: 5px;
-    height: 48px;
-    width: 48px;
+ 	bottom: 10px;
+  display: block;
+  height: 13%;
+  left: 5px;
+  height: 48px;
+  width: 48px;
 	position: relative;
-    margin-top: -48px;
+  margin-top: -48px;
+}
+
+.oembed:hover>a>.video-indicator {
+  background: url("../images/movie_file_icon_highlight.png") no-repeat;
 }
 
 /* VIDEO ATTACHED TO A NODE  */
 
-.oembed {
+.node-content .oembed {
     background: none repeat scroll 0 0 #EEEEEE;
     border-color: #ccc;
     border-radius: 0 0 0 0;
@@ -485,7 +499,7 @@ ul.class_material_field_class a.class_material_field_class_anchor {
     border-width: 1px;
     color: #555555;
     text-align:center;
-
+    width: 250px;
 }
 
 .oembed .oembed-title {
@@ -607,7 +621,7 @@ ul.class_material_field_class a.class_material_field_class_anchor {
 /* CTools MODAL OVERRIDES */
 
 #modalContent {
-  top: 0;
+  top: 0 !important;
   color: #666;
   position: fixed !important;
 }
@@ -657,7 +671,12 @@ div.ctools-modal-content .modal-content {
   overflow: auto;
   width: 575px;
   height: 400px;
-  }
+  overflow-x: hidden;
+}
+
+div.ctools-modal-content .modal-content .messages {
+  width: 680px;
+}
 
 #modalContent .spaces-customize-form .buttons input.form-submit {
   margin-right: 140px;
@@ -752,6 +771,12 @@ div.ctools-modal-content .modal-content .modal-throbber-wrapper img {
     border-radius: 0;
     border:0;
 } 
+
+
+
+.ui-dialog.ui-front.media-wrapper {
+	z-index:500;
+}
  
  #media-browser-tabset .media-browser-tab {
     border: none;
@@ -770,6 +795,7 @@ div.ctools-modal-content .modal-content .modal-throbber-wrapper img {
 	
 /** OS LOGIN CONTAINER STYLES **/	
 /** SLIDER **/
+.sv-list-biblio.sv-list-view-slide_teaser .biblio-abstract-display.os-slider,	
 .os-slider {
   display: none;
   color: black;
@@ -780,12 +806,28 @@ div.ctools-modal-content .modal-content .modal-throbber-wrapper img {
   padding: 1em;
 }
 
+.sv-list-view-slide_teaser .os-slider,
 .node-type-faq .os-slider,
 .page-faq .os-slider {
   border:none;
   padding: 0;
   background: none !important;
   
+}
+
+
+.sv-list-biblio.sv-list-view-slide_teaser .biblio-abstract-display.os-slider {
+	background: #F1F1F1 !important;
+}
+
+div.toggle {
+	cursor:pointer;
+}
+
+.sv-list-person.sv-list-view-slide_teaser .toggle h1.node-title {color: #215990;}
+
+.block-boxes-os_sv_list_box .sv-list-class.sv-list-view-slide_teaser .os-slider li {
+list-style: none !important;
 }
 
 
@@ -841,12 +883,85 @@ border-top:1px solid #ccc;
     padding: 0.15em 1em;
      text-decoration: none !important;
   }
+  
+   .ui-tabs-nav.ui-helper-reset {
+	line-height:1.3;
+}
 
 .page-cp #tabs,
 .page-cp #tabs .links {
 	border:none;
 	border-bottom:none;
 }	
+
+/* ACCORDION OVERRIDES */
+.ui-accordion .ui-accordion-content {
+    padding: 0.7em;
+}
+
+.accordion .ui-corner-all, 
+.accordion .ui-corner-bottom, 
+.accordion .ui-corner-right, 
+.accordion .ui-corner-br,
+.accordion .ui-corner-top, 
+.accordion .ui-corner-tr {
+    border-bottom-right-radius: 0;
+    border-top-right-radius: 0;
+}
+.accordion .ui-corner-all, 
+.accordion .ui-corner-bottom, 
+.accordion .ui-corner-left, 
+.accordion .ui-corner-bl,
+.accordion .ui-corner-left, 
+.accordion .ui-corner-tl,
+.accordion .ui-corner-top {
+    border-bottom-left-radius: 0;
+    border-top-left-radius: 0;
+}
+
+
+.ui-accordion .ui-accordion-header .ui-accordion-header-icon {
+    left: 0.2em;
+}
+
+.ui-accordion .ui-accordion-icons {
+    padding-left: 1.55em;
+}
+
+.accordion .ui-widget-content {
+    background: #fafafa;
+    border: none;
+    color: #333;
+}
+
+.accordion .ui-state-default, 
+.accordion .ui-widget-content .ui-state-default, 
+.accordion .ui-widget-header .ui-state-default,
+.accordion .ui-state-active, 
+.accordion .ui-widget-content .ui-state-active, 
+.accordion .ui-widget-header .ui-state-active {
+    background: #EEE;
+    border: none;
+    color: #333;
+}
+
+.accordion .ui-widget-content {
+     color: inherit;
+}
+
+.ui-widget-content {
+     color: inherit;
+}
+
+.ui-helper-reset {
+     font-size: 1em;
+      line-height: inherit;
+}
+
+.ui-widget {
+     font-family: inherit;
+     font-size: 1em;
+}
 	
 /* JCAROUSEL OVERRIDE STYLES */
 
@@ -893,23 +1008,16 @@ border:1px solid #CCC;
 	
 /* Recent Images Widget */
 
-.block-boxes-os_sv_list_box .item-list ul.recent-images-list li {list-style-image:none;}
-
-ul.recent-images-list li {
-  list-style: none;
-  padding: 0;
+img.recent-images-list {
+  padding: 4px;	
+  background-color: white;	
+  border: 1px solid #ADADAD;
   float: left;
   clear: none;
   margin: 0 5px 5px 0; 
 }
-	
-ul.recent-images-list li img {
-  padding: 4px;	
-  background-color: white;	
-  border: 1px solid #ADADAD;
-}
 
-ul.recent-images-list li a:hover img {
+img.recent-images-list:hover {
      background-color: yellow;
  
 }
@@ -979,12 +1087,18 @@ LIST OF POSTS - PERSON TEASER IN SIDEBAR
     margin-bottom: 0;
 }
 
+
+.block-boxes-os_sv_list_box .sv-list-person.sv-list-view-full h1.node-title {
+    font-size: 1.5em;
+}
+
+
 .block-boxes-os_sv_list_box .node.node-news.node-promoted .field-type-image.view-mode-sidebar_teaser,
 .block-boxes-os_sv_list_box .node.node-person.article.with-person-photo .pic-bio,
 .block-boxes-os_sv_list_box .node.node-person.article.modified-in-os_profiles_process_node .pic-bio,
-.block-boxes-os_sv_list_box .node.node-person .field-name-field-person-photo {
+.node.node-person .field-name-field-person-photo {
  	float:left;
-     margin-right: 10px;
+     margin-right: 1em;
 }
 
 

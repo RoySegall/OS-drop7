@@ -183,7 +183,7 @@
   function tab_change(e) {
     // set the active class on the tabs themselves
     $('#widget-categories a').removeClass('active');
-    var tar_class = $(e.target).addClass('active').text();
+    var tar_class = $(e.target).addClass('active').attr('data-category');
 
     // hide/show affected widgets
     if (tar_class == 'All') {

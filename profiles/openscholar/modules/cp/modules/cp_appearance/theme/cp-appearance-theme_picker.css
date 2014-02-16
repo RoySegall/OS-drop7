@@ -196,3 +196,39 @@ padding-left: 55px;
     overflow: auto;
     margin-bottom: 1em;
 }
+
+.delete-subtheme,
+.git-pull-button,
+.zip-pull-button {
+  float: right;
+  margin-left: 12px;
+}
+
+.delete-subtheme a,
+.git-pull-button a,
+.zip-pull-button a {
+  color: white;
+  font-size:11px;
+}
+
+.delete-subtheme a {
+	background:url('/profiles/openscholar/themes/os_basetheme/images/scholarbase-sprite.png') 0 -606px no-repeat;
+	padding-left:17px;
+}
+
+.zip-pull-button a {
+	background: url('/profiles/openscholar/themes/os_basetheme/images/scholarbase-sprite.png') 0 -620px no-repeat #0a4476;
+padding: 15px 7px 8px 22px;
+	
+}
+
+
+.git-pull-button a {
+	background: url('/profiles/openscholar/themes/os_basetheme/images/scholarbase-sprite.png') 0 -651px no-repeat #0a4476;
+padding: 15px 7px 8px 22px;
+	
+}
+
+
+
+

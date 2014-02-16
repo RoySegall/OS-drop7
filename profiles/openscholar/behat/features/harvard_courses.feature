@@ -7,6 +7,7 @@ Feature:
 
     # Define harvard courses
      When I enable harvard courses
+      And I set feature "edit-spaces-features-harvard-courses" to "Public" on "john"
       And I set courses to import
       And I refresh courses
       And I visit "john/courses"

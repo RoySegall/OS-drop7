@@ -262,17 +262,19 @@ function _purl_form_alter(&$form, &$form_state, $form_id) {
 }
 
 /**
- * Submit handler for menu_edit_menu
+ * Validate callback for redirect_edit_form().
  */
 function purl_redirect_edit_validate($form, &$form_state) {
   if ($form_state['values']['purl']['disabled'] == 0 && $form_state['values']['purl']['modifier']) {
     $purl_settings = explode(':', $form_state['values']['purl']['modifier']);
-    $form_state['values']['redirect_options'] = array(
-      'purl' => array('add' => array(array('provider' => $purl_settings[0], 'id' => $purl_settings[1]))),
+    $form_state['values']['redirect_options']['purl'] = array(
+      'add' => array(
+        0 => array(
+          'provider' => $purl_settings[0],
+          'id' => $purl_settings[1],
+        )
+      ),
     );
-  }
-  else {
-    $form_state['values']['redirect_options'] = array();
   }
 }
 

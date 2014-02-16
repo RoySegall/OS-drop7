@@ -31,7 +31,11 @@ a:hover {
     
  .node .node-inner .links li a {
    text-decoration:underline;
-}   
+} 
+
+ .node a.node-readmore {
+   text-decoration:underline;
+}  
 
 .more-link a {
   color:#991122;text-decoration:underline;

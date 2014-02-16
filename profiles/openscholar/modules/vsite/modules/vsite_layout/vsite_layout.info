@@ -1,4 +1,4 @@
-name = "vsite Layout"
+name = Vsite Layout
 description = "This implements the vsite api's for layout to apply overrides to contexts."
 core = 7.x
 package = "OpenScholar vsite"

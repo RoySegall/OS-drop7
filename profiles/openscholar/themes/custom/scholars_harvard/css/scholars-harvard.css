@@ -181,7 +181,8 @@ p.os-leadin {
 	height:80px;
 	background: url('../images/getsitenowButton.png')no-repeat;
 	padding: 20px 75px;
-	margin-bottom:0;
+	margin: 0 !important;
+	text-align:left;
 	}
 
 #block-vsite-register-get-your-site-block a {
@@ -1199,5 +1200,19 @@ border-right:1px solid #E8E9EB;
   overflow:hidden;
   font-size: 10px;
   display: block;
+}
+
+#block-vsite-register-get-your-site-block .get-your-site-button {
+    background: none;
+    border-radius: 0;
+    color: #FFFFFF;
+    font-size: 30px;
+    padding: 0;
+    text-decoration: none;
+}
+
+#block-vsite-register-get-your-site-block .get-your-site-button:hover {
+    background: none;
+  
 }
 

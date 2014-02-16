@@ -76,8 +76,8 @@ class SubTheme {
 
     $files_folder = variable_get('file_public_path', conf_path() . '/files');
 
-    $this->filePath = $files_folder . '/' . $file_name;
-    $this->extractPath = $files_folder . '/' . $folder_name;
+    $this->filePath = empty($this->filePath) ? $files_folder . '/' . $file_name : $this->filePath;
+    $this->extractPath = empty($this->extractPath) ? $files_folder . '/' . $folder_name : $this->extractPath;
   }
 
   /**

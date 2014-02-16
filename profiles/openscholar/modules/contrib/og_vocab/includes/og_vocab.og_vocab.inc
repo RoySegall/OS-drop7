@@ -89,9 +89,11 @@ class OgVocab extends Entity {
     if ($this->settings['widget_type'] ==  'entityreference_autocomplete') {
       $element['#vid'] = $vid;
 
-      // Change the "Add more" button name so it adds only the needed
-      // element.
-      $element['add_more']['#name'] .= '__' . $vid;
+      if (!empty($element['add_more'])) {
+        // Change the "Add more" button name so it adds only the needed
+        // element.
+        $element['add_more']['#name'] .= '__' . $vid;
+      }
 
       foreach (array_keys($element) as $delta) {
         if (!is_numeric($delta)) {

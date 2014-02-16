@@ -63,7 +63,7 @@ function hwpi_basetheme_page_alter(&$page) {
       )
     )
   );
-  
+
   if (context_isset('context', 'os_public') && variable_get('enable_responsive', false)) {
     $path = drupal_get_path('theme', 'hwpi_basetheme').'/css/';
     drupal_add_css($path.'responsive.base.css');
@@ -82,7 +82,6 @@ function hwpi_basetheme_page_alter(&$page) {
  * Preprocess variables for comment.tpl.php
  */
 function hwpi_basetheme_preprocess_node(&$vars) {
-  // Event persons, change title markup to h1
   if ($vars['type'] != 'person') {
     return;
   }
@@ -93,11 +92,36 @@ function hwpi_basetheme_preprocess_node(&$vars) {
   else {
     // If node is in teaser view mode, load a default image. If node is displayed
     // in "List of posts" widget or in full display mode, load a bigger default image.
-    if ($vars['view_mode'] == 'teaser') {
-      $path = variable_get('os_person_default_image', drupal_get_path('theme', 'hwpi_basetheme') . '/images/person-default-image.png');
-      $image = '<div class="field-name-field-person-photo">' . theme('image',  array('path' => $path)) . '</div>';
-      // Default image.
-      $vars['content']['field_person_photo'][0] = array('#markup' => $image);
+    if (in_array($vars['view_mode'], array('teaser'))) {
+      // Check if profile is in a widget.
+      if (!empty($vars['sv_list'])) {
+        // Use default image.
+        $path = variable_get('os_person_default_image', drupal_get_path('theme', 'hwpi_basetheme') . '/images/person-default-image.png');
+        $image = '<div class="field-name-field-person-photo">' . theme('image',  array('path' => $path)) . '</div>';
+        $vars['content']['field_person_photo'][0] = array('#markup' => $image);
+      }
+      // Profile is not in a widget. Check if default image is disabled. If it is, print an empty div.
+      elseif (variable_get('os_profiles_disable_default_image', FALSE)){
+        $vars['content']['field_person_photo'][0] = array('#markup' => '<div class="no-default-image"></div>');
+      }
+      else {
+        if ($custom_default_image = variable_get('os_profiles_default_image_file', 0)) {
+          // Use custom default image.
+          $image_file = file_load($custom_default_image);
+          $path = $image_file->uri;
+          $options = array(
+            'path' => $path,
+            'style_name' => 'profile_thumbnail',
+          );
+          $image = '<div class="field-name-field-person-photo">' . theme('image_style',  $options) . '</div>';
+        }
+        else {
+          // Use default image.
+          $path = variable_get('os_person_default_image', drupal_get_path('theme', 'hwpi_basetheme') . '/images/person-default-image.png');
+          $image = '<div class="field-name-field-person-photo">' . theme('image',  array('path' => $path)) . '</div>';
+        }
+        $vars['content']['field_person_photo'][0] = array('#markup' => $image);
+      }
     }
     elseif ((!empty($vars['os_sv_list_box']) && $vars['os_sv_list_box']) || $vars['view_mode'] == 'full') {
       $path = variable_get('os_person_default_image_big', drupal_get_path('theme', 'hwpi_basetheme') . '/images/person-default-image-big.png');
@@ -111,11 +135,35 @@ function hwpi_basetheme_preprocess_node(&$vars) {
       }
     }
     elseif ($vars['view_mode'] == 'sidebar_teaser') {
-      $path = variable_get('os_person_default_image', drupal_get_path('theme', 'hwpi_basetheme') . '/images/person-default-image.png');
-      $image = '<div class="field-name-field-person-photo">' . theme('image',  array('path' => $path)) . '</div>';
-      // Default image.
-      $vars['content']['pic_bio']['field_person_photo'][0] = array('#markup' => $image);
-
+      // Check if profile is in a widget.
+      if (!empty($vars['sv_list'])) {
+        // Use default image.
+        $path = variable_get('os_person_default_image', drupal_get_path('theme', 'hwpi_basetheme') . '/images/person-default-image.png');
+        $image = '<div class="field-name-field-person-photo">' . theme('image',  array('path' => $path)) . '</div>';
+        $vars['content']['pic_bio']['field_person_photo'][0] = array('#markup' => $image);
+      }
+      // Profile is not in a widget. Check if default image is disabled. If it is, print an empty div.
+      elseif (variable_get('os_profiles_disable_default_image', FALSE)){
+        $vars['content']['pic_bio']['field_person_photo'][0] = array('#markup' => '<div class="no-default-image"></div>');
+      }
+      else {
+        if ($custom_default_image = variable_get('os_profiles_default_image_file', 0)) {
+          // Use custom default image.
+          $image_file = file_load($custom_default_image);
+          $path = $image_file->uri;
+          $options = array(
+            'path' => $path,
+            'style_name' => 'profile_thumbnail',
+          );
+          $image = '<div class="field-name-field-person-photo">' . theme('image_style',  $options) . '</div>';
+        }
+        else {
+          // Use default image.
+          $path = variable_get('os_person_default_image', drupal_get_path('theme', 'hwpi_basetheme') . '/images/person-default-image.png');
+          $image = '<div class="field-name-field-person-photo">' . theme('image',  array('path' => $path)) . '</div>';
+        }
+        $vars['content']['pic_bio']['field_person_photo'][0] = array('#markup' => $image);
+      }
       // Make sure image will be displayed.
       $vars['content']['pic_bio']['#access'] = TRUE;
     }
@@ -128,9 +176,35 @@ function hwpi_basetheme_preprocess_node(&$vars) {
 function hwpi_basetheme_process_node(&$vars) {
   // Event persons, change title markup to h1
   if ($vars['type'] == 'person') {
-    if (!$vars['teaser'] && $vars['view_mode'] != 'sidebar_teaser') {
+    if ($vars['view_mode'] == 'title') {
+      $vars['title_prefix']['#suffix'] = '<h1 class="node-title">' . l($vars['title'], 'node/' . $vars['nid']) . '</h1>';
+      $vars['title'] = NULL;
+    }
+    elseif (!$vars['teaser'] && $vars['view_mode'] != 'sidebar_teaser') {
       $vars['title_prefix']['#suffix'] = '<h1 class="node-title">' . $vars['title'] . '</h1>';
       $vars['title'] = NULL;
+      
+      if ($vars['view_mode'] == 'slide_teaser') {
+        $vars['title_prefix']['#suffix'] = '<div class="toggle">' . $vars['title_prefix']['#suffix'] . '</div>';
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_field_display_ENTITY_TYPE_alter().
+ */
+function hwpi_basetheme_field_display_node_alter(&$display, $context) {
+  if ($context['entity']->type == 'event' && $context['instance']['field_name'] == 'field_date') {
+    if (($context['view_mode'] != 'full') || (isset($context['entity']->os_sv_list_box) && $context['entity']->os_sv_list_box)) {
+
+      if (isset($context['entity']->field_date[LANGUAGE_NONE][0]['value2']) &&
+          (strtotime($context['entity']->field_date[LANGUAGE_NONE][0]['value2']) - strtotime($context['entity']->field_date[LANGUAGE_NONE][0]['value']) > 24*60*60)) {
+        return; //event is more than one day long - keep both dates visible
+      }
+
+      //hide the date - it's already visible in the shield
+      $display['settings']['format_type'] = 'os_time';
     }
   }
 }
@@ -142,7 +216,12 @@ function hwpi_basetheme_node_view_alter(&$build) {
   // Persons, heavily modify the output to match the HC designs
   if ($build['#node']->type == 'person') {
 
-    $build['pic_bio']['#prefix'] = '<div class="pic-bio clearfix">';
+    if ($build['#view_mode'] == 'sidebar_teaser') {
+      $build['pic_bio']['#prefix'] = '<div class="pic-bio clearfix people-sidebar-teaser">';
+    }
+    else {
+      $build['pic_bio']['#prefix'] = '<div class="pic-bio clearfix">';
+    }
     $build['pic_bio']['#suffix'] = '</div>';
     $build['pic_bio']['#weight'] = -9;
 
@@ -165,7 +244,7 @@ function hwpi_basetheme_node_view_alter(&$build) {
     }
 
     // We dont want the other fields on teasers
-    if ($build['#view_mode'] == 'teaser') {
+    if (in_array($build['#view_mode'], array('teaser', 'slide_teaser','no_image_teaser'))) {
 
       //move title, website. body
       $build['pic_bio']['body']['#weight'] = 5;
@@ -189,7 +268,7 @@ function hwpi_basetheme_node_view_alter(&$build) {
         $build['field_email'][0]['#markup'] = '<a href="mailto:' . $email_plain . '">' . $email_plain . '</a>';
       }
 
-      //newlines after website
+      // Newlines after website.
       if (isset($build['pic_bio']['field_website'])) {
         foreach (array_filter(array_keys($build['pic_bio']['field_website']), 'is_numeric') as $delta) {
           $item = $build['pic_bio']['field_website']['#items'][$delta];
@@ -270,6 +349,11 @@ function hwpi_basetheme_node_view_alter(&$build) {
         $build['field_website']['#label_display'] = 'hidden';
         $build['website_details']['field_website'] = $build['field_website'];
         unset($build['field_website']);
+      }
+
+      //Don't show an empty contact details section.
+      if (!element_children($build['contact_details'])) {
+        unset($build['contact_details']);
       }
     }
 
@@ -514,6 +598,7 @@ function hwpi_basetheme_links($vars) {
 function hwpi_basetheme_status_messages($vars) {
   $display = $vars['display'];
   $output = '';
+  $allowed_html_elements = '<'. implode('><', variable_get('html_title_allowed_elements', array('em', 'sub', 'sup'))) . '>';
 
   $status_heading = array(
     'status' => t('Status update'),
@@ -528,9 +613,19 @@ function hwpi_basetheme_status_messages($vars) {
     if (count($messages) > 1) {
       $output .= " <ul>";
       foreach ($messages as $message) {
-        $output .= '  <li>' . $message . "</li>";
+        if (strpos($message, 'Biblio') === 0) {
+          // Allow some tags in messages about a Biblio.
+          $output .= '  <li>' . strip_tags(html_entity_decode($message), $allowed_html_elements) . "</li>";
+        }
+        else {
+          $output .= '  <li>' . $message . "</li>";
+        }
       }
       $output .= " </ul>";
+    }
+    elseif (strpos($messages[0], 'Biblio') === 0 || strpos($messages[0], 'Publication') === 0) {
+      // Allow some tags in messages about a Biblio.
+      $output .= strip_tags(html_entity_decode($messages[0]), $allowed_html_elements);
     }
     else {
       $output .= $messages[0];
@@ -545,8 +640,12 @@ function hwpi_basetheme_date_formatter_pre_view_alter(&$entity, $vars) {
     return;
   }
 
-  // only display the start time for this particular instance of a repeat event
-  $entity->view = views_get_current_view();
+  // Only display the start time for this particular instance of a repeat event.
+  if (!$entity->view = views_get_current_view()) {
+    return;
+  }
+
+
 
   // Don't remove the field date when exporting the calendar. This the unique
   // identifier of Google calendar.
@@ -569,4 +668,13 @@ function hwpi_basetheme_date_formatter_pre_view_alter(&$entity, $vars) {
   else {
     $entity->active_date = $vars['items'][0];
   }
+}
+
+/**
+ * Implements template_process_HOOK() for theme_pager_link().
+ */
+function hwpi_basetheme_process_pager_link($variables) {
+  // Adds an HTML head link for rel='prev' or rel='next' for pager links.
+  module_load_include('inc', 'os', 'includes/pager');
+  _os_pager_add_html_head_link($variables);
 }

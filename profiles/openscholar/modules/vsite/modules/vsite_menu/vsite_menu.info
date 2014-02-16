@@ -1,4 +1,4 @@
-name = "vsite Menu"
+name = Vsite Menu
 description = "This creates a menu handler that overides the default menus for vsites."
 core = 7.x
 package = "OpenScholar vsite"

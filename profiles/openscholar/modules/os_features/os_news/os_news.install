@@ -46,3 +46,10 @@ function os_news_update_7001(&$sandbox) {
 function os_news_update_7002() {
   features_revert(array('os_news' => array('field')));
 }
+
+/**
+ * Add description to image fields
+ */
+function os_news_update_7003() {
+  features_revert(array('os_news' => array('field_instance')));
+}

@@ -17,7 +17,7 @@ function vsite_subsite_access($op = 'create', $vsite = false){
     $vsite = spaces_get_space();
   }
 
-  $subsite_parents = variable_get('subsite_parents',array('department'));
+  $subsite_parents = variable_get('subsite_parents',array('department', 'project'));
 
   return ($vsite && in_array($vsite->group->type,$subsite_parents) && spaces_access_admin() && user_access("{$op} subsites"));
 }
@@ -147,15 +147,4 @@ function vsite_inherit($node) {
   if (!empty($value)) {
     $vsite->controllers->variable->set($name, $value);
   }
-
-  // Only continues to additionally turn on breadcrumbs if HWPI theme.
-  if (!_is_hwpi_theme($value)) {
-    return;
-  }
-
-  // Sets breadcrumbs to display for sites with an HWPI theme.
-  // @FIXME: the variable name looks like "show" but value "1" hides.
-  $name = 'os_breadcrumbs_show_breadcrumbs';
-  $value = 0;
-  $vsite->controllers->variable->set($name, $value);
 }

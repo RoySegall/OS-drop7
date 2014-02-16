@@ -43,7 +43,7 @@ function os_publications_views_default_views() {
   $handler->display->display_options['sorts']['sticky']['table'] = 'node';
   $handler->display->display_options['sorts']['sticky']['field'] = 'sticky';
   $handler->display->display_options['sorts']['sticky']['order'] = 'DESC';
-  /* Sort criterion: Publication: Year of Publication */
+  /* Sort criterion: Biblio: Year of Publication */
   $handler->display->display_options['sorts']['biblio_year']['id'] = 'biblio_year';
   $handler->display->display_options['sorts']['biblio_year']['table'] = 'biblio';
   $handler->display->display_options['sorts']['biblio_year']['field'] = 'biblio_year';
@@ -108,7 +108,7 @@ function os_publications_views_default_views() {
   $handler->display->display_options['sorts']['sticky']['table'] = 'node';
   $handler->display->display_options['sorts']['sticky']['field'] = 'sticky';
   $handler->display->display_options['sorts']['sticky']['order'] = 'DESC';
-  /* Sort criterion: Publication: Year of Publication */
+  /* Sort criterion: Biblio: Year of Publication */
   $handler->display->display_options['sorts']['biblio_year']['id'] = 'biblio_year';
   $handler->display->display_options['sorts']['biblio_year']['table'] = 'biblio';
   $handler->display->display_options['sorts']['biblio_year']['field'] = 'biblio_year';
@@ -169,7 +169,7 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['sorts']['created']['table'] = 'node';
   $handler->display->display_options['sorts']['created']['field'] = 'created';
   $handler->display->display_options['sorts']['created']['order'] = 'DESC';
-  /* Sort criterion: Publication: Year of Publication */
+  /* Sort criterion: Biblio: Year of Publication */
   $handler->display->display_options['sorts']['biblio_year']['id'] = 'biblio_year';
   $handler->display->display_options['sorts']['biblio_year']['table'] = 'biblio';
   $handler->display->display_options['sorts']['biblio_year']['field'] = 'biblio_year';
@@ -227,23 +227,23 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['style_plugin'] = 'default';
   $handler->display->display_options['style_options']['grouping'] = 'name';
   $handler->display->display_options['row_plugin'] = 'fields';
-  /* Field: Publication: Type of Publication */
+  /* Field: Biblio: Type of Publication */
   $handler->display->display_options['fields']['name']['id'] = 'name';
   $handler->display->display_options['fields']['name']['table'] = 'biblio_types';
   $handler->display->display_options['fields']['name']['field'] = 'name';
   $handler->display->display_options['fields']['name']['label'] = '';
   $handler->display->display_options['fields']['name']['exclude'] = TRUE;
-  /* Field: Publication: Biblio Citation */
+  /* Field: Biblio: Biblio Citation */
   $handler->display->display_options['fields']['citation']['id'] = 'citation';
   $handler->display->display_options['fields']['citation']['table'] = 'biblio';
   $handler->display->display_options['fields']['citation']['field'] = 'citation';
   $handler->display->display_options['fields']['citation']['label'] = '';
   $handler->display->display_options['fields']['citation']['style_name'] = 'cse';
-  /* Sort criterion: Publication: Type of Publication */
+  /* Sort criterion: Biblio: Type of Publication */
   $handler->display->display_options['sorts']['name']['id'] = 'name';
   $handler->display->display_options['sorts']['name']['table'] = 'biblio_types';
   $handler->display->display_options['sorts']['name']['field'] = 'name';
-  /* Contextual filter: Publication: Author last name */
+  /* Contextual filter: Biblio: Author last name */
   $handler->display->display_options['arguments']['lastname']['id'] = 'lastname';
   $handler->display->display_options['arguments']['lastname']['table'] = 'biblio_contributor_data';
   $handler->display->display_options['arguments']['lastname']['field'] = 'lastname';
@@ -297,8 +297,8 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['pager']['options']['items_per_page'] = '10';
   $handler->display->display_options['pager']['options']['offset'] = '0';
   $handler->display->display_options['pager']['options']['id'] = '1';
-  $handler->display->display_options['pager']['options']['tags']['previous'] = decode_entities('&laquo;');
-  $handler->display->display_options['pager']['options']['tags']['next'] = decode_entities('&raquo;');
+  $handler->display->display_options['pager']['options']['tags']['previous'] = '«';
+  $handler->display->display_options['pager']['options']['tags']['next'] = '»';
   $export['publication_contributors'] = $view;
 
   $view = new view();
@@ -324,24 +324,24 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['style_plugin'] = 'default';
   $handler->display->display_options['style_options']['grouping'] = '';
   $handler->display->display_options['row_plugin'] = 'fields';
-  /* Field: Publication: Type of Publication */
+  /* Field: Biblio: Type of Publication */
   $handler->display->display_options['fields']['name']['id'] = 'name';
   $handler->display->display_options['fields']['name']['table'] = 'biblio_types';
   $handler->display->display_options['fields']['name']['field'] = 'name';
   $handler->display->display_options['fields']['name']['label'] = '';
   $handler->display->display_options['fields']['name']['exclude'] = TRUE;
-  /* Field: Publication: Biblio Citation */
+  /* Field: Biblio: Biblio Citation */
   $handler->display->display_options['fields']['citation']['id'] = 'citation';
   $handler->display->display_options['fields']['citation']['table'] = 'biblio';
   $handler->display->display_options['fields']['citation']['field'] = 'citation';
   $handler->display->display_options['fields']['citation']['label'] = '';
   $handler->display->display_options['fields']['citation']['style_name'] = 'cse';
-  /* Sort criterion: Publication: Year of Publication */
+  /* Sort criterion: Biblio: Year of Publication */
   $handler->display->display_options['sorts']['biblio_year']['id'] = 'biblio_year';
   $handler->display->display_options['sorts']['biblio_year']['table'] = 'biblio';
   $handler->display->display_options['sorts']['biblio_year']['field'] = 'biblio_year';
   $handler->display->display_options['sorts']['biblio_year']['order'] = 'DESC';
-  /* Contextual filter: Publication: Type of Publication */
+  /* Contextual filter: Biblio: Type of Publication */
   $handler->display->display_options['arguments']['name']['id'] = 'name';
   $handler->display->display_options['arguments']['name']['table'] = 'biblio_types';
   $handler->display->display_options['arguments']['name']['field'] = 'name';
@@ -355,7 +355,7 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['arguments']['name']['case'] = 'ucwords';
   $handler->display->display_options['arguments']['name']['path_case'] = 'lower';
   $handler->display->display_options['arguments']['name']['transform_dash'] = TRUE;
-  /* Contextual filter: Publication: Type of Publication */
+  /* Contextual filter: Biblio: Type of Publication */
   $handler->display->display_options['arguments']['tid']['id'] = 'tid';
   $handler->display->display_options['arguments']['tid']['table'] = 'biblio_types';
   $handler->display->display_options['arguments']['tid']['field'] = 'tid';
@@ -403,7 +403,7 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['row_plugin'] = 'node';
   $handler->display->display_options['defaults']['row_options'] = FALSE;
   $handler->display->display_options['defaults']['arguments'] = FALSE;
-  /* Contextual filter: Publication: Type of Publication */
+  /* Contextual filter: Biblio: Type of Publication */
   $handler->display->display_options['arguments']['name']['id'] = 'name';
   $handler->display->display_options['arguments']['name']['table'] = 'biblio_types';
   $handler->display->display_options['arguments']['name']['field'] = 'name';
@@ -417,7 +417,7 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['arguments']['name']['case'] = 'ucwords';
   $handler->display->display_options['arguments']['name']['path_case'] = 'lower';
   $handler->display->display_options['arguments']['name']['transform_dash'] = TRUE;
-  /* Contextual filter: Publication: Type of Publication */
+  /* Contextual filter: Biblio: Type of Publication */
   $handler->display->display_options['arguments']['tid']['id'] = 'tid';
   $handler->display->display_options['arguments']['tid']['table'] = 'biblio_types';
   $handler->display->display_options['arguments']['tid']['field'] = 'tid';
@@ -443,10 +443,10 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['pager']['options']['items_per_page'] = '10';
   $handler->display->display_options['pager']['options']['offset'] = '0';
   $handler->display->display_options['pager']['options']['id'] = '1';
-  $handler->display->display_options['pager']['options']['tags']['previous'] = decode_entities('&laquo;');
-  $handler->display->display_options['pager']['options']['tags']['next'] = decode_entities('&raquo;');
+  $handler->display->display_options['pager']['options']['tags']['previous'] = '«';
+  $handler->display->display_options['pager']['options']['tags']['next'] = '»';
   $handler->display->display_options['defaults']['arguments'] = FALSE;
-  /* Contextual filter: Publication: Type of Publication */
+  /* Contextual filter: Biblio: Type of Publication */
   $handler->display->display_options['arguments']['name']['id'] = 'name';
   $handler->display->display_options['arguments']['name']['table'] = 'biblio_types';
   $handler->display->display_options['arguments']['name']['field'] = 'name';
@@ -486,7 +486,7 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['arguments']['tid']['default_argument_type'] = 'fixed';
   $handler->display->display_options['arguments']['tid']['summary']['format'] = 'default_summary';
   $handler->display->display_options['arguments']['tid']['specify_validation'] = TRUE;
-  /* Contextual filter: Publication: Type of Publication */
+  /* Contextual filter: Biblio: Type of Publication */
   $handler->display->display_options['arguments']['name']['id'] = 'name';
   $handler->display->display_options['arguments']['name']['table'] = 'biblio_types';
   $handler->display->display_options['arguments']['name']['field'] = 'name';
@@ -560,19 +560,19 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['style_plugin'] = 'default';
   $handler->display->display_options['style_options']['grouping'] = 'name';
   $handler->display->display_options['row_plugin'] = 'fields';
-  /* Field: Publication: Type of Publication */
+  /* Field: Biblio: Type of Publication */
   $handler->display->display_options['fields']['name']['id'] = 'name';
   $handler->display->display_options['fields']['name']['table'] = 'biblio_types';
   $handler->display->display_options['fields']['name']['field'] = 'name';
   $handler->display->display_options['fields']['name']['label'] = '';
   $handler->display->display_options['fields']['name']['exclude'] = TRUE;
-  /* Field: Publication: Biblio Citation */
+  /* Field: Biblio: Biblio Citation */
   $handler->display->display_options['fields']['citation']['id'] = 'citation';
   $handler->display->display_options['fields']['citation']['table'] = 'biblio';
   $handler->display->display_options['fields']['citation']['field'] = 'citation';
   $handler->display->display_options['fields']['citation']['label'] = '';
   $handler->display->display_options['fields']['citation']['style_name'] = 'cse';
-  /* Sort criterion: Publication: Type of Publication */
+  /* Sort criterion: Biblio: Type of Publication */
   $handler->display->display_options['sorts']['name']['id'] = 'name';
   $handler->display->display_options['sorts']['name']['table'] = 'biblio_types';
   $handler->display->display_options['sorts']['name']['field'] = 'name';
@@ -610,8 +610,8 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['pager']['options']['items_per_page'] = '10';
   $handler->display->display_options['pager']['options']['offset'] = '0';
   $handler->display->display_options['pager']['options']['id'] = '1';
-  $handler->display->display_options['pager']['options']['tags']['previous'] = decode_entities('&laquo;');
-  $handler->display->display_options['pager']['options']['tags']['next'] = decode_entities('&raquo;');
+  $handler->display->display_options['pager']['options']['tags']['previous'] = '«';
+  $handler->display->display_options['pager']['options']['tags']['next'] = '»';
   $handler->display->display_options['defaults']['style_plugin'] = FALSE;
   $handler->display->display_options['style_plugin'] = 'default';
   $handler->display->display_options['style_options']['grouping'] = '';
@@ -624,14 +624,14 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['row_options']['hide_empty'] = TRUE;
   $handler->display->display_options['defaults']['row_options'] = FALSE;
   $handler->display->display_options['defaults']['fields'] = FALSE;
-  /* Field: Publication: Year of Publication */
+  /* Field: Biblio: Year of Publication */
   $handler->display->display_options['fields']['biblio_year']['id'] = 'biblio_year';
   $handler->display->display_options['fields']['biblio_year']['table'] = 'biblio';
   $handler->display->display_options['fields']['biblio_year']['field'] = 'biblio_year';
   $handler->display->display_options['fields']['biblio_year']['label'] = '';
   $handler->display->display_options['fields']['biblio_year']['biblio_label'] = 0;
   $handler->display->display_options['defaults']['arguments'] = FALSE;
-  /* Contextual filter: Publication: Year of Publication */
+  /* Contextual filter: Biblio: Year of Publication */
   $handler->display->display_options['arguments']['biblio_year']['id'] = 'biblio_year';
   $handler->display->display_options['arguments']['biblio_year']['table'] = 'biblio';
   $handler->display->display_options['arguments']['biblio_year']['field'] = 'biblio_year';
@@ -652,7 +652,7 @@ if(module_exists(\'apachesolr_search\')){
   $handler->display->display_options['enabled'] = FALSE;
   $handler->display->display_options['defaults']['hide_admin_links'] = FALSE;
   $handler->display->display_options['defaults']['arguments'] = FALSE;
-  /* Contextual filter: Publication: Year of Publication */
+  /* Contextual filter: Biblio: Year of Publication */
   $handler->display->display_options['arguments']['biblio_year']['id'] = 'biblio_year';
   $handler->display->display_options['arguments']['biblio_year']['table'] = 'biblio';
   $handler->display->display_options['arguments']['biblio_year']['field'] = 'biblio_year';

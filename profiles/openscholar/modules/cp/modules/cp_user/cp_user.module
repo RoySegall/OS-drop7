@@ -54,7 +54,426 @@ function cp_user_menu() {
     'file' => 'cp_user.pages.inc',
   );
 
+  $items['cp/users/permissions'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'title' => 'Permissions',
+    'page callback' => 'cp_user_vsite_permissions',
+    'access callback' => 'cp_user_admin_access',
+  );
+
+  $items['cp/users/roles'] = array(
+    'type' => MENU_LOCAL_TASK,
+    'title' => 'Roles',
+    'page callback' => 'cp_user_vsite_roles',
+    'access callback' => 'cp_user_admin_access',
+  );
+
+  $items['cp/users/users'] = array(
+    'title' => 'People',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+  );
+
+  $items['cp/users/toggle-roles-permissions/confirm/%'] = array(
+    'type' => MENU_CALLBACK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('cp_user_vsite_toggle_roles_permissions_confirm', 4),
+    'access callback' => 'cp_user_admin_access',
+  );
+
   return $items;
+}
+
+/**
+ * Page callback; VSite permissions page, based on OG Permissions page.
+ */
+function cp_user_vsite_permissions() {
+  $vsite = vsite_get_vsite();
+
+  module_load_include('inc', 'og_ui', 'og_ui.admin');
+
+  $form = drupal_get_form('og_ui_admin_permissions', 'node', $vsite->id, $vsite->group->type);
+
+  // Add the 'Restore default/Edit roles and permissions' button.
+  cp_user_add_button_toggle_roles_permissions($form, $vsite, 'cp/users/permissions');
+
+  return $form;
+}
+
+/**
+ * Page callback; VSite roles page, based on OG Roles page.
+ */
+function cp_user_vsite_roles() {
+  $vsite = vsite_get_vsite();
+
+  module_load_include('inc', 'og_ui', 'og_ui.admin');
+
+  $form = drupal_get_form('og_ui_admin_new_role', 'node', $vsite->id, $vsite->group->type);
+
+  // Add the 'Restore default/Edit roles and permissions' button.
+  cp_user_add_button_toggle_roles_permissions($form, $vsite, 'cp/users/roles');
+
+  return $form;
+}
+
+/**
+ * Adds the 'Restore default/Edit roles and permissions' button to the form.
+ *
+ * If the VSite uses the default settings for roles and permissions, this allows
+ * the user to change this setting and edit roles and permissions in this VSite.
+ * If the VSite uses custom roles and permissions, this allows the user to go
+ * back to using the default ones.
+ */
+function cp_user_add_button_toggle_roles_permissions(&$form, $vsite, $destination) {
+  $wrapper = entity_metadata_wrapper('node', $vsite->group);
+
+  if ($wrapper->{OG_DEFAULT_ACCESS_FIELD}->value()) {
+    // Currently using custom roles and permissions.
+    $label = t('Restore default roles and permissions');
+    $path = 'cp/users/toggle-roles-permissions/confirm/0';
+  }
+  else {
+    // Currently using default roles and permissions.
+    $label = t('Edit roles and permissions');
+    $path = 'cp/users/toggle-roles-permissions/confirm/1';
+  }
+
+  // Add the button.
+  $options = array(
+    'query' => array('destination' => $destination),
+    'attributes' => array('class' => array('button')),
+  );
+  $form['top_buttons'] = array(
+    '#type' => 'container',
+    '#attributes' => array(
+      'class' => array('cp-user-top-buttons')
+    ),
+    'toggle_roles_permissions' => array(
+      '#type' => 'markup',
+      '#markup' => l($label, $path, $options),
+      '#weight' => -50,
+    ),
+  );
+  $form['#attached']['css'][] = drupal_get_path('module', 'cp_user') . '/cp_user.css';
+}
+
+/**
+ * Page callback; Confirmation form to allow editing of roles and permissions or
+ * restoring the default ones. The $value is '0' for default permissions or '1'
+ * for custom.
+ */
+function cp_user_vsite_toggle_roles_permissions_confirm($form, &$form_state, $value) {
+  $vsite = vsite_get_vsite();
+
+  $form['default_roles_and_permissions'] = array(
+    '#type' => 'value',
+    '#value' => $value,
+  );
+
+  if ($value) {
+    // Changing to custom permissions.
+    $title = t('Edit roles and permissions in %vsite', array('%vsite' => $vsite->group->title));
+    $description = t('Are you sure you want to override the default roles and permissions in %vsite?', array('%vsite' => $vsite->group->title));
+  }
+  else {
+    // Changing to default permissions.
+    $title = t('Restore default roles and permissions in %vsite', array('%vsite' => $vsite->group->title));
+    $description = t('Are you sure you want to restore the default roles and permissions in %vsite?', array('%vsite' => $vsite->group->title));
+  }
+
+  return confirm_form($form,
+    $title,
+    'john/cp/users/permissions',
+    $description,
+    t('Confirm'),
+    t('Cancel'));
+}
+
+/**
+ * Submit handler; Allow/Disallow editing of roles and permissions in the VSite.
+ */
+function cp_user_vsite_toggle_roles_permissions_confirm_submit($form, $form_state) {
+  $vsite = vsite_get_vsite();
+
+  $wrapper = entity_metadata_wrapper('node', $vsite->group);
+  $wrapper->{OG_DEFAULT_ACCESS_FIELD}->set($form_state['values']['default_roles_and_permissions']);
+  $wrapper->save();
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * @see og_ui_theme().
+ */
+function cp_user_theme_registry_alter(&$theme_registry) {
+  // Override OG permissions page theme.
+  if (!empty($theme_registry['og_ui_admin_permissions'])) {
+    $theme_registry['og_ui_admin_permissions']['function'] = 'cp_user_og_ui_admin_permissions';
+  }
+
+  // Override OG roles page theme.
+  if (!empty($theme_registry['og_ui_admin_new_role'])) {
+    $theme_registry['og_ui_admin_new_role']['function'] = 'cp_user_og_ui_admin_new_role';
+  }
+}
+
+/**
+ * Override theme_og_ui_admin_permissions(); OG permissions form.
+ *
+ * In OG's theme function the table is hardcoded to be on top of any other form
+ * element. Here we need the 'Edit roles and permissions' button to be above the
+ * table, so this is actually a copy of OG's theme function with special
+ * treatment for top buttons.
+ * In addition, some roles are to be displayed with a different name, and some
+ * are not to be displayed at all, so we're taking care of that here too.
+ */
+function cp_user_og_ui_admin_permissions($variables) {
+  // This function should override OG's theme only when outside of the admin.
+  $item = menu_get_item();
+  if (strpos($item['path'], 'admin/') === 0) {
+    // Inside the admin, use OG's theme function.
+    return theme_og_ui_admin_permissions($variables);
+  }
+
+  $form = $variables['form'];
+
+  // In some cases, we want a certain role to be displayed with a different
+  // name than the one in the DB. Here we get the "human" names for all roles in
+  // the vsite and use them to rename all roles on the list.
+  $roles_human_names = _cp_user_list_roles('rids-human', NULL, $form['gid']['#value']);
+  foreach (element_children($form['role_names']) as $rid) {
+    if (!is_numeric($rid) || empty($roles_human_names[$rid])) {
+      // Not a role.
+      continue;
+    }
+    $form['role_names'][$rid]['#markup'] = $roles_human_names[$rid];
+  }
+
+  $role_names = $form['role_names']['#value'];
+
+  // Only CRUD permissions should be displayed in the UI. Create an array of
+  // the allowed permissions so we can filter the list by it.
+  // Get all permissions from the enabled applications, while keeping their
+  // application info.
+  $allowed_permissions = array();
+
+  // In addition to CRUD permissions, the permission 'Change theme' is the only
+  // non-CRUD permission that should be displayed on the list.
+  foreach (vsite_get_os_override_permissions() as $permission) {
+    $allowed_permissions[$permission] = 'general';
+  }
+  $allowed_permissions['change theme'] = 'general';
+
+  foreach (os_get_bundles_per_app(array(OS_PUBLIC_APP, OS_PRIVATE_APP)) as $app_name => $bundles) {
+    foreach (array_keys($bundles) as $bundle) {
+      // Get bundle permissions with their related app name.
+      $bundle_permissions = array_fill_keys(array_keys(og_list_permissions($bundle)), $app_name);
+
+      // Merge bundle permissions to all permissions.
+      $allowed_permissions = array_merge($allowed_permissions, $bundle_permissions);
+    }
+  }
+
+  ksort($allowed_permissions);
+
+  $rows_per_category = array();
+  foreach (element_children($form['permission']) as $key) {
+    if (is_numeric($key)) {
+      // Module name, not for display in the UI.
+      // Not including it in the table is not enough, because later we call the
+      // function drupal_render_children() which will render it anyway unless
+      // we unset it.
+      unset($form['permission'][$key]);
+      continue;
+    }
+
+    if (!in_array($key, array_keys($allowed_permissions))) {
+      // Do not show this permission in the UI.
+      // Not including it in the table is not enough, because later we call the
+      // function drupal_render_children() which will render it anyway unless
+      // we unset it.
+      unset($form['permission'][$key]);
+
+      // We must also unset all the checkboxes related to the permission, one
+      // for each role, so they would not be rendered later.
+      foreach (element_children($form['checkboxes']) as $rid) {
+        unset($form['checkboxes'][$rid][$key]);
+      }
+      continue;
+    }
+
+    $row = array();
+
+    // Permission row.
+    $row[] = array(
+      'data' => drupal_render($form['permission'][$key]),
+      'class' => array('permission'),
+    );
+
+    foreach (element_children($form['checkboxes']) as $rid) {
+      if (empty($roles_human_names[$rid])) {
+        // Some roles are not to be shown on the UI, for example 'non-member',
+        // so do not display roles that don't exist in the "human" names list.
+        $form['checkboxes'][$rid][$key]['#access'] = FALSE;
+        continue;
+      }
+      $form['checkboxes'][$rid][$key]['#title'] = $role_names[$rid] . ': ' . $form['permission'][$key]['#markup'];
+      $form['checkboxes'][$rid][$key]['#title_display'] = 'invisible';
+      $row[] = array('data' => drupal_render($form['checkboxes'][$rid][$key]), 'class' => array('checkbox'));
+    }
+
+    // Add category title row.
+    $category = cp_user_add_category_title_to_table($key, $allowed_permissions, $rows_per_category, count($row));
+    $rows_per_category[$category][] = $row;
+  }
+
+  ksort($rows_per_category);
+
+  // "Flat" the rows for standard table.
+  $rows = array();
+  foreach ($rows_per_category as $category) {
+    $rows = array_merge($rows, array_values($category));
+  }
+
+  $header[] = (t('Permission'));
+  foreach (element_children($form['role_names']) as $rid) {
+    if (empty($roles_human_names[$rid])) {
+      // Some roles are not to be shown on the UI, for example 'non-member',
+      // so do not display roles that don't exist in the "human" names list.
+      $form['role_names'][$rid]['#access'] = FALSE;
+      continue;
+    }
+    $header[] = array('data' => drupal_render($form['role_names'][$rid]), 'class' => array('checkbox'));
+  }
+  $output = '';
+
+  // This part was added to the original theme function.
+  if (!empty($form['top_buttons'])) {
+    // Display this element above the permissions table.
+    $output .= drupal_render($form['top_buttons']);
+  }
+
+  $output .= theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'permissions')));
+  $output .= drupal_render_children($form);
+  return $output;
+}
+
+/**
+ * Get category from permission key, and add category title if needed.
+ *
+ * @param $permission
+ *   Permission key.
+ * @param $allowed_permissions
+ *   Array of permissions and their category.
+ * @param $rows_per_category
+ *   Referenced array of table rows by category.
+ * @param $number_of_columns
+ *   Number of columns, to set the right category colspan.
+ *
+ * @return string
+ *   Category name.
+ */
+function cp_user_add_category_title_to_table($permission, $allowed_permissions, &$rows_per_category, $number_of_columns) {
+  // Get spaces features in order to get human readable application name.
+  $spaces_features = spaces_features();
+  $category = $allowed_permissions[$permission];
+
+  if (empty($rows_per_category[$category])) {
+    $title = t('General permissions');
+
+    if (!empty($spaces_features[$category])) {
+      $title = t('Application: @app', array('@app' => $spaces_features[$category]->info['name']));
+    }
+    $rows_per_category[$category][] = array(
+      '0' => array(
+        'data' => $title,
+        // Using "checkbox" class as it centerlize the title, and already in
+        // use.
+        'class' => array('0' => 'checkbox'),
+        'colspan' => array('0' => $number_of_columns),
+      ),
+    );
+  }
+  return $category;
+}
+
+/**
+ * Overrides theme_og_ui_admin_new_role(); OG roles form.
+ *
+ * In the original theme function, the always-locked roles are hardcoded.
+ * We override the theme to add OS roles to the list of always-blocked roles.
+ */
+function cp_user_og_ui_admin_new_role($variables) {
+  // This function should override OG's theme only when outside of the admin.
+  $item = menu_get_item();
+  if (strpos($item['path'], 'admin/') === 0) {
+    // Inside the admin, use OG's theme function.
+    return theme_og_ui_admin_new_role($variables);
+  }
+
+  $form = $variables['form'];
+  $header = array(t('Name'), array('data' => t('Operations'), 'colspan' => 2));
+
+  $group_type = $form['group_type']['#value'];
+  $gid = $form['gid']['#value'];
+
+  // In some cases, we want a certain role to be displayed with a different
+  // name than the one in the DB. Here we get the "human" names for all roles in
+  // the vsite and use them to rename all roles on the list.
+  $roles_human_names = _cp_user_list_roles('rids-human', NULL, $form['gid']['#value']);
+  foreach (array_keys($form['role_names']['#value']) as $rid) {
+    if (!is_numeric($rid) || empty($roles_human_names[$rid])) {
+      // Not a role.
+      continue;
+    }
+    $form['role_names']['#value'][$rid] = $roles_human_names[$rid];
+  }
+
+  $role_names = $form['role_names']['#value'];
+
+  if ($gid) {
+    $group = entity_load_single($group_type, $gid);
+    $default_access = $group && og_is_group_default_access($group_type, $group);
+  }
+  else {
+    $default_access = FALSE;
+  }
+
+  // These roles will not be editable.
+  $always_blocked = array(
+    OG_ANONYMOUS_ROLE,
+    // This should have been OG_AUTHENTICATED_ROLE but we renamed it.
+    'Basic member',
+    // This should have been OS_USER_ROLE_ADMIN but we renamed it.
+    'Administrator',
+    // This should have been OS_USER_ROLE_EDITOR but we renamed it.
+    'Content editor',
+  );
+
+  foreach ($role_names as $rid => $name) {
+    if (empty($roles_human_names[$rid])) {
+      // This role should not be displayed in the UI.
+      continue;
+    }
+    $text = !$default_access ? t('edit permissions') : t('view permissions');
+    $path = $gid ? "group/$group_type/$gid/admin" : 'admin/config/group';
+    $permissions = l($text, "$path/permission/$rid/edit");
+
+    if (!$default_access && !in_array($name, $always_blocked)) {
+      $rows[] = array(check_plain($name), l(t('edit role'), "$path/role/$rid/edit"), $permissions);
+    }
+    else {
+      $rows[] = array(check_plain($name), t('locked'), $permissions);
+    }
+  }
+
+  $rows[] = array(array('data' => drupal_render($form['name']) . drupal_render($form['add']), 'colspan' => 4, 'class' => 'edit-name'));
+
+  hide($form['actions']);
+  $output = drupal_render_children($form);
+  $output .= theme('table', array('header' => $header, 'rows' => $rows));
+  $output .= render($form['actions']);
+
+  return $output;
 }
 
 /**
@@ -163,11 +582,8 @@ function cp_user_og_ui_add_users_submit(&$form, &$form_state) {
   $account = user_load_by_name($form_state['values']['name']);
 
   if ($state) {
-    $og_roles = og_roles('node', FALSE, $form_state['values']['gid']);
-    $vsite_user_role = array_search('vsite user', $og_roles);
-
-    // Grant them the vsite user role
-    og_role_grant('node', $form_state['values']['gid'], $account->uid, $vsite_user_role);
+    // Associate the user with the group.
+    og_group('node', $form_state['values']['gid'], array('entity' => $account->uid));
   }
 
   $form_state['redirect'] = 'cp/users';
@@ -226,6 +642,19 @@ function cp_user_form_user_register_form_alter(&$form, &$form_state, $form_id) {
     // be adding to their site as well as creating the user, in one step.
     $form['actions']['submit']['#value'] = t('Create and add member');
   }
+
+  // Remove vsite user, vsite admin and content editor roles from list of
+  // site-wide roles.
+  $roles = array(
+    'vsite user',
+    'vsite admin',
+    'content editor',
+  );
+  foreach ($roles as $role) {
+    if (($key = array_search($role, $form['account']['roles']['#options'])) !== FALSE)  {
+      unset($form['account']['roles']['#options'][$key]);
+    }
+  }
 }
 
 /**
@@ -271,50 +700,117 @@ function cp_user_form_cp_settings_form_alter(&$form, &$form_state) {
 }
 
 /**
- * Returns an associative array mapping role names to human readable names.
+ * Returns an associative array of OG roles.
  *
- * @param bool $verbose
- *   If TRUE, formats a 2-line label with descriptive help text for each role.
+ * @param $format
+*    The requested format for the array. Accepted values:
+ *    - 'names': Returns array of roles with their "machine" names as keys and
+ *       their "human" names as values.
+ *    - 'options': Returns array of roles with their "machine" names as keys and
+ *       a themed string of their "human" name and description as values.
+ *    - 'rids': Returns array of roles with their "machine" names as keys and
+ *       their RIDs as values.
+ *    - 'rids-human': Returns array of roles with their RIDs as keys and their
+ *       "human" names as values.
+ * @param $bundle
+ *    (optional) The bundle of the group whose roles are to be returned. If not
+ *    provided, $gid is mandatory and will be used to retrieve the bundle.
+ * @param $gid
+ *    (optional) The group ID whose roles are to be returned. Defaults to 0,
+ *    which will return the default OG roles for the given bundle. Must be
+ *    bigger than 0 if $bundle is not provided.
  *
  * @return array $roles
  */
-function _cp_user_list_roles($mode = 'names', $bundle = NULL) {
+function _cp_user_list_roles($format, $bundle, $gid = 0) {
   $roles = array();
 
-  $machine_names = array(
-    OS_USER_ROLE_BASIC,
-    OS_USER_ROLE_EDITOR,
-    OS_USER_ROLE_ADMIN,
-  );
-  $human_names = array(
-    t('Basic member'),
-    t('Content editor'),
-    t('Administrator'),
+  if (empty($bundle)) {
+    // Get bundle.
+    $group = node_load($gid);
+    $bundle = $group->type;
+  }
+
+  // In the UI, the following roles will not be displayed as they are in the DB
+  // but will have these "human-readable" names for display. In addition, they
+  // have a description to display on certain pages.
+  // Roles that are not mentioned here will be displayed as they are in the DB
+  // and will not have a description.
+  $system_roles = array(
+    OS_USER_ROLE_BASIC => array(
+      'human_name' => t('Basic member'),
+      'description' => t('<em>Basic members</em> may only add new posts and edit their own posts.'),
+    ),
+    OS_USER_ROLE_EDITOR => array(
+      'human_name' => t('Content editor'),
+      'description' => t('<em>Content editors</em> may add and edit posts, and also edit others\' posts.'),
+    ),
+    OS_USER_ROLE_ADMIN => array(
+      'human_name' => t('Administrator'),
+      'description' => t('<em>Administrators</em> may add, edit or delete any post, and change site settings.'),
+    ),
   );
 
-  switch ($mode) {
+  // Get all OG roles in the group - could be default roles or custom roles.
+  // Will not include the 'member' and 'non-member' OG roles.
+  $og_roles = og_roles('node', $bundle, $gid, FALSE, FALSE);
+
+  switch ($format) {
     case 'names':
-      $roles = array_combine($machine_names, $human_names);
+      // Create array of roles with their "machine" names as keys and their
+      // "human" names as values.
+      foreach ($og_roles as $machine_name) {
+        $human_name = !empty($system_roles[$machine_name]) ? $system_roles[$machine_name]['human_name'] : $machine_name;
+        $roles[$machine_name] = $human_name;
+      }
       break;
 
     case 'options':
-      $descriptions = array(
-        t('<em>Basic members</em> may only add new posts and edit their own posts.'),
-        t('<em>Content editors</em> may add and edit posts, and also edit others\' posts.'),
-        t('<em>Administrators</em> may add, edit or delete any post, and change site settings.'),
-      );
-      for ($i = 0; $i < sizeof($machine_names); $i++) {
-        $roles[$machine_names[$i]] = _cp_user_role_option($human_names[$i], $descriptions[$i]);
+      // Create array of roles with their "machine" names as keys and a themed
+      // string of their "human" name and description (if any) as values.
+      foreach ($og_roles as $machine_name) {
+        // Attempt to get human name and description.
+        $human_name = !empty($system_roles[$machine_name]) ? $system_roles[$machine_name]['human_name'] : $machine_name;
+        $description = !empty($system_roles[$machine_name]) ? $system_roles[$machine_name]['description'] : '';
+        // Theme and create the array.
+        $roles[$machine_name] = _cp_user_role_option($human_name, $description);
       }
       break;
 
     case 'rids':
-      $og_roles = og_roles('node', $bundle);
-      for ($i = 0; $i < sizeof($machine_names); $i++) {
-        $roles[$machine_names[$i]] = array_search($machine_names[$i], $og_roles);
+      // Get array of roles with their "machine" names as keys and their RIDs
+      // as values.
+      $roles = array_flip($og_roles);
+      break;
+
+    case 'rids-human':
+      // Create array of roles with their RIDs as keys and their "human" names
+      // as values.
+      foreach ($og_roles as $rid => $machine_name) {
+        $human_name = !empty($system_roles[$machine_name]) ? $system_roles[$machine_name]['human_name'] : $machine_name;
+        $roles[$rid] = $human_name;
       }
       break;
   }
 
   return $roles;
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function cp_user_form_og_ui_admin_new_role_alter(&$form, &$form_state) {
+  $item = menu_get_item();
+  if ($item['path'] != 'cp/users/roles') {
+    return;
+  }
+  $form['add']['#submit'][] = 'cp_user_roles_add_redirect';
+}
+
+/**
+ * Submit handler; After the user add roles from the cp redirect them back to
+ * the page he came from and not the default path of OG.
+ */
+function cp_user_roles_add_redirect($form, &$form_state) {
+  $form_state['redirect'] = 'cp/users/roles';
 }

@@ -7,6 +7,84 @@
 include_once 'os_activity.features.inc';
 
 /**
+ *
+ */
+function os_activity_menu() {
+  $items = array();
+
+  $items['activity.json'] = array(
+    'title' => 'Activity JSON',
+    'page callback' => 'os_activity_json',
+    'page arguments' => array(),
+    'access callback' => TRUE,
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+/**
+ * Page callback; outputs the latest activity messages as JSON.
+ */
+function os_activity_json($options = array()) {
+  // Allow settings to be overridden.
+  $defaults = array(
+    'filter_vsite' => TRUE,
+    'view_mode' => 'full',
+    'range' => 10,
+    'langcode' => NULL,
+    'page' => NULL,
+  );
+  foreach (array_keys($defaults) as $key) {
+    if (isset($_GET[$key])) {
+      $options[] = $_GET[$key];
+    }
+  }
+  $options += $defaults;
+
+  // Builds a new entity field query.
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'message');
+  $query->range(0, $options['range']);
+  $query->propertyOrderBy('timestamp', 'DESC');
+  // Only continues to filter by current space if we can load the vsite.
+  // @FIXME This condition currently returns empty results when not site-wide...
+  if (module_exists('vsite') && $options['filter_vsite']) {
+    $space = spaces_get_space();
+    if (is_object($space) && is_numeric($space->id)) {
+      $query->fieldCondition(OG_AUDIENCE_FIELD, 'target_id', $space->id);
+    }
+  }
+
+  // Only outputs $data['success'] == TRUE when messages are found.
+  $data = array();
+  $result = $query->execute();
+  if (isset($result['message'])) {
+    $data['success'] = TRUE;
+
+    // Builds an indexed array of messages with markup HTML snippets included.
+    $mids = array_keys($result['message']);
+    $entities = entity_load('message', $mids);
+    $build = entity_view('message', $entities, $options['view_mode'], $options['langcode'], $options['page']);
+    $key = 'message__message_text__0';
+    foreach ($entities as $mid => $info) {
+      // Add the rendered HTML snippet to the entity object.
+      $entities[$mid]->markup = $build['message'][$mid][$key]['#markup'];
+      // Use timestamp + message ID, as array key for easier cross-install
+      // aggregation.
+      // Example: "1389220285.285411"
+      $data['messages']["{$entities[$mid]->timestamp}.{$mid}"] = $entities[$mid];
+    }
+  }
+  else {
+    $data['success'] = FALSE;
+  }
+
+  drupal_json_output($data);
+  exit;
+}
+
+/**
  * Return the last message ID a user viewed in a certain group.
  *
  * @param $vsite_id

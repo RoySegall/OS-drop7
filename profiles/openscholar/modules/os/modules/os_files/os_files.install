@@ -10,6 +10,8 @@
  */
 function os_files_install() {
   _os_files_clean_up_fields();
+
+  _os_files_update_add_description_field();
 }
 
 /**
@@ -604,6 +606,13 @@ function os_files_update_7008(&$sb) {
  * Adds a generic description field to all file types
  */
 function os_files_update_7009($sb) {
+  _os_files_update_add_description_field();
+}
+
+/**
+ * Adds a generic description field to all file types
+ */
+function _os_files_update_add_description_field() {
   $entities = entity_get_info();
 
   foreach ($entities['file']['bundles'] as $type => $info) {
@@ -684,4 +693,58 @@ function os_files_update_7011(&$sb) {
  */
 function os_files_update_7012($sb) {
   return os_files_update_7007($sb);
+}
+
+/**
+ * Replace usages of media_description with os_files_description
+ */
+function os_files_update_7013($sb) {
+  $info = entity_get_info('file');
+  foreach ($info['bundles'] as $b => $t) {
+    if ($b == 'undefined') {
+      continue;
+    }
+
+    $md = field_read_instance('file', 'media_description', $b);
+    $osd = field_read_instance('file', 'os_file_description', $b);
+
+    if ($md && $osd) {
+      $osd['display'] += $md['display'];
+      $md['display'] = array();
+  
+      field_update_instance($md);
+      field_update_instance($osd);
+    }
+  }
+}
+
+/**
+ * Remove Description field's character limit
+ */
+function os_files_update_7014($sb) {
+  // Using standard API functions doesn't work for some reason
+  // The changes just refused to take
+  // so I have to do it this way
+  $q = db_select('field_config', 'fc')
+     ->fields('fc')
+     ->condition('field_name', 'os_file_description')
+    ->execute();
+
+  foreach ($q as $r) {
+    $r->data = unserialize($r->data);
+    unset($r->data['settings']['max_length']);
+    drupal_write_record('field_config', $r, array('id'));
+  }
+}
+
+/**
+ * Change file description teaser length
+ */
+function os_files_update_7015() {
+  $entity_info = entity_get_info('file');
+  foreach ($entity_info['bundles'] as $bundle_name => $bundle) {
+    $instance_info = field_info_instance('file', 'os_file_description', $bundle_name);
+    $instance_info['display']['teaser']['settings']['trim_length'] = variable_get('os_files_teaser_length', 160);
+    field_update_instance($instance_info);
+  }
 }

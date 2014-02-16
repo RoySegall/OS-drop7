@@ -255,6 +255,11 @@ ul.links li.link-count-node-readmore {
     color: #FFFFFF;
     font-weight: normal;
 }
+
+ul.nice-menu-down li ul li ul {
+  left: 12em;
+}
+
 #menu-bar ul > li > a:hover,
 #menu-bar ul.nice-menu a:hover,
 #menu-bar ul.nice-menu li.menuparent:hover a,
@@ -321,6 +326,13 @@ ul.links li.link-count-node-readmore {
     border-width: 1px;
     box-shadow: 0 0;
 }
+
+
+
+.block-boxes-os_taxonomy_fbt.navigation a {
+	font-weight:normal;
+	}
+
 #menu-bar ul.nice-menu .menuparent a span, #menu-bar ul.nice-menu .menuparent a:hover span, #menu-bar ul.nice-menu .menuparent a.active span {
     background: url("../../images/menu-arrow_sh.png") no-repeat scroll right center transparent;
 

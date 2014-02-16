@@ -1,6 +1,11 @@
 <?php
 
 /**
+ * @file
+ * Provides page and form content for Control Panel module.
+ */
+
+/**
  * Form argument for menu item '/cp/build/apps/$app_name'.
  */
 function cp_app_settings($js, $app_name) {
@@ -83,9 +88,10 @@ function cp_app_settings_form($form, $form_state, $app_name) {
   return $form;
 }
 
-
 /**
- * @todo Function description
+ * After build callback for form `app_settings_form`.
+ *
+ * Processes specifically-structured form elements with system_settings_form().
  */
 function _cp_app_settings_remove_no_form($element, $form_state) {
   $keys = array('no_form', 'ok', 'form_build_id', 'form_token', 'form_id');
@@ -99,6 +105,11 @@ function _cp_app_settings_remove_no_form($element, $form_state) {
   return $element;
 }
 
+/**
+ * Submit callback for form `app_settings_form`.
+ *
+ * @see cp_app_settings_form()
+ */
 function cp_app_settings_form_submit($form, &$form_state) {
   $mode = overlay_get_mode();
   if ($mode== 'child') {

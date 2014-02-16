@@ -65,7 +65,7 @@ class citation_distribute_service_repec extends citation_distribute_service {
 		$node = node_load($nid);
 		$type = $this->_nid_to_type($nid);
 	  $out = array();
-	  $out['Template-Type'] = $this->_map_biblio_type($node->biblio_type_name);
+	  $out['Template-Type'] = $this->_get_template_type($this->_map_biblio_type($node->biblio_type_name));
 		$out['Handle'] = 'RePEc:' . $this->archive_code . ':' . $type . ':' .  $nid;
 
 		//get node's URL

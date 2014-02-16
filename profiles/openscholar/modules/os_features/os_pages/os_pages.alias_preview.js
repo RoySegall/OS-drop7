@@ -47,7 +47,7 @@
                     // Verifies settings before continuing...
                     if (Drupal.settings.alias_preview && Drupal.settings.alias_preview.make_alias) {
                         // Prepares the ajax callback URL to query.
-                        var href = href = 'http://' + document.location.host + '/os/pages/alias-preview';
+                        var href = Drupal.settings.alias_preview.url;
                         // Prepares the URL parameters to call for this node.
                         var data = Drupal.settings.alias_preview;
                         // Cleans the title value stored in our URL params.

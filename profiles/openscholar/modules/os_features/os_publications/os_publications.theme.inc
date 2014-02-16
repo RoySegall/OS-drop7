@@ -102,6 +102,7 @@ function theme_os_publications_tabular(&$vars) {
       }
     }
   }
+
   $output = '<div id="biblio-node">';
   $output .= filter_xss($node->biblio_coins, array('span'));
   $output .= '<h3>Citation:</h3><div id="citation-wrapper">' . $citation . '' . theme('biblio_export_links', array('node' => $node)) . '</div>';
@@ -151,7 +152,8 @@ function _os_publications_plain_citation($node) {
 
   $citation = theme('biblio_style', array('node' => $node, 'base' => $base, 'style_name' => $style));
 
-  $citation = strip_tags($citation);
+  $allowed_html_elements = variable_get('html_title_allowed_elements', array('em', 'sub', 'sup'));
+  $citation = filter_xss($citation, $allowed_html_elements);
 
   // add url to citation
   if (function_exists('shorten_url') && variable_get('os_publications_shorten_citations')) {

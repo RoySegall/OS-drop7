@@ -1,4 +1,4 @@
-name = "vsite Domain"
+name = Vsite Domain
 description = "This creates a domain handler for scholar that overides the default purl domain handler.  It also also provides an admin form for creating domains for vsites"
 core = 7.x
 package = "OpenScholar vsite"

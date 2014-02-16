@@ -11,3 +11,10 @@
 function os_taxonomy_update_7000() {
   module_enable(array('hierarchical_taxonomy'));
 }
+
+/**
+ * Update the pattern for vocabularies.
+ */
+function os_taxonomy_update_7001() {
+  variable_set('pathauto_taxonomy_vocabulary_pattern', 'vocab/[vocabulary:name]');
+}

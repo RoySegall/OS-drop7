@@ -133,6 +133,11 @@ width: 90% !important;
     padding-top: 65px;
    
 }
+
+.two-sidebars .region-sidebar-second {
+width: 90%!important;
+}
+
 #menu-bar ul.nice-menu .menuparent ul li a {
     background: none repeat scroll 0 0 #24527A !important;
 }
@@ -146,4 +151,10 @@ width: 90% !important;
 background: none !important;
 }
 
+}
+
+@media (max-width: 768px) {
+.one-sidebar.sidebar-second .region-sidebar-second {
+width: 90%!important;
+	}
 }

@@ -2,7 +2,7 @@
 include_once('iqss_projects_front.features.inc');
 
 /**
- * implementation of hook_context_default_contexts_alter
+ * Implements of hook_context_default_contexts_alter().
  */
 function iqss_projects_front_context_default_contexts_alter(&$contexts){
   // add some extra blocks/boxes to the 'sitewide_front'
@@ -10,38 +10,38 @@ function iqss_projects_front_context_default_contexts_alter(&$contexts){
     $fp_blocks = &$contexts['os_sitewide_front']->reactions['block']['blocks'];
 
     $fp_blocks['boxes-iqss_projects_fp_infoblock'] = array(
-        'module' => 'boxes',
-        'delta' => 'iqss_projects_fp_infoblock',
-        'weight' => -100,
-        'region' => 'content_top',
+      'module' => 'boxes',
+      'delta' => 'iqss_projects_fp_infoblock',
+      'weight' => -100,
+      'region' => 'content_top',
     );
 
     $fp_blocks['boxes-iqss_projects_fp_logoblock'] = array(
-        'module' => 'boxes',
-        'delta' => 'iqss_projects_fp_logoblock',
-        'weight' => -100,
-        'region' => 'header_first',
+      'module' => 'boxes',
+      'delta' => 'iqss_projects_fp_logoblock',
+      'weight' => -100,
+      'region' => 'header_first',
     );
 
     $fp_blocks['boxes-iqss_projects_fp_features'] = array(
-        'module' => 'boxes',
-        'delta' => 'iqss_projects_fp_features',
-        'weight' => 10,
-        'region' => 'content_first',
+      'module' => 'boxes',
+      'delta' => 'iqss_projects_fp_features',
+      'weight' => 10,
+      'region' => 'content_first',
     );
 
     $fp_blocks['boxes-iqss_projects_fp_stats'] = array(
-        'module' => 'os_stats',
-        'delta' => 'os_stats',
-        'weight' => 10,
-        'region' => 'footer',
+      'module' => 'os_stats',
+      'delta' => 'os_stats',
+      'weight' => 10,
+      'region' => 'footer',
     );
 
     $fp_blocks['boxes-iqss_projects_fp_navblock'] = array(
-        'module' => 'boxes',
-        'delta' => 'iqss_projects_fp_navblock',
-        'weight' => -100,
-        'region' => 'header_second',
+      'module' => 'boxes',
+      'delta' => 'iqss_projects_fp_navblock',
+      'weight' => -100,
+      'region' => 'header_second',
     );
 
     if(isset($fp_blocks['vsite_register-get_your_site_block'])){
@@ -97,38 +97,6 @@ function iqss_projects_front_os_widget_alter(&$widget) {
 }
 
 /**
- * Implement hook_strongarm
- * Strongarm hook for configuration variables
- * for the os_stats block
- */
-function iqss_projects_front_strongarm() {
-	$export = array();
-
-	$strongarm = new stdClass();
-  	$strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  	$strongarm->api_version = 1;
-  	$strongarm->name = 'os_stats_cache_expiration';
-  	$strongarm->value = (int)3600*24;
-  	$export['os_stats_cache_expiration'] = $strongarm;
-
-	$strongarm = new stdClass();
-  	$strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
-  	$strongarm->api_version = 1;
-  	$strongarm->name = 'os_stats_enabled';
-  	$strongarm->value = array(
-  		'filesize' => 0,
-  		'users' => 0,
-  		'websites' => 1,
-  		'posts' => 1,
-  		'publications' => 0,
-  		'files' => 1,
-  	);
-  	$export['os_stats_enabled'] = $strongarm;
-
-  	return $export;
-}
-
-/**
  * Implements hook_preprocess_page().
  * Add the jcarousel call into the preprocess page for the projects front page
  */
@@ -153,4 +121,108 @@ function iqss_projects_front_jcarousel_skin_info() {
     'file' => 'carousel.css',
   );
   return $skins;
+}
+
+/**
+ * Function to return the contents for iqss_projects_fp_infoblock
+ */
+function iqss_projects_front_infoblock_content() {
+  global $user;
+  $vsites = vsite_get_vsite_by_owner($user->uid);
+  if (!vsite_vsite_exists_access($vsites)) {
+    if($vsites){
+      $items[] = array(
+        '#title' => ((count($vsites) > 1) ? t('Go to your sites') : t('Go to your site')),
+        '#href' => ((count($vsites) > 1) ? 'user' : $vsites[0]->get_absolute_url()),
+        '#type' => 'link',
+      );
+    } //No sites or ablility to create one
+  }else{
+    //Create a site
+    $items[] = array(
+      '#title' => ((count($vsites) >= 1) ? t('Create a site') : t('Get your website!')),
+      '#href' => 'site/register',
+      '#type' => 'link',
+    );
+  }
+
+  $image = theme('image', array('path' => drupal_get_path('theme', 'projects_harvard') . '/images/top_image.png'));
+  // Create the link.
+  $text = t('<strong>Projects at Harvard</strong> is a free web site building tool available to groups at Harvard wishing to create a site for their project. It is one of two main Harvard installations of <strong>OpenScholar</strong> and a creation of Harvard’s <em>Institute for Quantitative Social Science.</em><br><br><strong>Projects at Harvard</strong> (and the personal site-oriented <strong>Scholars at Harvard</strong>) provide simple web site creation and management with a suite of features tailored to the particular needs of academics.');
+  $block_button = drupal_render($items);
+
+  // Setup the content.
+  $block_content = '<div class="os-fp-imageholder">' . $image .'</div><div class="os-more-info">' . $text . '<div class="os-big-button">' . $block_button . '</div></div>';
+
+  return $block_content;
+}
+
+/**
+ * Function to return the contents for iqss_pojects_fp_navblock_view
+ */
+function iqss_projects_front_navblock_content() {
+  $items = array();
+
+  global $user;
+  $items[] = array(
+    '#title' => $user -> uid ? 'Log out' : 'Log in',
+    '#href' =>  $user -> uid ? 'user/logout' : 'user',
+    '#type' => 'link',
+  );
+
+  $vsites = vsite_get_vsite_by_owner($user->uid);
+  if (!vsite_vsite_exists_access($vsites)) {
+    if ($vsites) {
+      $items[] = array(
+        '#title' => ((count($vsites) > 1) ? 'Go to your sites' : "Go to your site"),
+        '#href' => ((count($vsites) > 1) ? 'user' : $vsites[0]->get_absolute_url()),
+        '#type' => 'link',
+      );
+    } //No sites or ablility to create one
+  }
+  else {
+    //Create a site
+    $items[] = array(
+      '#title' => ((count($vsites) >= 1) ? 'Create a site' : 'Get your website!'),
+      '#href' => 'site/register',
+      '#type' => 'link',
+    );
+  }
+}
+
+/**
+ * Implements hook_default_box_alter().
+ */
+function iqss_projects_front_default_box_alter(&$items) {
+  $box = new stdClass();
+  $box->disabled = FALSE; /* Edit this to true to make a default box disabled initially */
+  $box->api_version = 1;
+  $box->delta = 'iqss_projects_fp_infoblock';
+  $box->plugin_key = 'simple';
+  $box->title = '';
+  $box->description = 'Projects Info text';
+  $box->options = array(
+    'body' => array(
+      'value' => iqss_projects_front_infoblock_content(),
+      'format' => 'filtered_html',
+    ),
+    'additional_classes' => '',
+  );
+  $items['iqss_projects_fp_infoblock'] = $box;
+
+  $box = new stdClass();
+  $box->disabled = FALSE; /* Edit this to true to make a default box disabled initially */
+  $box->api_version = 1;
+  $box->delta = 'iqss_projects_fp_navblock';
+  $box->plugin_key = 'simple';
+  $box->title = '';
+  $box->description = 'OpenScholar: Top Links';
+  $box->options = array(
+    'body' => array(
+      'value' => iqss_projects_front_navblock_content(),
+      'format' => 'filtered_html',
+    ),
+    'additional_classes' => '',
+  );
+  $items['iqss_projects_fp_navblock'] = $box;
 }

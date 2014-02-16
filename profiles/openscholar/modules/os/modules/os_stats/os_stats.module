@@ -19,7 +19,7 @@ function os_stats_menu() {
   $items['geckoboard'] = array(
     'title' => 'Geckoboard Widget',
     'page callback' => 'os_stats_page',
-    'page arguments' => array('geckoboard'),
+    'page arguments' => array('geckoboard', 'websites'),
     'access callback' => TRUE,
     'type' => MENU_CALLBACK,
   );
@@ -44,9 +44,9 @@ function os_stats_form_os_settings_form_alter(&$form, &$form_state, $form_id) {
     '#type' => 'checkboxes',
     '#title' => t('Enabled stats'),
   	'#weight' => 0,
-    '#options' => drupal_map_assoc(array('filesize', 'users', 'websites', 'posts', 'publications', 'files'), 'ucfirst'),
+    '#options' => drupal_map_assoc(array('filesize', 'filesize_bytes', 'users', 'websites', 'posts', 'publications', 'files'), 'ucfirst'),
     '#default_value' => variable_get('os_stats_enabled', ''),
-    '#description' => t('Enables specific statistics to visitors on the <a href="/stats">Stats page</a>.'),
+    '#description' => t('Enables specific statistics to visitors on the "OpenScholar Stats" (os_stats) block. All statistics are available on the <a href="/stats">Stats JSON endpoint</a>.'),
   );
 }
 
@@ -97,10 +97,8 @@ function os_stats_content() {
         continue;
       }
       // Runs query, handling arguments if present.
-      if ((!empty($info['query_args'])) && (!empty($info['query_args_type']))) {
-        $type = $info['query_args_type'];
-        $queryArray = $info['query_args'];
-        $result = db_query($info['query'], array($type => $queryArray))->fetchField();
+      if (!empty($info['args'])) {
+        $result = db_query($info['query'], $info['args'])->fetchField();
       }
       else {
         $result = db_query($info['query'])->fetchField();
@@ -135,10 +133,11 @@ function os_stats_content() {
  * @return NULL
  * - Content printed directly to screen without rendering page.
  */
-function os_stats_page($style = 'default') {
+function os_stats_page($style = FALSE, $type = FALSE) {
   // Sets defaults for possible query parameters.
   $version_default = OS_STATS_API_VERSION_DEFAULT;
-  $type_default    = 'websites';
+  $style_default   = 'default';
+  $type_default    = 'all';
   $format_default  = 'json'; // One day: xml?
   // Fetches query parameters and sets defaults.
   $version = isset($_GET['version']) ? $_GET['version'] : $version_default;
@@ -147,10 +146,12 @@ function os_stats_page($style = 'default') {
     drupal_not_found();
     return NULL;
   }
-  $type = isset($_GET['type']) ? $_GET['type'] : $type_default;
+  if (!$type) {
+    $type = isset($_GET['type']) ? $_GET['type'] : $type_default;
+  }
   $format = isset($_GET['format']) ? $_GET['format'] : $format_default;
-  if ($style == 'default') {
-    $style = isset($_GET['style']) ? $_GET['style'] : $style;
+  if (!$style) {
+    $style = isset($_GET['style']) ? $_GET['style'] : $style_default;
   }
   $cid = 'os_stats_' . $version . '_' . $type . '_' . $format . '_' . $style;
 
@@ -202,6 +203,9 @@ function _os_stats_v1_json($type, $style) {
       case 'websites':
         $enabled = array('websites');
         break;
+      case 'all';
+        $enabled = variable_get('os_stats_enabled', array_keys($queries));
+        break;
     }
 
     foreach ($queries as $query => $info) {
@@ -209,15 +213,13 @@ function _os_stats_v1_json($type, $style) {
         continue;
       }
       // Runs query, handling arguments if present.
-      if ((!empty($info['query_args'])) && (!empty($info['query_args_type']))) {
-        $args_type = $info['query_args_type'];
-        $queryArray = $info['query_args'];
-        $result = db_query($info['query'], array($args_type => $queryArray))->fetchField();
+      if (!empty($info['args'])) {
+        $result = db_query($info['query'], $info['args'])->fetchField();
       }
       else {
         $result = db_query($info['query'])->fetchField();
       }
-      if ($result) {
+      if (isset($result)) {
         // Applies optional formatting callback.
         if (isset($info['callback']) && function_exists($info['callback'])) {
           $result = $info['callback']($result);
@@ -234,8 +236,7 @@ function _os_stats_v1_json($type, $style) {
   $output['href'] = url($path, array('query' => array('version' => '1','format' => 'json', 'type' => $type, 'style' => $style)));
 
   // Adds current OpenScholar version to JSON object, like "7.x-1.0".
-  $path = drupal_get_path('profile', 'openscholar') . '/openscholar.info';
-  $info = drupal_parse_info_file($path);
+  $info = system_get_info('module','openscholar');
   $output['os_version'] = $info['os_version'];
 
   if ($style == 'geckoboard') {
@@ -260,10 +261,10 @@ function _os_stats_v1_json($type, $style) {
  */
 function _os_stats_v1_json_init($type, $style) {
   $errors = array();
-  $types = array('websites');
+  $types = variable_get('os_stats_enabled',array('websites'));
   $styles = array('default', 'geckoboard');
 
-  if (!in_array($type, $types)) {
+  if ($type != 'all' && !in_array($type, $types)) {
     $errors[] = "Unknown type parameter: $type";
   }
   if (!in_array($style, $styles)) {
@@ -286,7 +287,8 @@ function _os_stats_v1_json_init($type, $style) {
  */
 function _os_stats_queries() {
   $group_types = array_keys(array_intersect(module_invoke_all('vsite_og_node_type_info'), array('group')));
-
+  $day_duration = 60 * 60 * 24;
+  $yesterday = time() - ($day_duration);
   $queries = array();
 
   $queries['filesize'] = array(
@@ -296,18 +298,44 @@ function _os_stats_queries() {
     'callback' => 'format_size',
     'weight' => -10,
   );
+  $queries['filesize_bytes'] = array(
+    'title' => t('Total uploaded bytes'),
+    'description' => t('Size of all files uploaded by users'),
+    'query' => 'SELECT SUM(filesize) FROM {file_managed}',
+    'weight' => -10,
+  );
   $queries['users'] = array(
     'title' => t('Users'),
     'description' => t('User accounts'),
     'query' => 'SELECT COUNT(uid) FROM {users}',
     'weight' => -10,
   );
+  $queries['new_users'] = array(
+    'title' => t('New users'),
+    'description' => t('User accounts registered in the past 72 hours'),
+    'query' => 'SELECT COUNT(uid) FROM {users} WHERE created > :three_days_ago',
+    'args' => array(
+      ':three_days_ago' => $yesterday,
+    ),
+    'weight' => -10,
+  );
   $queries['websites'] = array(
     'title' => t('Websites'),
-    'description' => t('Virtual sites in this OS installation'),
+    'description' => t('Virtual sites registered'),
     'query' => 'SELECT COUNT(nid) FROM {node} WHERE type IN (:group_types) ',
-    'query_args' => $group_types,
-    'query_args_type' => ':group_types',
+    'args' => array(
+      ':group_types' => $group_types,
+    ),
+    'weight' => 0,
+  );
+  $queries['new_websites'] = array(
+    'title' => t('New websites'),
+    'description' => t('Virtual sites registered in the past 72 hours'),
+    'query' => 'SELECT COUNT(nid) FROM {node} WHERE type IN (:group_types) AND created > :three_days_ago',
+    'args' => array(
+      ':group_types' => $group_types,
+      ':three_days_ago' => $yesterday,
+    ),
     'weight' => 0,
   );
   $queries['posts'] = array(
@@ -316,10 +344,28 @@ function _os_stats_queries() {
     'query' => 'SELECT COUNT(nid) FROM {node}',
     'weight' => 10,
   );
+  $queries['new_posts'] = array(
+    'title' => t('New posts'),
+    'description' => t('Drupal nodes in the past 72 hours'),
+    'query' => 'SELECT COUNT(nid) FROM {node} WHERE created > :three_days_ago',
+    'args' => array(
+      ':three_days_ago' => $yesterday,
+    ),
+    'weight' => 10,
+  );
   $queries['publications'] = array(
     'title' => t('Publications'),
     'description' => t('Biblio publications'),
     'query' => 'SELECT COUNT(nid) FROM {node} WHERE type=\'biblio\'',
+    'weight' => 20,
+  );
+  $queries['new_publications'] = array(
+    'title' => t('New publications'),
+    'description' => t('Biblio publications in the past 72 hours'),
+    'query' => 'SELECT COUNT(nid) FROM {node} WHERE type=\'biblio\' AND created > :three_days_ago',
+    'args' => array(
+      ':three_days_ago' => $yesterday,
+    ),
     'weight' => 20,
   );
   $queries['files'] = array(

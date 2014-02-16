@@ -20,6 +20,14 @@ function harvard_courses_os_app_info() {
        */
       'harvard_course',
     ),
+    'browse_pages' => array(
+      'harvard_course' => array(
+        'url' => 'browse/courses',
+        'title' => t('Browse courses'),
+        'menu_item' => 'courses',
+        'display_mode' => 'teaser',
+      ),
+    ),
   );
 
   return $apps;

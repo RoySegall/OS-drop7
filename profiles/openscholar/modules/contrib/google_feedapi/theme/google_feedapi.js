@@ -26,8 +26,15 @@ Drupal.behaviors.googleFeedAPI = {
 		           	  
 		           	  var date = "";
 		           	  if(typeof entry.publishedDate != 'undefined' && entry.publishedDate != ''){
-		           		//@todo find a good way to do FuzzyTime in js
-		           		date = googleFeedAPIFuzzyDate(entry.publishedDate);
+		           		if(feed_setting.time_display == 'relative'){  
+		           		  //@todo find a good way to do FuzzyTime in js
+		           		  date = googleFeedAPIFuzzyDate(entry.publishedDate);
+		           	    }
+		           		
+		           		if(feed_setting.time_display == 'formal'){  
+			              date = googleFeedAPIFormalDate(entry.publishedDate);
+			           	}
+		           		
 		           		if(typeof date == 'undefined'){
 		           		  date = "";
 		           		}else{
@@ -41,12 +48,18 @@ Drupal.behaviors.googleFeedAPI = {
 		           		content = entry.contentSnippet;
 		           	  }
 		           	  
-		           	  var feed_markup = "<div class='feed_item'>" +
-	            		date +
-                  		"<a class='title' href='" + entry.link + "'>" + entry.title + "</a>";
+		           	  var feed_markup = "<div class='feed_item'>";
+		           	  
+		           	  //Put time before title if there is no content
+		           	  if(!feed_setting.show_content){
+		           		feed_markup = feed_markup + date;
+		           	  }
+	            	
+		           	  //Add Title
+	            	  feed_markup = feed_markup + "<a class='title' href='" + entry.link + "'>" + entry.title + "</a>";
 		           	  
 		           	  if(feed_setting.show_content){
-		           		feed_markup = feed_markup + "<span class='description'>" +
+		           		feed_markup = feed_markup + "<br />" + date + "<span class='description'>" +
                   		content + 
                   		"<span/>";
 		           	  }
@@ -87,4 +100,19 @@ function googleFeedAPIFuzzyDate(time){
 		day_diff == 1 && "Yesterday" ||
 		day_diff < 7 && day_diff + " days ago" ||
 		day_diff < 31 && Math.ceil( day_diff / 7 ) + " weeks ago";
+}
+
+//Takes an ISO time and returns a string representing how
+//long ago the date represents.
+function googleFeedAPIFormalDate(time){
+	
+	var date = new Date(time);
+	var month = date.getMonth();
+	var day = date.getDate();
+	var year = date.getFullYear();
+	
+	var montharray=new Array("January","February","March","April","May","June",
+                            "July","August","September","October","November","December");
+	
+	return montharray[month]+" "+day+", "+year;
 }

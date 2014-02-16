@@ -53,6 +53,11 @@ function os_software_feeds_importer_default() {
             'unique' => FALSE,
           ),
           2 => array(
+            'source' => 'Packing method',
+            'target' => 'field_software_method',
+            'unique' => FALSE,
+          ),
+          3 => array(
             'source' => 'Files',
             'target' => 'file',
             'unique' => FALSE,

@@ -15,7 +15,8 @@ function theme_google_feedapi_formatter_google_feedapi($info){
     $info['delta'],
     $info['num_to_show'],
     $info['content_summary'],
-    $info['show_content']
+    $info['show_content'],
+    $info['time_display']
   ));
 
   $url_options = array('external' => true);
@@ -29,7 +30,8 @@ function theme_google_feedapi_formatter_google_feedapi($info){
         'url' => url($info['element']['url'],$url_options),
         'num_feeds' => $info['num_to_show'],
         'content_summary' => $info['content_summary'],
-        'show_content' => $info['show_content']
+        'show_content' => $info['show_content'],
+        'time_display' => $info['time_display'],
       )
     )
   ), 'setting');

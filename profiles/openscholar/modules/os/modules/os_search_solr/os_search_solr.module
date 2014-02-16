@@ -9,9 +9,8 @@ function os_search_solr_block_info() {
   $blocks = array();
 
   $blocks['site-search'] = array(
-      'info' => t('Site Search'),
-      'weight' => '10',
-      //'cache' => DRUPAL_CACHE_CUSTOM
+    'info' => t('Site Search'),
+    'weight' => '10',
   );
 
   return $blocks;
@@ -24,16 +23,14 @@ function os_search_solr_block_info() {
  * all os menu blocks.
  */
 function os_search_solr_block_view($delta = '') {
-  $block = array();
-  switch ($delta) {
-    case 'site-search' :
-      $block['subject'] = NULL;
-      $block['content'] = drupal_get_form('search_block_form');
-      return $block;
-
-    default:
-    break;
+  if ($delta != 'site-search') {
+    return array();
   }
+
+  $block = array();
+  $block['subject'] = NULL;
+  $block['content'] = drupal_get_form('search_block_form');
+  return $block;
 }
 
 
@@ -44,13 +41,21 @@ function os_search_solr_block_view($delta = '') {
  * into account.
  */
 function os_search_solr_apachesolr_search_page_alter(&$build, $search_page) {
-  if (empty($build['search_results']['#results']) || !module_exists('vsite')) {
-    // No return values, or no VSite enabled.
+  if (!module_exists('vsite')) {
+    // No VSite enabled.
+    return;
+  }
+  if (!vsite_get_vsite()) {
+    // Not inside a VSite context.
     return;
   }
 
-  if (!vsite_get_vsite()) {
-    // Not inside a VSite context.
+  // If only markup exist, it means there are no results, we want an empty page.
+  if (empty($build['search_results']['#results']) && !empty($build['search_results']['#markup'])) {
+    $build['search_results']['#markup'] = '';
+  }
+  if (empty($build['search_results']['#results'])) {
+    // No return values, or no VSite enabled.
     return;
   }
 
@@ -83,21 +88,22 @@ function os_search_solr_os_widget() {
 }
 
 /**
- * Alter the query after it's prepared and cached.
- *
- * @param object $query
- *   An object implementing DrupalSolrQueryInterface. No need for &.
+ * Implements hook_apachesolr_query_alter().
  */
-function os_search_solr_apachesolr_query_alter($query) {
-
-  if (!variable_get('os_search_solr_query_multisites',FALSE)) {
-    // Limit searches to just this OpenScholar install in shared indexes
-    $query->addFilter('hash', apachesolr_site_hash());
-  }
-
-  if(module_exists('vsite') && ($vsite = spaces_get_space())){
+function os_search_solr_apachesolr_query_alter(DrupalSolrQueryInterface $query) {
+  if (module_exists('vsite') && ($vsite = spaces_get_space())) {
     // I only want to see items in this site
     $query->addFilter("sm_og_group_ref", $vsite->group_type.":".$vsite->id);
+  }
+  elseif (variable_get('file_default_scheme', 'public') == 'private') {
+    //We are not in a vsite, and we are in  a private install.
+    drupal_access_denied();
+    drupal_exit();
+  }
+
+  if (!variable_get('os_search_solr_query_multisites', FALSE)) {
+    // Limit searches to just this OpenScholar install in shared indexes.
+    $query->addFilter('hash', apachesolr_site_hash());
   }
 }
 
@@ -126,65 +132,65 @@ function os_search_solr_get_searcher_name() {
  */
 function os_search_solr_block_view_alter(&$data,$block) {
   // Gets delta map
-  $map = facetapi_get_delta_map();
+  if (!$map = facetapi_get_delta_map()) {
+    return;
+  }
 
-  if(isset($map) && is_array($map)) {
-    $searcher_name = os_search_solr_get_searcher_name();
+  $searcher_name = os_search_solr_get_searcher_name();
 
-    // Filter by Post Type.
-    $string_bundle = facetapi_build_delta($searcher_name, 'block', 'bundle');
-    $delta_bundle = array_search($string_bundle, $map);
+  // Filter by Post Type.
+  $string_bundle = facetapi_build_delta($searcher_name, 'block', 'bundle');
+  $delta_bundle = array_search($string_bundle, $map);
 
-    if($block->module == 'facetapi' && $block->delta == $delta_bundle) {
-      // Alter the title.
-      $data['title'] = 'Filter By Post Type';
+  if ($block->module == 'facetapi' && $block->delta == $delta_bundle) {
+    // Alter the title.
+    $data['title'] = 'Filter By Post Type';
 
-      // Hide the Filter by Post Type block if there is only one filter.
-      if(isset($data['content']['bundle']) && isset($data['content']['bundle']['#items'])) {
-        $type_array = $data['content']['bundle']['#items'];
-        if(is_array($type_array) && count($type_array) <= 1) {
-          $data['content'] = NULL;
-        }
-      }
-    }
-
-    // Filter by Site.
-    $string_og = facetapi_build_delta($searcher_name, 'block', 'sm_og_group_ref');
-    $delta_og = array_search($string_og, $map);
-
-    if($block->module == 'facetapi' && $block->delta == $delta_og) {
-      // Alter the title.
-      $data['title'] = 'Filter By Site';
-
-      // Hide the Filter By Site facet inside of vsites.
-      if(module_exists('vsite') && vsite_get_vsite()) {
+    // Hide the Filter by Post Type block if there is only one filter.
+    if(isset($data['content']['bundle']) && isset($data['content']['bundle']['#items'])) {
+      $type_array = $data['content']['bundle']['#items'];
+      if(is_array($type_array) && count($type_array) <= 1) {
         $data['content'] = NULL;
       }
+    }
+  }
 
-      // Hide the Filter by Site block if there is only one filter.
-      if(isset($data['content']['sm_og_group_ref']) && isset($data['content']['sm_og_group_ref']['#items'])) {
-        $site_array = $data['content']['sm_og_group_ref']['#items'];
-        if(is_array($site_array) && count($site_array) <= 1) {
-          $data['content'] = NULL;
-        }
+  // Filter by Site.
+  $string_og = facetapi_build_delta($searcher_name, 'block', 'sm_og_group_ref');
+  $delta_og = array_search($string_og, $map);
+
+  if($block->module == 'facetapi' && $block->delta == $delta_og) {
+    // Alter the title.
+    $data['title'] = 'Filter By Site';
+
+    // Hide the Filter By Site facet inside of vsites.
+    if(module_exists('vsite') && vsite_get_vsite()) {
+      $data['content'] = NULL;
+    }
+
+    // Hide the Filter by Site block if there is only one filter.
+    if(isset($data['content']['sm_og_group_ref']) && isset($data['content']['sm_og_group_ref']['#items'])) {
+      $site_array = $data['content']['sm_og_group_ref']['#items'];
+      if(is_array($site_array) && count($site_array) <= 1) {
+        $data['content'] = NULL;
       }
     }
+  }
 
-    // Filter by Post Date.
-    $string_date = facetapi_build_delta($searcher_name, 'block', 'created');
-    $delta_date = array_search($string_date, $map);
+  // Filter by Post Date.
+  $string_date = facetapi_build_delta($searcher_name, 'block', 'created');
+  $delta_date = array_search($string_date, $map);
 
-    if($block->module == 'facetapi' && $block->delta == $delta_date) {
-      // Alter the title.
-      $data['title'] = 'Filter By Post Date';
-    }
+  if ($block->module == 'facetapi' && $block->delta == $delta_date) {
+    // Alter the title.
+    $data['title'] = t('Filter By Post Date');
+  }
 
-    // OG-vocab field.
-    $string = facetapi_build_delta($searcher_name, 'block', 'sm_og_vocabulary');
-    $delta = array_search($string, $map);
-    if ($block->module == 'facetapi' && $block->delta == $delta) {
-      $data['title'] = t('Filter By Taxonomy');
-    }
+  // OG-vocab field.
+  $string = facetapi_build_delta($searcher_name, 'block', 'sm_og_vocabulary');
+  $delta = array_search($string, $map);
+  if ($block->module == 'facetapi' && $block->delta == $delta) {
+    $data['title'] = t('Filter By Taxonomy');
   }
 }
 
@@ -206,6 +212,9 @@ function os_search_solr_apachesolr_index_node_solr_document(ApacheSolrDocument $
 
   // Check in the app, if we need to index the author.
   foreach (os_app_info() as $app) {
+    if (empty($app['nodetypes'])) {
+      continue;
+    }
     if (in_array($node->type, $app['nodetypes'])) {
       $index_author = $app['index author'];
       break;
@@ -398,7 +407,6 @@ function os_search_solr_cron() {
 
   foreach ($values as $vsite_id => $values) {
     os_search_solr_mark_entity_by_bundles($vsite_id, $values['bundles'], $values['last_nid']);
-    return;
   }
 }
 
@@ -442,8 +450,10 @@ function os_search_solr_mark_entity_by_bundles($vsite_id, $bundles = array(), $l
     return;
   }
 
-  foreach (array_keys($result['node']) as $nid) {
-    apachesolr_mark_entity('node', $nid);
+  foreach ($result['node'] as $nid => $object) {
+    // The object returned by EFQ has nid / vid / type whcich is good enough for
+    // entity_extract_ids() so we can pass that as the node object.
+    apachesolr_entity_update($object, 'node');
   }
 
   // Set last processed node ID.
@@ -468,13 +478,13 @@ function os_search_solr_cp_settings() {
   $settings = array();
   $settings['os_search_solr'] = array(
     'group' => array(
-      '#title' => t('Solr search'),
-      '#id' => 'os-search-solr',
+      '#title' => t('Maintenance'),
+      '#id' => 'os-maintenance',
     ),
     'form' => array(
       '#type' => 'submit',
-      '#value' => t('Index Solr'),
-      '#description' => t('Index the site to be searchable.'),
+      '#value' => t('Re-Index Search'),
+      '#suffix' => "<div class=\"description\">".t('(Re)Index the sites searchable content.')."</div>",
       '#submit' => array('os_search_solr_reindex_site'),
     ),
   );
@@ -491,3 +501,448 @@ function os_search_solr_reindex_site() {
   drupal_set_message(t('Site marked for indexing. It may take a few minutes until the site is fully indexed.'));
 }
 
+/**
+ * Implements hook_context_default_contexts().
+ */
+function os_search_solr_context_default_contexts() {
+  if (!module_exists('facetapi')) {
+    return;
+  }
+  $export = array();
+  $export['os_search'] = os_search_solr_setup_core_search_context();
+
+  foreach (os_search_solr_get_browse_pages_info() as $bundle_name => $bundle_info) {
+    $export['browse_' . $bundle_name] = os_search_solr_setup_bundle_context($bundle_name, $bundle_info['title'], $bundle_info['url'], $bundle_info['menu_item']);
+  }
+
+  return $export;
+}
+
+/**
+ * Utility function; Get bundles for browse_pages.
+ *
+ * @return array
+ *   Array of bundle names and their labels needed for browse_pages.
+ */
+function os_search_solr_get_browse_pages_info() {
+  $browse_pages_info = array();
+
+  foreach (os_app_info() as $app) {
+    if (!$app['browse_pages']) {
+      continue;
+    }
+    foreach ($app['browse_pages'] as $bundle_name => $bundle_info) {
+      // Verify there is no opt-out of a bundle.
+      if (!$bundle_info) {
+        continue;
+      }
+      $browse_pages_info[$bundle_name] = $bundle_info;
+    }
+  }
+  return $browse_pages_info;
+}
+
+/**
+ * Setup blocks for browse context.
+ *
+ * @param $bundle_name
+ *   Bundle machine name.
+ * @param $bundle_title
+ *   Bundle label.
+ *
+ * @return stdClass
+ *   Bundle context information.
+ */
+function os_search_solr_setup_bundle_context($bundle_name, $bundle_title, $bundle_url, $menu_item) {
+  $searcher_name = os_search_solr_get_searcher_name();
+  // Gets delta map
+  if (!$map = facetapi_get_delta_map()) {
+    return;
+  }
+
+  // Filter by OG vocab.
+  $string_og_vocab = facetapi_build_delta($searcher_name, 'block', 'sm_og_vocabulary');
+  $delta_og_vocab = array_search($string_og_vocab, $map);
+
+  $context = new stdClass();
+
+  $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
+  $context->api_version = 3;
+  $context->name = 'browse_' . $bundle_name;
+  $context->description = $bundle_title;
+  $context->tag = 'OpenScholar';
+  $context->conditions = array(
+    'path' => array(
+      'values' => array(
+        $bundle_url => $bundle_url,
+      ),
+    ),
+  );
+  $context->reactions = array(
+    'block' => array(
+      'blocks' => array(
+        'boxes-vocabulary_filter_' . $bundle_name => array(
+          'module' => 'boxes',
+          'delta' => 'vocabulary_filter_' . $bundle_name,
+          'title' => t('Filter by taxonomy'),
+          'region' => 'sidebar_second',
+          'weight' => '-10',
+        ),
+      ),
+    ),
+    'menu' => $menu_item,
+  );
+  $context->condition_mode = 1;
+  return $context;
+}
+
+/**
+ * Setup blocks for core search context.
+ *
+ * @return stdClass
+ *   Core search context.
+ */
+function os_search_solr_setup_core_search_context() {
+  $delta_created = '';
+  $delta_bundle = '';
+  $delta_og = '';
+
+  $searcher_name = os_search_solr_get_searcher_name();
+  // Gets delta map
+  if (!$map = facetapi_get_delta_map()) {
+    return;
+  }
+
+  // Filter by Post Date block.
+  $string_created = facetapi_build_delta($searcher_name, 'block', 'created');
+  $delta_created = array_search($string_created, $map);
+
+  // Filter by Post Type block.
+  $string_bundle = facetapi_build_delta($searcher_name, 'block', 'bundle');
+  $delta_bundle = array_search($string_bundle, $map);
+
+  // Filter by Site block.
+  $string_og = facetapi_build_delta($searcher_name, 'block', 'sm_og_group_ref');
+  $delta_og = array_search($string_og, $map);
+
+  // Filter by OG vocab.
+  $string_og_vocab = facetapi_build_delta($searcher_name, 'block', 'sm_og_vocabulary');
+  $delta_og_vocab = array_search($string_og_vocab, $map);
+
+  $context = new stdClass();
+
+  $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
+  $context->api_version = 3;
+  $context->name = 'os_search';
+  $context->description = 'Search Pages';
+  $context->tag = 'OpenScholar';
+  $context->conditions = array(
+    'context' => array(
+      'values' => array(
+        '~os_cp' => '~os_cp',
+      ),
+    ),
+    'path' => array(
+      'values' => array(
+        'search' => 'search',
+        'search/*' => 'search/*',
+      ),
+    ),
+  );
+  $context->reactions = array(
+    'block' => array(
+      'blocks' => array(
+        'current_search-standard' => array(
+          'module' => 'current_search',
+          'delta' => 'standard',
+          'region' => 'sidebar_second',
+          'weight' => '-10',
+        ),
+        'apachesolr_search-sort' => array(
+          'module' => 'apachesolr_search',
+          'delta' => 'sort',
+          'region' => 'sidebar_second',
+          'weight' => '-9',
+        ),
+        'facetapi-'.$delta_created => array(
+          'module' => 'facetapi',
+          'delta' => $delta_created,
+          'region' => 'sidebar_second',
+          'weight' => '-8',
+        ),
+        'facetapi-'.$delta_bundle => array(
+          'module' => 'facetapi',
+          'delta' => $delta_bundle,
+          'region' => 'sidebar_second',
+          'weight' => '-7',
+        ),
+        'facetapi-'.$delta_og => array(
+          'module' => 'facetapi',
+          'delta' => $delta_og,
+          'region' => 'sidebar_second',
+          'weight' => '-6',
+        ),
+        'apachesolr_search-mlt-001' => array(
+          'module' => 'apachesolr_search',
+          'delta' => 'mlt-001',
+          'region' => 'sidebar_second',
+          'weight' => '-5',
+        ),
+        'facetapi-' . $delta_og_vocab => array(
+          'module' => 'facetapi',
+          'delta' => $delta_og_vocab,
+          'region' => 'sidebar_second',
+          'weight' => '-4',
+        ),
+      ),
+    ),
+  );
+  $context->condition_mode = 1;
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('OpenScholar');
+  t('Search Pages');
+
+  return $context;
+}
+
+/**
+ * Implements hook_apachesolr_search_default_searchers().
+ */
+function os_search_solr_apachesolr_search_default_searchers() {
+  $export = array();
+  $export['core_search'] = os_search_solr_setup_core_searcher();
+
+  foreach (os_search_solr_get_browse_pages_info() as $bundle_name => $bundle_info) {
+    $page_id = 'browse_' . $bundle_name;
+    $export[$page_id] = os_search_solr_setup_bundle_searcher($bundle_name, $bundle_info['title'], $bundle_info['url']);
+
+    // Set the default display mode for the searcher.
+    os_search_solr_save_view_mode($page_id, $bundle_info['display_mode']);
+  }
+  return $export;
+}
+
+/**
+ * Setup core searcher.
+ *
+ * @return stdClass
+ *   Solr searcher info for core search.
+ */
+function os_search_solr_setup_core_searcher() {
+  $searcher = new stdClass();
+  $searcher->disabled = FALSE; /* Edit this to true to make a default searcher disabled initially */
+  $searcher->api_version = 3;
+  $searcher->page_id = 'core_search';
+  $searcher->label = 'Openscholar Search';
+  $searcher->description = 'Openscholar Search Page';
+  $searcher->search_path = 'search/site';
+  $searcher->page_title = 'Site';
+  $searcher->env_id = apachesolr_default_environment();
+  $searcher->settings = array(
+    'fq' => array(),
+    'apachesolr_search_custom_enable' => 0,
+    'apachesolr_search_search_type' => 'custom',
+    'apachesolr_search_search_box' => TRUE,
+    'apachesolr_search_per_page' => '10',
+    'apachesolr_search_browse' => 'results',
+    'apachesolr_search_spellcheck' => 1,
+    'apachesolr_search_allow_user_input' => 0,
+  );
+
+  return $searcher;
+}
+
+/**
+ * Setup bundle searcher info.
+ *
+ * @param $bundle_name
+ *   Bundle machine name.
+ * @param $label
+ *   Bundle label.
+ *
+ * @return stdClass
+ *   Solr searcher info for the bundle browsing.
+ */
+function os_search_solr_setup_bundle_searcher($bundle_name, $bundle_title, $bundle_url) {
+  $searcher = new stdClass();
+  $searcher->disabled = FALSE; /* Edit this to true to make a default searcher disabled initially */
+  $searcher->api_version = 3;
+  $searcher->page_id = 'browse_' . $bundle_name;
+  $searcher->label = $bundle_title;
+  $searcher->description = $bundle_title;
+  $searcher->search_path = $bundle_url;
+  $searcher->page_title = $bundle_title;
+  $searcher->env_id = apachesolr_default_environment();
+  $searcher->settings = array(
+    'fq' => array(
+      0 => 'bundle:' . $bundle_name,
+    ),
+    'apachesolr_search_custom_enable' => 1,
+    'apachesolr_search_search_type' => 'custom',
+    'apachesolr_search_search_box' => 0,
+    'apachesolr_search_per_page' => '20',
+    'apachesolr_search_browse' => 'results',
+    'apachesolr_search_spellcheck' => 0,
+    'apachesolr_search_allow_user_input' => 0,
+  );
+
+  return $searcher;
+}
+
+/**
+ * Implements hook_ctools_plugin_pre_alter().
+ *
+ * Use OS's Facet API adapter.
+ */
+function os_search_solr_ctools_plugin_pre_alter(&$plugin, &$info) {
+  if ($plugin['name'] != 'apachesolr' || $plugin['plugin type'] != 'adapters') {
+    return;
+  }
+
+  $plugin['handler']['class'] = 'OsApacheSolrFacetapiAdapter';
+}
+
+/**
+ * Implements hook_form_alter()
+ */
+function os_search_solr_form_alter(&$form, &$form_state, $form_id) {
+  // Override the Apache Solr Search Page configuration form.
+  if ($form_id == 'apachesolr_search_page_settings_form') {
+    $view_modes = array('' => t('Use default core search result'));
+    $entity_info = entity_get_info('node');
+
+    // Build the view modes dropdown list
+    foreach ($entity_info['view modes'] as $machine_name => $view_mode) {
+      $view_modes[$machine_name] = $view_mode['label'];
+    }
+
+    // Override form to add custom view modes dropdown.
+    if ($view_modes) {
+      // Grab search page id
+      $search_page_id = $form['search_page']['#value']['page_id'];
+
+      // Fetch currently save Solr view modes.
+      $solr_view_modes = variable_get('os_search_solr_display_mode', '');
+      $form['info']['page_title']['#weight'] = -2;
+      $form['info']['apachesolr_search_view_mode'] = array(
+        '#type' => 'select',
+        '#title' => t('View Mode'),
+        '#description' => t('Select another view mode in favor of the default search view mode.'),
+        '#options' => $view_modes,
+        '#weight' => -1,
+        '#default_value' => isset($solr_view_modes[$search_page_id]) ? $solr_view_modes[$search_page_id] : '',
+      );
+
+      // Add custom submit handler
+      $form['#submit'][] = 'os_search_solr_save_view_mode_from_form';
+    }
+  }
+}
+
+/**
+ * Apache Solr Save View Mode Form Submit Handler
+ */
+function os_search_solr_save_view_mode_from_form($form, &$form_state) {
+  $values = $form_state['values'];
+  os_search_solr_save_view_mode($values['page_id'], $values['apachesolr_search_view_mode']);
+}
+
+/**
+ * Set the view mode for the given page id for current vsite or globally.
+ *
+ * @param $page_id
+ *   Page id as defined for the Solr pages.
+ * @param $view_mode
+ *   View mode name.
+ */
+function os_search_solr_save_view_mode($page_id, $view_mode) {
+  // Get Solr View Modes
+  $solr_view_modes = variable_get('os_search_solr_display_mode', '');
+
+  // Set View Modes
+  $solr_view_modes[$page_id] = $view_mode;
+
+  // Save Apache Solr View Modes. Use VSite if exists.
+  if (module_exists('vsite') && $vsite = vsite_get_vsite()) {
+    $vsite->controllers->variable->set('os_search_solr_display_mode', $solr_view_modes);
+  }
+  else {
+    variable_set('os_search_solr_display_mode', $solr_view_modes);
+  }
+}
+
+/**
+ * Implements hook_preprocess_search_results().
+ */
+function os_search_solr_preprocess_search_results(&$variables) {
+  if (empty($variables['search_page']['page_id'])) {
+    // Not inside a "browse" page.
+    return;
+  }
+  // This will override node results if a node view mode way selected on the
+  // apachesolr page configuration page.
+  $solr_view_modes = variable_get('os_search_solr_display_mode', array());
+
+  $page_id = $variables['search_page']['page_id'];
+
+  $view_mode = !empty($solr_view_modes[$page_id]) ? $solr_view_modes[$page_id] : 'teaser';
+
+  //Only alter 'search_results' and render node if it is a non-search view mode.
+  if(!in_array($view_mode, array('search_result', 'search_index'))){
+
+	  // Reset Search Results, we are going to completely override
+	  $variables['search_results'] = '';
+
+	  foreach ($variables['results'] as $result) {
+	    if ($result['entity_type'] == 'node' && $node = node_load($result['node']->entity_id)) {
+	      $build = node_view($node, $view_mode);
+	      // Hide links.
+	      $build['links']['#access'] = FALSE;
+	      $variables['search_results'] .= render($build);
+	    }
+	  }
+  }
+}
+
+/**
+ * Implements hook_default_box_alter().
+ */
+function os_search_solr_default_box_alter(&$items) {
+  foreach (array_keys(os_search_solr_get_browse_pages_info()) as $bundle_name) {
+    $items['vocabulary_filter_' . $bundle_name] = os_search_solr_vocabulary_filter_box($bundle_name);
+  }
+}
+
+/**
+ * Utility function to create vucabulary filter box.
+ *
+ * @return stdClass
+ *   Vocabulary filter box object.
+ */
+function os_search_solr_vocabulary_filter_box($bundle_name) {
+  $box = new stdClass();
+  $box->disabled = FALSE; /* Edit this to true to make a default box disabled initially */
+  $box->api_version = 1;
+  $box->delta = 'vocabulary_filter_' . $bundle_name;
+  $box->plugin_key = 'os_boxes_facetapi_vocabulary';
+  $box->title = t('Filter by taxonomy');
+  $box->description = 'Vocabulary filter';
+  $box->options = array(
+    'bundle' => $bundle_name,
+  );
+
+  return $box;
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ *
+ * @param $theme_registry
+ */
+function os_search_solr_theme_registry_alter(&$theme_registry) {
+  $path = drupal_get_path('module', 'os_search_solr');
+  $theme_registry['search_results']['path'] = $path;
+  $theme_registry['search_results']['template'] = 'search-results';
+}

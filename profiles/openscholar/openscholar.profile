@@ -155,8 +155,6 @@ function openscholar_install_type_submit($form, &$form_state) {
   }
 }
 
-
-
 function openscholar_vsite_modules_batch(&$install_state){
   //@todo this should be in an .inc file or something.
   $modules = array();
@@ -287,38 +285,14 @@ function _openscholar_module_batch($modules) {
 
 
 /**
- * Set OG's permissions for group-members.
+ * 'Finished' callback after all modules have been installed.
  */
 function _openscholar_install_profile_modules_finished($success, $results, $operations) {
   _install_profile_modules_finished($success, $results, $operations);
 
-  if(variable_get('file_default_scheme', 'public') == 'private'){
+  if (variable_get('file_default_scheme', 'public') == 'private'){
     //Disallow indexing for this install. (Uses already enabled robotstxt module)
     variable_set('robotstxt', "User-agent: *\nDisallow: /");
-  }
-
-  if (!module_exists('vsite')) {
-    return;
-  }
-
-  // Set permissions per group-type.
-  $default_rid = array_search(OG_AUTHENTICATED_ROLE, og_get_default_roles());
-  $default_permissions = og_get_default_permissions();
-  $permissions = array_keys($default_permissions[$default_rid]);
-
-  // Remove permissions to "edit any" or "delete any" content.
-  foreach ($permissions as $key => $permission) {
-    if (strpos($permission, 'update any') === 0 || strpos($permission, 'delete any') === 0) {
-      unset($permissions[$key]);
-    }
-  }
-
-  $group_types = og_get_all_group_bundle();
-  foreach (array_keys($group_types['node']) as $bundle) {
-    $rids = og_roles('node', $bundle);
-    // Get the role ID of the group-member.
-    $rid = array_search(OG_AUTHENTICATED_ROLE, $rids);
-    og_role_grant_permissions($rid, $permissions);
   }
 }
 

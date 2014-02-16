@@ -113,7 +113,9 @@ function os_update_7010() {
   features_revert(array_fill_keys(array('os_faq','os_links','os_news','os_profiles'), array('view')));
 
   //enable mollom on event signup pages
-  _os_update_event_registration_mollom();
+  if (module_exists('mollom')) {
+    os_events_save_mollom_settings();
+  }
 
   //quinn and its flavors -> eloquent
   $flavors = array(
@@ -196,41 +198,6 @@ function os_update_7012() {
     foreach (array(DRUPAL_ANONYMOUS_RID, DRUPAL_AUTHENTICATED_RID) as $rid) {
       user_role_grant_permissions($rid, array('access resource file'));
     }
-  }
-}
-
-/**
- * @function _os_update_event_registration_mollom
- *
- * Configures mollom to put a captcha on event signups
- */
-function _os_update_event_registration_mollom() {
-  if (module_exists('mollom')) {
-    $mollom_form = array(
-      'form_id' => 'registration_form',
-      'mode' => '1',
-      'checks' => array('spam'),
-      'enabled_fields' => array('field_department][und][0][value','field_full_name][und][0][value'),
-      'strictness' => 'normal',
-      'discard' => '1',
-      'moderation' => 0,
-      'entity' => 'registration',
-      'bundle' => 'event_signup_simple',
-      'module' => 'os_events',
-      'title' => 'Registration form',
-      'elements' => array(
-        'field_department][und][0][value' => 'Department',
-        'field_full_name][und][0][value' => 'Full Name',
-      ),
-      'mapping' => array(
-        'author_email' => 'anon_email',
-        'post_id' => 'registration_id',
-      ),
-      'bypass access' => array(),
-      'mail ids' => array(),
-    );
-
-    mollom_form_save($mollom_form);
   }
 }
 
@@ -385,5 +352,308 @@ function os_update_7022() {
  * Reverts `os` module's presets to use new HWPI theme defaults.
  */
 function os_update_7023() {
-  features_revert(array('os' => array('spaces_presets')));
+  // Removed in favor of os_update_7025().
+  //features_revert(array('os' => array('spaces_presets')));
+}
+
+/**
+ * Enable expire module
+ */
+function os_update_7024() {
+  module_enable(array('expire'));
+  //Setup defaults
+  variable_set('expire_debug', '0');
+  variable_set('expire_file_actions', array(1 => '1', 2 => '2'));
+  variable_set('expire_file_file', '1');
+  variable_set('expire_handler_file', 'OSExpireFile');
+  variable_set('expire_handler_node', 'OSExpireNode');
+  variable_set('expire_node_actions', array(1 => '1', 2 => '2', 3 => '3'));
+  variable_set('expire_node_node_page', '1');
+  variable_set('expire_status', '1');
+}
+
+/**
+ * Reverts `os` module's preset taking into account theme changes.
+ */
+function os_update_7025() {
+  $output = "Updating spaces_overrides for sites using presets with modified default themes.\n\n";
+
+  // These were the previous values for variable `default_theme` in presets:
+  $variable = 'theme_default';
+  $preset_themes_original = array(
+    'os_scholar' => 'cleanblue',
+    'os_project' => 'cleanblue',
+    'os_department_minimal' => 'ballard',
+  );
+  // This is the new theme that all 3 presets now use:
+  $new_default = 'hwpi_classic';
+
+  // Reverts spaces_presets -- things are temporarily broken!
+  $revert = array(
+    'os' => array(
+      'spaces_presets',
+    ),
+  );
+  features_revert($revert);
+
+  // Saves a new spaces_override variable values on all affected sites.
+  foreach ($preset_themes_original as $preset => $old_default) {
+    $output .= "Preset: {$preset}: ";
+    $add_override = _os_update_7025_add_override($preset, 'variable', $variable, $old_default);
+    foreach ($add_override as $gid) {
+      $vsite = vsite_get_vsite($gid);
+      if ($vsite) {
+        $vsite->controllers->variable->set($variable, $old_default);
+      }
+    }
+    $count = count($add_override);
+    $output .= "{$count} overrides added, ";
+
+    $remove_override = _os_update_7025_remove_override($preset, 'variable', $variable, $new_default);
+    foreach ($remove_override as $gid) {
+      $vsite = vsite_get_vsite($gid);
+      if ($vsite) {
+        // Since this matches defaults, this will delete the override.
+        // @see spaces_controller::set()
+        $vsite->controllers->variable->set($variable, $new_default);
+      }
+    }
+    $count = count($remove_override);
+    $output .= "{$count} removed.\n";
+    $output .= ' + (' . (empty($add_override) ? '' : implode(',', $add_override)) . ")\n";
+    $output .= ' - (' . (empty($remove_override) ? '' : implode(',', $remove_override)) . ")\n";
+    unset($add_override);
+    unset($remove_override);
+  }
+
+  return $output;
+}
+
+/**
+ * Returns site IDs for all sites which require a new override record.
+ *
+ * @see os_update_7025()
+ */
+function _os_update_7025_add_override($preset, $object_type, $object_id, $old) {
+  // First finds all vsites with this spaces preset type.
+  $all_preset_gids = _query_so_ids('variable', 'spaces_preset_og', $preset);
+
+  // Finds all unique site IDs with an override of the specific object.
+  // Excludes overrides that match the old value.
+  $overridden_non_old_default = _query_so_ids($object_type, $object_id, $old, '!=', $all_preset_gids);
+
+  // Candidates for sites that will need a new override record.
+  // Considers sites such that:
+  // - They have this spaces_preset (from $all_preset_gids above)
+  // - They have an overridden value for 'theme_default'
+  // - Their overridden value != $old
+  $uses_old_default_theme = array_diff($all_preset_gids, $overridden_non_old_default);
+
+  // Removes sites such that:
+  // - There is an overridden value for 'os_appearance_{$old}_flavor'
+  // - The value of 'os_appearance_{$old}_flavor' != "default".
+  $flavor_object_id = "os_appearance_{$old}_flavor";
+  $uses_non_old_default_flavor = _query_so_ids($object_type, $flavor_object_id, 'default', '!=');
+
+  // Determines which sites need a new override record.
+  // Sites such that:
+  // - They use the old default theme (from $uses_old_default_theme above)
+  // - They use the old default theme flavor.
+  $add_override = array_diff($uses_old_default_theme, $uses_non_old_default_flavor);
+
+  return $add_override;
+}
+
+/**
+ * Returns site IDs for all sites whose existing override can be deleted.
+ *
+ * @see os_update_7025()
+ */
+function _os_update_7025_remove_override($preset, $object_type, $object_id, $new) {
+  // First finds all vsites with this spaces preset type.
+  $all_preset_gids = _query_so_ids('variable', 'spaces_preset_og', $preset);
+
+  // Finds all unique site IDs with an override that will no longer be needed.
+  // Only includes overrides that match the new default value.
+  $uses_new_default_theme = _query_so_ids($object_type, $object_id, $new, '=', $all_preset_gids);
+
+  // Removes sites that use a non-default theme value.
+  $flavor_object_id = "os_appearance_{$new}_flavor";
+  $uses_non_new_default_flavor = _query_so_ids($object_type, $flavor_object_id, 'default', '!=');
+  $remove_override = array_diff($uses_new_default_theme, $uses_non_new_default_flavor);
+
+  return $remove_override;
+}
+
+/**
+ * Helper function; returns an array of OG Group IDs.
+ *
+ * @param $object_type
+ *   i.e. 'variable'
+ * @param $object_id
+ *   i.e. 'theme_default'
+ * @param bool $value
+ *   i.e. 'hwpi_classic'
+ * @param string $compare
+ *   one of '=' or '!='
+ * @param mixed $within
+ *   An array of OG group IDs to check against.
+ *
+ * @return array $ids
+ *   An array of int IDs matching the parameter constraints.
+ */
+function _query_so_ids($object_type, $object_id, $value = FALSE, $compare = '=', $within = FALSE) {
+  // Returns an empty array if an empty $within array was passed.
+  $ids = array();
+  if ($within !== FALSE && is_array($within)) {
+    if (empty($within)) {
+      return $ids;
+    }
+  }
+
+  // Initialize a new spaces_overrides query for this object type and id.
+  $query = db_select('spaces_overrides', 'so');
+  $query->fields('so', array('id'));
+  $query->condition('object_type', $object_type);
+  $query->condition('object_id', $object_id);
+
+  // Applies optional value condition.
+  if ($value && in_array($compare, array('=', '!='))) {
+    $length = strlen($value);
+    $value = "s:{$length}:\"{$value}\";";
+    $query->condition('value', $value, $compare);
+  }
+
+  // Applies "within" id array condition.
+  if ($within) {
+    $query->condition('id', $within, 'IN');
+  }
+
+  $result = $query->execute();
+  while ($record = $result->fetchAssoc()) {
+    $ids[] = $record['id'];
+  }
+
+  return $ids;
+}
+
+/**
+ * Reverts feature module `vsite_preset` component: spaces_presets.
+ *
+ * Note: although this might "belong" in vsite_preset.install, it needs to run
+ * AFTER os_update_7025().
+ */
+function os_update_7026() {
+  $revert = array(
+    'vsite_preset' => array(
+      'spaces_presets',
+    ),
+  );
+  features_revert($revert);
+}
+
+/**
+ * Installs modules new to 3.11
+ */
+function os_update_7027($ctx) {
+  $modules = array(
+    'nodeformcols',
+    'media_draggable',
+  );
+
+  module_enable($modules);
+
+  return t('Enabled new modules: @modules', array('@modules' => implode(', ', $modules)));
+}
+
+/**
+ * Revert variables of the app features
+ */
+function os_update_7028($ctx) {
+  $revert = array(
+    'os_biocv' => array(
+      'variable',
+    ),
+    'os_blog' => array(
+      'variable',
+    ),
+    'os_booklets' => array(
+      'variable',
+    ),
+    'os_classes' => array(
+      'variable',
+    ),
+    'os_events' => array(
+      'variable',
+    ),
+    'os_faq' => array(
+      'variable',
+    ),
+    'os_image_gallery' => array(
+      'variable',
+    ),
+    'os_links' => array(
+      'variable',
+    ),
+    'os_news' => array(
+      'variable',
+    ),
+    'os_pages' => array(
+      'variable',
+    ),
+    'os_presentations' => array(
+      'variable',
+    ),
+    'os_profiles' => array(
+      'variable',
+    ),
+    'os_publications' => array(
+      'variable',
+    ),
+    'os_software' => array(
+      'variable',
+    ),
+  );
+
+  features_revert($revert);
+}
+
+/**
+ * Enables metatag modules and reverts metatag config components.
+ */
+function os_update_7029() {
+  $modules = array(
+    'metatag',
+    'metatag_opengraph',
+    'metatag_twitter_cards',
+  );
+  module_enable($modules);
+  $message = t('Enabled new modules: @modules<br/>', array('@modules' => implode(', ', $modules)));
+
+  $modules = array(
+    'os',
+    'vsite',
+    'os_biocv',
+    'os_blog',
+    'os_booklets',
+    'os_events',
+    'os_image_gallery',
+    'os_links',
+    'os_news',
+    'os_presentations',
+    'os_profiles',
+    'os_publications',
+    'os_software',
+  );
+  foreach ($modules as $module) {
+    $revert = array(
+      $module => array(
+        'metatag',
+        'field_instance'
+      ),
+    );
+    features_revert($revert);
+  }
+  $message .= t('Reverted metatag and field_instance config for modules: @modules<br/>', array('@modules' => implode(', ', $modules)));
+  return $message;
 }

@@ -7,20 +7,16 @@
 /**
  * Implements hook_ctools_plugin_api().
  */
-function os_events_ctools_plugin_api() {
-  list($module, $api) = func_get_args();
+function os_events_ctools_plugin_api($module = NULL, $api = NULL) {
   if ($module == "context" && $api == "context") {
     return array("version" => "3");
   }
-  list($module, $api) = func_get_args();
   if ($module == "feeds" && $api == "feeds_importer_default") {
     return array("version" => "1");
   }
-  list($module, $api) = func_get_args();
   if ($module == "feeds_tamper" && $api == "feeds_tamper_default") {
     return array("version" => "2");
   }
-  list($module, $api) = func_get_args();
   if ($module == "strongarm" && $api == "strongarm") {
     return array("version" => "1");
   }
@@ -29,8 +25,8 @@ function os_events_ctools_plugin_api() {
 /**
  * Implements hook_views_api().
  */
-function os_events_views_api() {
-  return array("version" => "3.0");
+function os_events_views_api($module = NULL, $api = NULL) {
+  return array("api" => "3.0");
 }
 
 /**

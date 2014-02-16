@@ -25,3 +25,12 @@ Drupal.behaviors.osBase_skipLinkFocus = {
 };
 
 
+
+jQuery(document).ready(function() {
+jQuery('.sv-list-image.sv-list-view-teaser.sv-list-layout-grid .file.file-image, .sv-list-video.sv-list-view-teaser.sv-list-layout-grid .file.file-video').hover(function() {
+    jQuery(this).find('.field-name-os-file-description').slideToggle();
+	});
+});
+
+
+

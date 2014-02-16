@@ -40,6 +40,7 @@ class os_boxes_site_info extends os_boxes_default {
       '#title' => t('Title'),
       '#default_value' => $this->options['site_title'],
       '#size' => 60,
+      '#required' => true,
     );
 
     $form['descrip'] = array(

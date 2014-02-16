@@ -32,6 +32,7 @@ class os_boxes_site_logo extends os_boxes_default {
       $height = $this->options['height'];
       $width = $this->options['width'];
       $ratio = 0;
+      $description = '';
       if (module_exists('vsite') && $vsite = spaces_get_space()) {
         $file = field_get_items('node', $vsite->group, 'field_site_logo');
         $file = $file[0];
@@ -46,12 +47,18 @@ class os_boxes_site_logo extends os_boxes_default {
           $ratio = explode('x', $instance['widget']['settings']['resolution']);
           $ratio = $ratio[0]/$ratio[1];
         }
+        $description = $instance['description'];
       }
       $allowed_file_types = 'gif png jpg jpeg';
       $form['file'] = array(
         '#type' => 'managed_file',
         '#title' => t('Site Logo'),
-        '#description' => t('Upload a photo and position the cropping tool over it if necessary.<br/>Allowed file types: <strong>' . $allowed_file_types . '</strong>'),
+        '#description' => t('Upload a photo and position the cropping tool over it if necessary.<br/>Allowed file types: <strong>@file_types</strong><br />@description',
+          array(
+            '@file_types' => $allowed_file_types,
+            '@description' => $description,
+          )
+        ),
         '#process' => array(
           '_os_boxes_site_logo_process',
         ),
@@ -226,7 +233,8 @@ function os_boxes_site_logo_submit($form, $form_state) {
 
 function _os_boxes_site_logo_process($element, $form_state, $form) {
   $element = file_managed_file_process($element, $form_state, $form);
-  $element['remove_button']['#submit'][] = '_os_boxes_site_logo_remove_handler';
+  $element = os_files_imagefield_crop_process($element, $form_state, $form);
+  $element['remove_button']['#submit'][] = '_os_image_remove_handler';
 
   $fid = isset($element['#value']['fid']) ? $element['#value']['fid'] : 0;
 
@@ -344,25 +352,4 @@ function _os_boxes_site_logo_preview_process($element, $form_state, $form) {
   $element['#imagefield_crop']['#height'] = isset($scale)?$scale['height']:0;
 
   return $element;
-}
-
-function _os_boxes_site_logo_remove_handler($form, $form_state) {
-  $parents = $form_state['triggering_element']['#array_parents'];
-  $button_key = array_pop($parents);
-  $element = drupal_array_get_nested_value($form, $parents);
-
-  // @see: file_managed_file_submit
-  if (isset($element['#file'])) {
-    $orig = _imagefield_crop_file_to_crop($element['#file']->fid);
-    file_usage_delete($orig, 'imagefield_crop', null, null, 0);
-    file_usage_delete($element['#file'], 'os_boxes', null, null, 0);
-    file_delete($orig);
-    file_delete($element['#file']);
-    $element['#value']['fid'] = null;
-    unset($element['#file']);
-
-    $values_element = $element['#extended'] ? $element['fid'] : $element;
-    form_set_value($values_element, NULL, $form_state);
-    drupal_array_set_nested_value($form_state['input'], $values_element['#parents'], NULL);
-  }
 }

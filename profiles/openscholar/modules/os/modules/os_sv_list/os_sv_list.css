@@ -1,3 +1,5 @@
+/* CSS for the sv list form */
+
 body.page-os-widget #terms {
      border: 1px solid #999999;
      padding: 5px;
@@ -24,4 +26,10 @@ body.page-os-widget #vocabs .form-type-item > label {
 body.page-os-widget #vocabs .form-type-select {
      clear: both;
      display: block;
+}
+
+.more-wrapper>div, 
+fieldset#edit-content>.fieldset-wrapper>div {
+	display: inline-block;
+	margin-right: 2em;
 }

@@ -434,8 +434,9 @@ function _os_context_get_rank($context_name) {
         return $context_rank[$context_name];
       }
 
+      // Set feature and vocab contexts to level 2.
       $map = features_get_component_map('context');
-      if (array_key_exists($context_name, $map)) {
+      if (array_key_exists($context_name, $map) || strpos($context_name,'os_taxonomy-vocab-') === 0) {
         // Feature context.
         $context_rank[$context_name] = 2;
       }

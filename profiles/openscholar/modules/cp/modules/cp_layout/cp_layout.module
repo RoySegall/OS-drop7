@@ -182,7 +182,7 @@ function template_preprocess_cp_layout_unused_widgets(&$variables) {
   }
 
   $vars = array(
-    'title' => 'Add New Widget',
+    'title' => t('Add new widget'),
     'links' => $links,
   );
 

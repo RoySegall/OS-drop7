@@ -91,6 +91,172 @@ function os_profiles_strongarm() {
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'nodeformscols_field_placements_person_default';
+  $strongarm->value = array(
+    'actions' => array(
+      'region' => 'footer',
+      'weight' => '20',
+      'has_required' => FALSE,
+      'title' => 'Save',
+      'hidden' => 0,
+    ),
+    'revision_information' => array(
+      'region' => 'right',
+      'weight' => '6',
+      'has_required' => FALSE,
+      'title' => 'Revision information',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'author' => array(
+      'region' => 'right',
+      'weight' => '4',
+      'has_required' => FALSE,
+      'title' => 'Authoring information',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'options' => array(
+      'region' => 'right',
+      'weight' => '1',
+      'has_required' => FALSE,
+      'title' => 'Publishing options',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'body' => array(
+      'region' => 'main',
+      'weight' => '8',
+      'has_required' => FALSE,
+      'title' => 'Short bio',
+      'hidden' => 0,
+    ),
+    'field_address' => array(
+      'region' => 'main',
+      'weight' => '4',
+      'has_required' => FALSE,
+      'title' => 'Address',
+      'hidden' => 0,
+    ),
+    'field_email' => array(
+      'region' => 'main',
+      'weight' => '6',
+      'has_required' => FALSE,
+      'title' => 'Email',
+      'hidden' => 0,
+    ),
+    'field_first_name' => array(
+      'region' => 'main',
+      'weight' => '0',
+      'has_required' => TRUE,
+      'title' => 'First Name',
+    ),
+    'field_last_name' => array(
+      'region' => 'main',
+      'weight' => '2',
+      'has_required' => TRUE,
+      'title' => 'Last Name',
+    ),
+    'field_middle_name_or_initial' => array(
+      'region' => 'main',
+      'weight' => '1',
+      'has_required' => FALSE,
+      'title' => 'Middle Name or Initial',
+      'hidden' => 0,
+    ),
+    'field_person_photo' => array(
+      'region' => 'main',
+      'weight' => '9',
+      'has_required' => FALSE,
+      'title' => 'Photo',
+      'hidden' => 0,
+    ),
+    'field_phone' => array(
+      'region' => 'main',
+      'weight' => '5',
+      'has_required' => FALSE,
+      'title' => 'Phone',
+      'hidden' => 0,
+    ),
+    'field_professional_title' => array(
+      'region' => 'main',
+      'weight' => '3',
+      'has_required' => FALSE,
+      'title' => 'Professional Titles/Affiliations',
+      'hidden' => 0,
+    ),
+    'field_upload' => array(
+      'region' => 'main',
+      'weight' => '10',
+      'has_required' => FALSE,
+      'title' => 'Attach Files',
+      'hidden' => 0,
+    ),
+    'field_url' => array(
+      'region' => 'main',
+      'weight' => '11',
+      'has_required' => FALSE,
+      'title' => 'Redirect',
+      'hidden' => 0,
+    ),
+    'field_website' => array(
+      'region' => 'main',
+      'weight' => '7',
+      'has_required' => FALSE,
+      'title' => 'Websites',
+      'hidden' => 0,
+    ),
+    'og_group_ref' => array(
+      'region' => 'main',
+      'weight' => '12',
+      'has_required' => FALSE,
+      'title' => NULL,
+      'hidden' => 0,
+    ),
+    'og_vocabulary' => array(
+      'region' => 'main',
+      'weight' => '13',
+      'has_required' => FALSE,
+      'title' => NULL,
+      'hidden' => 0,
+    ),
+    'comment_settings' => array(
+      'region' => 'right',
+      'weight' => '5',
+      'has_required' => FALSE,
+      'title' => 'Comment settings',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'path' => array(
+      'region' => 'right',
+      'weight' => '2',
+      'has_required' => FALSE,
+      'title' => 'URL path settings',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'os_menu' => array(
+      'region' => 'right',
+      'weight' => '3',
+      'has_required' => FALSE,
+      'title' => 'Menu settings',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'actions_top' => array(
+      'region' => 'right',
+      'weight' => '0',
+      'has_required' => FALSE,
+      'title' => 'Save',
+      'hidden' => 0,
+    ),
+  );
+  $export['nodeformscols_field_placements_person_default'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'node_options_person';
   $strongarm->value = array(
     0 => 'status',

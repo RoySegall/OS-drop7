@@ -19,6 +19,19 @@ function os_publications_os_app_info() {
   	'nodetypes' => array(
   	  'biblio',
     ),
+    'importers' => array(
+      'biblio' => array(
+        'csv' => 'os_publication',
+      ),
+    ),
+    'browse_pages' => array(
+      'biblio' => array(
+        'url' => 'browse/publications',
+        'title' => t('Publications'),
+        'display_mode' => 'teaser',
+        'menu_item' => 'publications',
+      ),
+    ),
   );
 
   return $apps;
@@ -30,11 +43,12 @@ function os_publications_os_app_info() {
 function os_publications_menu_alter(&$items) {
   $items['publications'] = array(
     'title' => 'Publications',
+    'description' => 'Publications',
     'page callback' => 'os_publications_overview',
     'access callback' => 'spaces_access_feature',
     'access arguments' => array('view', 'os_publications'),
     'file' => drupal_get_path('module', 'os_publications') . '/os_publications.pages.inc',
-    'menu_name' => 'primary',
+    'menu_name' => 'primary-menu',
   );
 
   $items['publications/export'] = array(
@@ -90,6 +104,13 @@ function os_publications_vsite_og_node_type_info() {
 }
 
 /**
+ * Adds process function to text_format to remove our filter format when necessary
+ */
+function os_publications_element_info_alter(&$info) {
+  $info['text_format']['#process'][] = 'os_publications_process_format';
+}
+
+/**
  * Implementation of hook_form_user_profile_form_alter
  * This hook will remove the "bibio" fieldset from the users profile form
  */
@@ -136,7 +157,7 @@ function os_publications_query_biblio_alter(QueryAlterableInterface $query) {
   // Check the sort order for biblio.
   // If we're sorting by year, we want to sort by date as well to replicate D6
   // sorting.
-  if ($space->controllers->variable->get('biblio_sort','space') == 'year') {
+  if (variable_get('biblio_sort', 'year') == 'year') {
     // Get their sort order.
     $biblio_year_sort = $space->controllers->variable->get('biblio_order','space');
     $order = &$query->getOrderBy();
@@ -151,10 +172,6 @@ function os_publications_query_biblio_alter(QueryAlterableInterface $query) {
       $s = current(array_keys($order));
       $o = current($order);
 
-      if ($s == 'biblio_sort_year') {
-        $biblio_sort_year = $o;
-      }
-
       if ($s = 'biblio_sort_title') {
         $biblio_sort_title = $o;
       }
@@ -163,9 +180,31 @@ function os_publications_query_biblio_alter(QueryAlterableInterface $query) {
       $order = array();
     }
 
+    // Sort by year, and after that create another sorting by the node's
+    // "sticky" property, the creation date of the node, the Biblio date, and
+    // the Biblio title.
     $order['biblio_year'] = isset($biblio_year_sort) ? $biblio_year_sort : 'DESC';
+    $order['n.sticky'] = 'DESC';
+    $order['n.created'] = 'DESC';
     $order['biblio_date'] = 'DESC';
     $order['biblio_sort_title'] = (isset($biblio_sort_title)) ? $biblio_sort_title : 'ASC';
+  }
+  elseif (variable_get('biblio_sort', 'year') == 'type') {
+    // Sort by type, and after that create another sorting by creation date of
+    // the node.
+    $order = &$query->getOrderBy();
+    $new_order = array();
+
+    foreach ($order as $key => $value) {
+      $new_order[$key] = $value;
+      if ($key == 'biblio_type_name') {
+        $new_order['n.sticky'] = 'DESC';
+        $new_order['biblio_year'] = 'DESC';
+        $new_order['n.created'] = 'DESC';
+      }
+    }
+
+    $order = $new_order;
   }
 }
 
@@ -250,6 +289,13 @@ function os_publications_theme_registry_alter(&$reg) {
 function os_publications_form_biblio_node_form_alter(&$form, $form_state) {
   if (!isset($form['#node']->nid)) {
     drupal_set_title(t('Create @name', array('@name' => 'Publication')), PASS_THROUGH);
+
+    // Since Biblio requires first selecting the type of the biblio, in
+    // og_field_widget_form() the "admin" field mode is populated with an invalid
+    // group -- the same group that is also set for the "default" field mode.
+    // To overcome this problem, we will override the values of the that field
+    // mode.
+    unset($form[OG_AUDIENCE_FIELD][LANGUAGE_NONE][0]['admin']);
   }
   else {
     drupal_set_title(t('<em>Edit @type</em> @title', array('@type' => 'Publication', '@title' => $form['#node']->title)), PASS_THROUGH);
@@ -439,9 +485,6 @@ function os_publications_form_biblio_node_form_alter(&$form, $form_state) {
   // Add in a new validation for patents
   $form['#validate'][] = 'os_publications_biblio_form_patent_validate';
 
-  // remove the sticky content option
-  unset($form['options']['sticky']);
-
   unset($form['biblio_tabs']);
 }
 
@@ -591,6 +634,21 @@ function _os_publications_attach_abstract(&$entry, $node, $markup_element) {
 }
 
 /**
+ * Removes our title field format from fields we don't want it to be in
+ */
+function os_publications_process_format($element) {
+  if (isset($element['#field_name']) && $element['#field_name'] == 'title_field') {
+    $format = &$element['format']['format'];
+    unset($format['#options']['filtered_html']);
+    $element['#format'] = $format['#default_value'] = 'title_filter';
+  }
+  else {
+    unset($element['format']['format']['#options']['title_filter']);
+  }
+  return $element;
+}
+
+/**
  * Implements hook_preprocess_node().
  */
 function os_publications_preprocess_node(&$vars) {
@@ -609,24 +667,33 @@ function os_publications_preprocess_node(&$vars) {
  */
 function os_publications_node_view_alter(&$build, $type) {
   $spaces = spaces_get_space();
-  if ($type == 'node' && $build['#bundle'] == 'biblio') {
-    if($build['#view_mode'] == 'full') {
+  if ($type != 'node' || $build['#bundle'] != 'biblio') {
+    return;
+  }
+    
+  switch ($build['#view_mode'])  {
+    case 'full':
       // Remove the publication image as it's called in theme_os_publications_tabular instead.
-      if(isset($build['field_biblio_image'])) {
+      if (isset($build['field_biblio_image'])) {
       	$build['field_biblio_image']['#access'] = FALSE;
       }
+      
       // Remove the Google Scholar link that appears at the bottom of full view publications.
-      if(isset($build['links']['biblio_google_scholar'])) {
+      if (isset($build['links']['biblio_google_scholar'])) {
         unset($build['links']['biblio_google_scholar']);
       }
-    }
-    if ($build['#view_mode'] == 'teaser') {
+      break;
+    
+    case 'slide_teaser':
+      $build['teaser']['#markup'] = theme('biblio_style', array('node' => $build['#node'], 'base' => variable_get('biblio_base', 'biblio'), 'style_name' => biblio_get_style()));
+      //FALLTHROUGH!  slide_teaser should run just like teaser, except we need to load up the markup from biblio_view().
+    case 'teaser':  
       // Alter the teaser to remove the external URL as the URL title and
       // replace it with either the biblio_url_title or "website".
       if (isset($build['teaser']['#markup'])) {
         $node = node_load($build['#node']->nid);
         $build['teaser']['#markup'] = _os_publications_biblio_entry_alter($build['teaser']['#markup'], $node);
-      }
+      } 
 
       // Add the abstract slider.
 	    _os_publications_attach_abstract($build, $build['#node'], 'teaser');
@@ -636,8 +703,9 @@ function os_publications_node_view_alter(&$build, $type) {
       }
       $build['teaser']['#weight'] = 1;
       $build['links']['#access'] = FALSE;
-    }
-    else {
+      break;
+      
+    default:
       $links = &$build['links'];
       foreach ($links as $k => $l) {
         if (is_array($l) && isset($l['#links'])) {
@@ -648,21 +716,8 @@ function os_publications_node_view_alter(&$build, $type) {
           }
         }
       }
-    }
-  }
-}
-
-/**
- * Adds a page contextual link for importing biblio nodes.
- */
-function os_publications_os_add_new_links_alter(&$links) {
-  if (isset($links['biblio'])) {
-    $links['biblio-import'] = array(
-      'title' => t('Import Publications'),
-      'href' => 'publications/import',
-      'html' => TRUE,
-    );
-    $links['biblio']['title'] = 'Publication';
+      break;
+    
   }
 }
 

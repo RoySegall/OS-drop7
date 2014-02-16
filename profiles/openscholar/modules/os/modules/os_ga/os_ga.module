@@ -7,7 +7,7 @@
  */
 
 // Defines which file extensions should be tracked, if enabled.
-define('OS_GA_TRACK_FILE_EXTENSIONS', '7z|aac|arc|arj|asf|asx|avi|bin|csv|doc|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt|qtm?|ra(m|r)?|sea|sit|tar|tgz|torrent|txt|wav|wma|wmv|wpd|xls|xml|z|zip');
+define('OS_GA_TRACK_FILE_EXTENSIONS', '7z|aac|arc|arj|asf|asx|avi|bin|csv|docx?|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt|qtm?|ra(m|r)?|sea|sit|tar|tgz|torrent|txt|wav|wma|wmv|wpd|xlsx?|xml|z|zip');
 
 /**
  * Implements hook_form_FORM_ID_alter() for os_settings_form.
@@ -79,6 +79,15 @@ function os_ga_form_os_settings_form_alter(&$form, &$form_state, $form_id) {
     '#description' => t("AddThis social tracking is only available to one Google Analytics account per pageload. In cases where one account must be chosen for AddThis social tracking, the default account will be chosen."),
     '#dependency' => array('edit-os-ga-addthis' => array('1')),
     '#attributes' => array('class' => array('form-item-child')),
+  );
+  $form['os_ga']['os_ga_custom_variable_index'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Site homepage Custom Variable index'),
+    '#weight' => 7,
+    '#size' => 5,
+    '#maxlength' => 2,
+    '#default_value' => variable_get('os_ga_custom_variable_index', 0),
+    '#description' => t("For Classic Google analytics only. Enter a value between 1 and 5 to send the current vsite homepage URL to GA. This allows you to run reports by vsite within GA."),
   );
 }
 
@@ -278,6 +287,17 @@ function _os_ga_build_script($accounts = array()) {
     else {
       $output .= '_gaq.push(["_trackPageview"]);';
     }
+
+    // For global only, optionally adds a custom variable to report on vsite.
+    // For classic google analytics.
+    // @see https://developers.google.com/analytics/devguides/collection/gajs/gaTrackingCustomVariables
+    if ($account == variable_get('os_ga_global_id', '')) {
+      $index = variable_get('os_ga_custom_variable_index', 0);
+      if (is_numeric($index) && !empty($index) && $index < 6) {
+        $output .= _os_ga_set_custom_var_snippet($index);
+      }
+    }
+
     // Checks if this is the default AddThis account.
     if ($info['addthis_default'] === TRUE) {
       $addthis_account = $account;
@@ -333,4 +353,26 @@ function _os_ga_search_get_keys() {
     $return = count($path) == 3 ? $path[2] : $keys;
   }
   return $return;
+}
+
+/**
+ * Returns a javascript snippet which sets a custom Google Analytics variable.
+ */
+function _os_ga_set_custom_var_snippet($index) {
+  $name = t('Site homepage');
+
+  // First tries to get a vsite-level home page URL.
+  if (function_exists('vsite_get_vsite') && $vsite = vsite_get_vsite()) {
+    $wrapper = entity_metadata_wrapper('node', $vsite->group);
+    $value = $wrapper->field_group_path->value();
+    $value = $value['url'];
+  }
+  // Defaults to the sitewide home page URL if none found.
+  else {
+    $value = url('<front>', array('absolute' => TRUE));
+  }
+  $value = rtrim($value, '/');
+
+  // Sets a page-level custom variable at the given index.
+  return "_gaq.push(['_setCustomVar',{$index},'{$name}','{$value}',3]);";
 }

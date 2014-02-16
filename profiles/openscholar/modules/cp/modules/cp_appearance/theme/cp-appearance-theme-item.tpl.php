@@ -30,7 +30,7 @@ if (file_exists($info['screenshot'])) {
       Flavors <?php echo $sub_theme; ?>
     </div>
   <?php endif; ?>
-
+</div>
 
 
 

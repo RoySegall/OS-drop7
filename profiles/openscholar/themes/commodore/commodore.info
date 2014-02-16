@@ -1,7 +1,7 @@
 
 ;----------// Theme Information
 
-  name        = Commodore (HPAC)
+  name        = Commodore
   description = Clean theme for individual or department use.
   core        = 7.x
   base theme  = os_basetheme

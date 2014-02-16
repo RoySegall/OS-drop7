@@ -23,6 +23,22 @@ function os_classes_os_app_info() {
     'views tabs' => array(
       'os_classes' => array('page'),
     ),
+    'importers' => array(
+      'class' => array(
+        'csv' => 'os_classes',
+      ),
+    ),
+    'require_parent_node' => array(
+      'class_material'=> TRUE,
+    ),
+    'browse_pages' => array(
+      'class' => array(
+        'url' => 'browse/classes',
+        'title' => t('Classes'),
+        'display_mode' => 'teaser',
+        'menu_item' => 'classes',
+      ),
+    ),
   );
 
   return $apps;

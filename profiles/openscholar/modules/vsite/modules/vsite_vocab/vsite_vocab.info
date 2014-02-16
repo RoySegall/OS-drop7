@@ -1,4 +1,4 @@
-name = vsite taxonomy integration
+name = Vsite Taxonomy Integration
 description = Integration with OG Vocabulary.
 core = 7.x
 package = OpenScholar vsite

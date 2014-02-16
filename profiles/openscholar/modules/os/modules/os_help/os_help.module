@@ -5,6 +5,12 @@
  * Implements hook_help().
  */
 function os_help_help($path, $arg) {
+  $item = menu_get_item();
+  // Display the help icon only for allowed pages.
+  if (!$item['access']) {
+    return;
+  }
+
   switch ($path) {
     case 'cp/build':
     case 'cp/build/apps':
@@ -26,10 +32,6 @@ function os_help_help($path, $arg) {
     case 'cp/settings/site_info/%':
       $topic = 'Site-Information';
       break;
-    case 'cp/settings':
-    case 'cp/settings/generic':
-      $topic = 'Site-Settings';
-      break;
     case 'cp/content':
       $topic = 'Managing-Your-Content';
       break;
@@ -48,14 +50,14 @@ function os_help_help($path, $arg) {
   }
   if (isset($topic)) {
     return theme('advanced_help_topic', array(
-    	'module' => 'os_help',
-    	'topic' => $topic,
+      'module' => 'os_help',
+      'topic' => $topic,
     ));
   }
 }
 
 /**
- * Impements hook_process_HOOK for page.tpl.php.
+ * Implements hook_process_HOOK for page.tpl.php.
  */
 function os_help_process_page(&$vars) {
   $path = drupal_get_path_alias();
@@ -70,13 +72,6 @@ function os_help_process_page(&$vars) {
  * Implements hook_form_FORM_ID_form_alter() for spaces_features_form
  */
 function os_help_form_spaces_features_form_alter(&$form, &$form_state, $form_id) {
-  _os_help_traverse_form($form, $form_id);
-}
-
-/**
- * Implements hook_form_FORM_ID_form_alter() for cp_layout_full_form
- */
-function os_help_form_cp_layout_full_form_alter(&$form, &$form_state, $form_id) {
   _os_help_traverse_form($form, $form_id);
 }
 
@@ -150,7 +145,6 @@ function _os_help_get_theme_variables($id) {
     'spaces_features_form:spaces_features:os_presentations' => array('module' => 'os_help', 'topic' => 'Presentations-app'),
     'spaces_features_form:spaces_features:os_reader' => array('module' => 'os_help', 'topic' => 'Reader-app'),
     'spaces_features_form:spaces_features:os_software' => array('module' => 'os_help', 'topic' => 'Software-app'),
-    'cp_layout_full_form:context_selection' => array('module' => 'os_help', 'topic' => 'Customizing-Your-Site-Layout'),
   );
   if (!isset($theme_variables[$id])) {
     return FALSE;

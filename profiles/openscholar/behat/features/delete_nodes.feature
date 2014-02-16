@@ -6,7 +6,8 @@ Feature: Testing the tagged items.
   Scenario: verify that the tagged items filter work as expected.
       Given I am logging in as "admin"
         And I visit "john/classes"
-        And I click "Add Class"
+        And I click "Add New"
+        And I click "Class"
         And I fill in "Title" with "Dummy class"
         And I press "Save"
         And I click "Delete"

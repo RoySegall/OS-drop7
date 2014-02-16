@@ -28,6 +28,15 @@ function os_basetheme_preprocess_html(&$vars) {
 function os_basetheme_preprocess_page(&$vars) {
   $item = menu_get_item();
 
+  // Remove the node view tab.
+  if (!empty($vars['tabs']['#primary'])) {
+    foreach ($vars['tabs']['#primary'] as $k => $l) {
+      if ($l['#link']['path'] == 'node/%/view') {
+        unset($vars['tabs']['#primary'][$k]);
+      }
+    }
+  }
+
   //Adds OpenScholar header region awareness to body classes
   $header = array(
     'header-left' => $vars['page']['header_first'],
@@ -75,7 +84,7 @@ function os_basetheme_preprocess_page(&$vars) {
   }
 
   //hide useless tabs - drupal uses $vars['tabs'], but adaptive loads primary and secondary menu local tasks.
-  $vars['primary_local_tasks'] = $vars['tabs']['#primary'];
+  $vars['primary_local_tasks'] = !empty($vars['tabs']['#primary']) ? $vars['tabs']['#primary'] : '';
   $vars['secondary_local_tasks'] = $vars['tabs']['#secondary'];
 
   $theme_name = $GLOBALS['theme_key'];
@@ -172,6 +181,17 @@ function os_basetheme_preprocess_node(&$vars) {
       $vars['classes_array'][] = 'event-start';
     }
   }
+  
+  // Event persons, change title markup to h1
+  if ($vars['type'] == 'person') {
+    if (!$vars['teaser'] && $vars['view_mode'] != 'sidebar_teaser') {
+      $vars['title_prefix']['#suffix'] = '<h1 class="node-title">' . $vars['title'] . '</h1>';
+      
+      if ($vars['view_mode'] == 'slide_teaser') {
+        $vars['title_prefix']['#suffix'] = '<div class="toggle">' . $vars['title_prefix']['#suffix'] . '</div>'; 
+      }
+    }
+  }
 }
 
 /**
@@ -218,4 +238,21 @@ function os_basetheme_preprocess_menu_tree(&$variables) {
     $variables['os_nice_menus'] = false;
   }
   $variables['tree'] = $variables['tree']['#children'];
+}
+
+/**
+ * Implements template_process_HOOK() for theme_pager_link().
+ */
+function os_basetheme_process_pager_link($variables) {
+  // Adds an HTML head link for rel='prev' or rel='next' for pager links.
+  module_load_include('inc', 'os', 'includes/pager');
+  _os_pager_add_html_head_link($variables);
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ * Set OS profiles preprocess to run before any other preprocess function.
+ */
+function os_basetheme_theme_registry_alter(&$theme_registry) {
+  array_unshift($theme_registry['image_formatter']['preprocess functions'], "os_profiles_preprocess_image_formatter");
 }

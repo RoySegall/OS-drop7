@@ -11,6 +11,24 @@
 function vsite_register_admin_form($form, &$state) {
   $presets = _vsite_register_list_presets();
   $form = array(
+    'vsite_register_get_site_text' => array(
+      '#type' => 'textfield',
+      '#title' => t('For users who may create more site(s)'),
+      '#size' => 60,
+      '#default_value' => variable_get('vsite_register_get_site_text', t('Create your site')),
+    ),
+    'vsite_register_max_site_text_single' => array(
+      '#type' => 'textfield',
+      '#title' => t('For maxed-out users with 1 site'),
+      '#size' => 60,
+      '#default_value' => variable_get('vsite_register_max_site_text_single', t('Go to your site')),
+    ),
+     'vsite_register_max_site_text_plural' => array(
+      '#type' => 'textfield',
+      '#title' => t('For maxed-out users with multiple sites'),
+      '#size' => 60,
+      '#default_value' => variable_get('vsite_register_max_site_text_plural', t('Go to your sites')),
+    ),
     'os_enabled_spaces_presets' => array(
       '#title' => t('Enabled presets'),
       '#type' => 'checkboxes',

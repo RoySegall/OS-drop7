@@ -127,20 +127,20 @@ function os_links_field_default_fields() {
       'description' => 'The web address of the link. Starts with: http://',
       'display' => array(
         'default' => array(
-          'label' => 'above',
+          'label' => 'hidden',
           'module' => 'link',
           'settings' => array(),
-          'type' => 'link_default',
+          'type' => 'hidden',
           'weight' => '1',
         ),
         'sidebar_teaser' => array(
-          'label' => 'above',
+          'label' => 'hidden',
           'settings' => array(),
           'type' => 'hidden',
           'weight' => 0,
         ),
         'teaser' => array(
-          'label' => 'above',
+          'label' => 'hidden',
           'settings' => array(),
           'type' => 'hidden',
           'weight' => '3',
@@ -244,7 +244,7 @@ function os_links_field_default_fields() {
       'settings' => array(
         'description_field' => 0,
         'file_directory' => '',
-        'file_extensions' => 'jpg jpeg gif png txt doc docx gz xls xlsx pdf ppt pptx pps odt ods odp tex tgz xml zip',
+        'file_extensions' => 'avi doc docx exe gif gz ico jpeg jpg m4a m4v mov mp3 mp4 mpeg odp ods odt oga ogg ogv pdf png pps ppsx tar tex tgz txt wmv wtml wtt wwtfig xls xlsx xml zip',
         'filefield_paths' => array(
           'active_updating' => 0,
           'file_name' => array(

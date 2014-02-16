@@ -13,9 +13,9 @@ function vsite_taxonomy_default_vocabularies() {
       'name' => 'Organization',
       'machine_name' => 'organization',
       'description' => '',
-      'hierarchy' => '1',
+      'hierarchy' => 1,
       'module' => 'taxonomy',
-      'weight' => '0',
+      'weight' => 0,
       'rdf_mapping' => array(
         'rdftype' => array(
           0 => 'skos:ConceptScheme',

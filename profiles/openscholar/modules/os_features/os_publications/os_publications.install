@@ -56,9 +56,9 @@ function os_publications_install() {
     $field_map = biblio_get_map('field_map','csl');
     if(isset($field_map['collection-title']) && isset($field_map['container-title'])) {
       if($field_map['collection-title'] == 'biblio_secondary_title' && $field_map['container-title'] == 'biblio_secondary_title') {
-	    $field_map['collection-title'] = '';
-	    biblio_set_map('field_map', 'csl', $field_map);
-	  }
+        $field_map['collection-title'] = '';
+        biblio_set_map('field_map', 'csl', $field_map);
+      }
     }
   }
 }
@@ -1049,4 +1049,110 @@ function os_publications_update_7012() {
  */
 function os_publications_update_7013() {
   features_revert(array('os_publications' => array('field')));
+}
+
+/**
+ * Add "American chemical society.csl" and "American chemical society with titles.csl"
+ * to Biblio.
+ */
+function os_publications_update_7014() {
+  module_load_include('inc', 'biblio_citeproc', 'biblio_citeproc.admin');
+
+  $files = array(
+    'american-chemical-society',
+    'american-chemical-society-with-titles',
+  );
+
+  foreach ($files as $file) {
+    // Read the CSL file from the directory.
+    $csl = file_get_contents(drupal_get_path('module', 'biblio_citeproc') . '/style/' . $file . '.csl');
+    _install_csl($file . '.csl', $csl);
+  }
+}
+
+/**
+ * Make the "Data" biblio type visible.
+ */
+function os_publications_update_7015() {
+  db_update('biblio_types')
+    ->fields(array('visible' => 1))
+    ->condition('name', 'data')
+    ->execute();
+}
+
+
+/**
+ * Revert fields to use new field widget
+ */
+function os_publications_update_7016() {
+  $revert = array('os_publications' => array('field_instance'));
+
+  features_revert($revert);
+
+  return t('Reverted field instances for os_publications module.');
+}
+
+/**
+ * Enable html_title and title modules.
+ */
+function os_publications_update_7017() {
+  module_enable(array('html_title'));
+  module_enable(array('title'));
+  features_revert_module('os_publications');
+}
+
+/**
+ * Add title field to publications.
+ */
+function os_publications_update_7026(&$sandbox) {
+  if (!isset($sandbox['total'])) {
+    $sandbox['progress'] = 0;
+
+    $query = new EntityFieldQuery();
+    $sandbox['total'] = $query
+      ->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'biblio')
+      ->count()
+      ->execute();
+  }
+
+  $batch = 250;
+  $last_publication = isset($sandbox['publication_id']) ? $sandbox['publication_id'] : 0;
+
+  $query = new EntityFieldQuery();
+  $results = $query
+    ->entityCondition('entity_type', 'node')
+    ->entityCondition('bundle', 'biblio')
+    ->propertyCondition('nid', $last_publication, '>=')
+    ->range(0, $batch)
+    ->execute();
+
+  if (!empty($results['node'])) {
+    // We found items to process.
+    $ids = array_keys($results['node']);
+    title_field_replacement_init('node', 'biblio', 'title', $ids);
+    $sandbox['publication_id'] = end($ids);
+
+    if (drupal_is_cli()) {
+      // Display message when running the update via drush.
+      $params = array(
+        '@start' => $last_publication,
+        '@end' => $sandbox['publication_id'],
+      );
+      drush_log(dt('Replaced title with field instance for publication number @start to @end', $params), 'success');
+    }
+  }
+
+  // Increase the progress.
+  $sandbox['progress'] += $batch;
+
+  if ($sandbox['progress'] > $sandbox['total']) {
+    // The total results amount is smaller then the amount we processed in a
+    // single batch. After a single batch we can set the finished to true.
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    // Save the last node, increase the node and check if the import finished.
+    $sandbox['#finished'] = ($sandbox['progress'] / $sandbox['total']);
+  }
 }

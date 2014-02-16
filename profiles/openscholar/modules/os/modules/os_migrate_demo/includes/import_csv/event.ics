@@ -29,7 +29,7 @@ DESCRIPTION:Testing the import from a iCal file \n  \n -------- DATE:  ----
 DTSTART;TZID=Europe/Helsinki:20131017T153000
 DTEND;TZID=Europe/Helsinki:20131017T153000
 LAST-MODIFIED:20131017T123058Z
-SUMMARY:Testing importing
+SUMMARY:Event from csv
 URL;TYPE=URI:http://localhost/OpenScholarMake/www/john/event/testing-import
  ing
 END:VEVENT

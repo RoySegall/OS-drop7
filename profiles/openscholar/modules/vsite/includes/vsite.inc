@@ -66,9 +66,6 @@ function vsite_add_node($node, $gid = FALSE, $update_alias = TRUE) {
     // Tells pathauto to update this node's alias.
     $node->path['pathauto'] = TRUE;
     $node->vsite_pathauto_alias_alter = TRUE;
-    // @todo verify if we need this?
-    // Prevents a collision with an existing system path.
-    //_vsite_alter_node_path_settings($node);
 
     // Saves the node to trigger
     node_save($node);

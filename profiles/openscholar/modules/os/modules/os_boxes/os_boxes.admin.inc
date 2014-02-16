@@ -226,3 +226,33 @@ function os_boxes_remove_widget($module, $delta, $target = FALSE) {
   return '';
 }
 
+/**
+ * Returns an embeddable version of a box
+ * @param $box - a full box object
+ * @param $embed_style - how the box should be embedded in the client
+ *    can be inline or iframe
+ */
+function os_boxes_embed_code($box, $embed_style) {
+  module_invoke_all('suppress');
+  if ($box) {
+    module_load_include('module', 'block', 'block');
+    $plugin = context_get_plugin('reaction', 'block');
+    $blocks = $plugin->get_blocks();
+    $bid = 'boxes-'.$box->delta;
+    if ($b = $blocks[$bid]) {
+      web_widgets_inside_widget(true);
+      $b->region = 'embed';
+      if ($b_out = _block_render_blocks(array($b))) {
+        $block_arr = _block_get_renderable_array($b_out);
+        $block = $block_arr['boxes_'.$box->delta];
+        $block['#attached']['js'] = array(
+          drupal_get_path('module', 'os_boxes').'/misc/os_boxes.resize_child.js',
+        );
+
+        print web_widgets_render_widget($embed_style, drupal_render($block), '');
+      }
+    }
+  }
+  print '';
+  exit;
+}

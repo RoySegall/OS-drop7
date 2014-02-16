@@ -1223,10 +1223,11 @@ function og_vocab_form_alter(&$form, $form_state, $form_id) {
 
     // Alter the 'Add term' link that is displayed when no terms have yet been
     // added.
-    $og_vocab = taxonomy_vocabulary_load($form['#vocabulary']->vid);
-    $relation = og_vocab_relation_get($og_vocab->vid);
+    $vid = !empty($form['vid']['#value']) ? $form['vid']['#value'] : $form['#vocabulary']->vid;
+    $vocab = taxonomy_vocabulary_load($vid);
+    $relation = og_vocab_relation_get($vocab->vid);
     if (og_user_access($relation->group_type, $relation->gid, 'administer taxonomy')) {
-      $path = "group/$relation->group_type/$relation->gid/admin/taxonomy/$og_vocab->machine_name/add";
+      $path = "group/$relation->group_type/$relation->gid/admin/taxonomy/$vocab->machine_name/add";
       $form['#empty_text'] = t('No terms available. <a href="@link">Add term</a>.', array('@link' => url($path)));
     }
   }
@@ -1481,8 +1482,7 @@ function og_vocab_entity_delete($entity, $entity_type) {
  *   Array keyed with the group type and group ID, if context found.
  */
 function og_vocab_is_group_admin_context() {
-  $item = menu_get_item();
-  if (strpos($item['path'], 'group/') === 0 && !empty($item['map'][2])) {
+  if (strpos($_GET['q'], 'group/') === 0 && ($item = menu_get_item()) && !empty($item['map'][2])) {
     return array('group_type' => $item['map'][1], 'gid' => $item['map'][2]);
   }
 

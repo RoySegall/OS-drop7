@@ -166,16 +166,7 @@ text-shadow: 0px -1px 0px rgba(30, 30, 30, 0.25);
 -webkit-border-radius: 4px;
 -moz-border-radius: 4px;
 border-radius: 4px;
-background: rgb(58, 114, 171);
-background: -moz-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
-background: -webkit-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
-background: -o-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
-background: -ms-linear-gradient(90deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
-background: linear-gradient(0deg, rgb(58, 114, 171) 31%, rgb(58, 139, 171) 100%);
--webkit-box-shadow: 0px 1px 1px rgba(50, 50, 50, 0.5);
--moz-box-shadow:    0px 1px 1px rgba(50, 50, 50, 0.5);
-box-shadow:         0px 1px 1px rgba(50, 50, 50, 0.5);
-
+background: #4183c4;
 
 }
 
@@ -325,25 +316,20 @@ margin-right:-3px;
 .logged-in.no-sidebars.page-user #content .delete-link a {
 	padding: 5px 10px;
     border:none;
-	color:#fff;
+	color:#FFFFFF;
 	font-size:13px;
 	font-weight:bold;
-color: rgb(230, 230, 230);
 text-shadow: 0px -1px 0px rgba(30, 30, 30, 0.25);
 -webkit-border-radius: 4px;
 -moz-border-radius: 4px;
 border-radius: 4px;
-background: rgb(210, 20, 20);
-background: -moz-linear-gradient(90deg, rgb(210, 20, 20) 30%, rgb(255, 123, 0) 100%);
-background: -webkit-linear-gradient(90deg, rgb(210, 20, 20) 30%, rgb(255, 123, 0) 100%);
-background: -o-linear-gradient(90deg, rgb(210, 20, 20) 30%, rgb(255, 123, 0) 100%);
-background: -ms-linear-gradient(90deg, rgb(210, 20, 20) 30%, rgb(255, 123, 0) 100%);
-background: linear-gradient(0deg, rgb(210, 20, 20) 30%, rgb(255, 123, 0) 100%);
--webkit-box-shadow: 0px 1px 1px rgba(50, 50, 50, 0.5);
--moz-box-shadow:    0px 1px 1px rgba(50, 50, 50, 0.5);
-box-shadow:         0px 1px 1px rgba(50, 50, 50, 0.5);
+background: #FF3A2D;
+
 }
 
+.pin-button a, 
+fieldset.pin-fieldset legend a, 
+#user-login fieldset legend a,
 .page-site-register .form-submit,
 .logged-in.no-sidebars.page-user #content .user-add-website,
 .os-green-button {
@@ -351,22 +337,49 @@ box-shadow:         0px 1px 1px rgba(50, 50, 50, 0.5);
     border:none;
 	font-size:13px;
 	font-weight:bold;
-color: rgb(230, 230, 230);
-text-shadow: 0px -1px 0px rgba(30, 30, 30, 0.25);
+color: #FFFFFF;
 -webkit-border-radius: 4px;
 -moz-border-radius: 4px;
 border-radius: 4px;
-background: rgb(61, 155, 19);
-background: -moz-linear-gradient(90deg, rgb(61, 155, 19) 30%, rgb(61, 132, 19) 70%);
-background: -webkit-linear-gradient(90deg, rgb(61, 155, 19) 30%, rgb(61, 132, 19) 70%);
-background: -o-linear-gradient(90deg, rgb(61, 155, 19) 30%, rgb(61, 132, 19) 70%);
-background: -ms-linear-gradient(90deg, rgb(61, 155, 19) 30%, rgb(61, 132, 19) 70%);
-background: linear-gradient(180deg, rgb(61, 155, 19) 30%, rgb(61, 132, 19) 70%);
--webkit-box-shadow: 0px 1px 1px rgba(50, 50, 50, 0.5);
--moz-box-shadow:    0px 1px 1px rgba(50, 50, 50, 0.5);
-box-shadow:         0px 1px 1px rgba(50, 50, 50, 0.5);
+background: #4183c4;
 }
 
+.logged-in.no-sidebars.page-user #content .user-add-website {
+background: #3D9B13;
+}
+
+fieldset.pin-fieldset legend, 
+#user-login fieldset legend,
+.pin-button a, 
+fieldset.pin-fieldset legend a, 
+#user-login fieldset legend a {
+	color:#FFF !important;
+	width:300px;
+}
+
+.pin-button, 
+fieldset.pin-fieldset legend, 
+#user-login fieldset legend {
+    background-color:none;
+     margin: 15px 0 0;
+}
+
+#user-login fieldset, 
+.pin-button, fieldset.pin-fieldset legend, #user-login fieldset legend {
+    width: 300px;
+    padding-left: 0;
+}
+
+
+fieldset#edit-pin-fieldset {
+	background:#F7F7F7;
+}
+
+.pin-button#pin-nvm {display:block;margin-bottom:20px;text-align:center;width: 50px;}
+
+.pin-button#pin-nvm a {width:50px;}
+  
+.collapsible.collapsed.pin-fieldset.form-wrapper.collapse-processed {padding-left:0;}
 
 .profile h3 {
 	margin: -5px -5px 15px;
@@ -409,60 +422,6 @@ box-shadow:         0px 1px 1px rgba(50, 50, 50, 0.5);
 	padding-left: 10px;
 }
 
-/* Override the PIN Button styles coming from a conrtib css file */
-.pin-button, #user-login fieldset legend {
-     background: #FFFFFF;
-    -webkit-border-radius: 4px;
--moz-border-radius: 4px;
-border-radius: 4px;
-     border: 1px solid #E1E1E1;
-     font-size: 13px;
-     font-weight: bold;
-     padding-left: 10px;
-     width: 90%;
-}
-
-.pin-button {
-     display: block;
-     margin: 20px 0px 5px 10px;
-}
-
-#user-login fieldset {
-     background: none repeat scroll 0% 0% #F7F7F7;
-     margin: 0px;
-}
-
-
-#edit-pin-fieldset {margin: 20px 0 0 10px !important;}
-
-@-moz-document url-prefix() { 
-#edit-pin-fieldset {margin: 10px 0 0 0 !important;}
-}
-
-
-.pin-button a, #user-login fieldset legend a {
-     color: #3A72AB ! important;
-     font-size: 14px;
-     font-weight: normal;
-     padding: 2px 5px;
-}
-
-
-
-
-.pin-button:hover, #user-login fieldset legend:hover {
-    background-color: #FFF;
-}
-.pin-button a, #user-login fieldset legend a {
-    color: #3A72AB !important;
-    display: block;
-    padding: 2px;
-}
-.pin-button:hover a, #user-login fieldset legend:hover a {
-    color: #3A72AB !important;
-}
-
-
 
 /* ACCESS DENIED PAGE */
 
@@ -490,4 +449,263 @@ border-radius: 4px;
 	-moz-border-radius: 3px;
 	border-radius: 3px;
      padding: 5px 7px;
+}
+
+/* OS FRONTPAGE STYLES */
+body.sitewide-front {
+	background:#FFF;
+	font-size:16px;
+	color:#555;
+	line-height:19px;
+}
+
+
+.os-align-center img {
+   display:inline-block;
+    
+}
+
+.os-title-text a:hover,
+.sitewide-front a {
+	text-decoration:underline;
+	color:#007aff;
+
+}
+
+.os-title-text a,
+.os-title-text {
+	font-size: 50px;
+color: #777;
+height: 70px;
+display: inline-block;
+vertical-align: middle;
+text-decoration:none;
+}
+
+
+.not-logged-in.sitewide-front #columns {min-height:50px;}
+
+.sitewide-front #header-container {
+    padding: 0;
+    margin-bottom:20px;
+    background:url('../images/osfrontpg_headerbg.gif') center bottom no-repeat;
+}
+
+
+.logged-in.sitewide-front #columns {
+    background: url('../images/osfrontpg_headerbg.gif') center bottom no-repeat;
+     margin-bottom: 25px;
+}
+
+
+.sitewide-front .content-left.content-right .at-panel .region.region-content-second {
+    width: 290px;
+    float:right;
+}
+
+.sitewide-front .content-left.content-right .at-panel .region.region-content-first {
+    border-right: none;
+ 
+}
+
+.sitewide-front #page.container,
+.sitewide-front #header,
+.sitewide-front #columns
+ {
+    width: 775px;
+}
+
+
+.sitewide-front #block-boxes-os-front-header {
+	font-size:22px;
+	line-height:26px;
+    margin-bottom: 20px;
+}
+
+.sitewide-front #block-boxes-os-front-main-support {
+	border:1px solid #ff9500;
+	margin-bottom: 50px;
+}
+
+.sitewide-front #block-boxes-os-front-main-support .content {
+	padding: 15px;
+	line-height:23px;
+}
+
+
+
+.sitewide-front .os-title-image {margin-top:10px;}
+
+.sitewide-front #block-boxes-os-front-main-support .block-inner {
+    margin-left: 0;
+    margin-right: 0;
+}
+
+.sitewide-front #block-boxes-os-front-main-support .boxes-box-content {
+    margin-left: 12px;
+    margin-right: 12px;
+}
+
+
+
+.sitewide-front #block-boxes-os-front-main-support h2 {
+	background:#ff9500;
+	padding:8px;
+	color:#FFF;
+	text-align:center;
+}
+
+#boxes-box-os_front_sample h2 {
+	font-size:23px;
+}
+
+.sitewide-front #block-boxes-os-front-create
+ {
+	float:right;;
+}
+
+
+.sitewide-front #boxes-box-os_front_sample {
+	text-align:center;
+}
+
+
+.sitewide-front #boxes-box-os_front_sample ul {
+	margin-top:20px;
+	text-align:center;
+}
+
+.sitewide-front #boxes-box-os_front_sample ul li {
+	float:left;
+	list-style:none;
+	margin-left: 40px;
+}
+
+#block-boxes-os-front-sample img {width:200px;border:1px solid #ccc;}
+
+/** TODO MOVE TO PROPER CSS FILE **/
+
+#boxes-box-os_front_header .boxes-box-content {
+    text-align: center;
+}
+
+#block-os-search-db-site-search, #block-os-search-solr-site-search{
+    display: block;
+    width: 100%;
+    text-align: center;
+    margin: 0 0 20px 0 !important;
+}
+
+#edit-search-block-form--2 {
+    border:1px solid #d0d0d0 !important;
+    margin: 3px;
+    background: url('./images/search.png') no-repeat 8px 6px;
+    border-radius:3px  !important;
+    -moz-border-radius:3px  !important;
+    -webkit-border-radius:3px  !important;
+}
+
+#block-os-search-db-site-search #search-block-form #edit-submit, #block-os-search-solr-site-search #search-block-form #edit-submit {
+    width: auto;
+    height: auto;
+    text-indent: 0;
+    padding: 12px 20px 12px 20px !important;
+    margin: 0 0 0 12px !important;
+    -webkit-font-smoothing: antialiased;
+    font-weight: normal;
+    line-height: 19px;
+}
+
+.sitewide-front #block-os-search-solr-site-search #edit-submit,
+.sitewide-front #block-os-search-db-site-search #edit-submit {
+    background: #919191;
+    background-image: -webkit-linear-gradient(top, #919191, #6b6b6b);
+    background-image: -moz-linear-gradient(top, #919191, #6b6b6b);
+    background-image: -ms-linear-gradient(top, #919191, #6b6b6b);
+    background-image: -o-linear-gradient(top, #919191, #6b6b6b);
+    background-image: linear-gradient(to bottom, #919191, #6b6b6b);
+    -webkit-border-radius: 3;
+    -moz-border-radius: 3;
+    border-radius: 3px;
+    color: #ffffff;
+    font-size: 20px;
+    text-decoration: none;
+}
+
+.sitewide-front #block-os-search-solr-site-search #edit-submit:hover,
+.sitewide-front #block-os-search-db-site-search #edit-submit:hover {
+    background: #919191;
+    background-image: -webkit-linear-gradient(top, #919191, #6b6b6b);
+    background-image: -moz-linear-gradient(top, #919191, #6b6b6b);
+    background-image: -ms-linear-gradient(top, #919191, #6b6b6b);
+    background-image: -o-linear-gradient(top, #919191, #6b6b6b);
+    background-image: linear-gradient(to bottom, #919191, #6b6b6b);
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.sitewide-front #search-block-form .container-inline .form-item .form-text {
+    border-image: none;
+    border-radius: 0;
+    width: 236px;
+    padding: 10px 20px 11px 36px !important;
+    margin-left: 181px;
+    background: transparent url('../images/search.png') 14px 14px no-repeat;
+}
+
+#block-os-search-db-site-search #edit-actions, #block-os-search-solr-site-search #edit-actions {
+    float: left;
+    margin-right: -125px;
+}
+
+#block-os-search-db-site-search #search-block-form .container-inline, #block-os-search-solr-site-search #search-block-form .container-inline {
+    max-width: none;
+}
+
+#block-os-search-db-site-search #search-block-form .container-inline .form-item,
+#block-os-search-solr-site-search #search-block-form .container-inline .form-item {
+    width: auto;
+}
+
+#block-os-search-db-site-search .form-item.form-type-textfield.form-item-search-block-form,
+#block-os-search-solr-site-search .form-item.form-type-textfield.form-item-search-block-form {
+    margin-right: -16px;
+}
+
+#block-boxes-os-front-sample {
+    margin-bottom: 20px;
+}
+
+#block-vsite-register-get-your-site-block {
+    display: block;
+    clear: both;
+    text-align: center;
+    padding: 0px;
+    margin: 40px 0 40px 0 !important;
+}
+
+.sitewide-front #block-vsite-register-get-your-site-block {
+margin: 10px 0 40px 0 !important;
+}
+
+#block-vsite-register-get-your-site-block .get-your-site-button {
+    background: #4CD964;
+    -webkit-border-radius: 3px;
+    -moz-border-radius: 3;
+    border-radius: 3px;
+    color: #ffffff;
+    font-size: 20px;
+    padding: 10px 20px 10px 20px;
+    text-decoration: none;
+}
+
+#block-vsite-register-get-your-site-block .get-your-site-button:hover {
+    background: #4CD964;
+    text-decoration: none;
+}
+
+.os-align-center {
+    text-align: center;
+    
+    
 }

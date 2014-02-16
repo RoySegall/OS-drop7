@@ -167,6 +167,7 @@ function os_migrate_demo_migrate_api() {
     'OsMigrateSoftwareNode',
     'OsMigrateFamilyTaxonomyTerm',
     'OsMigrateDepartmentNode',
+    'OsMigratePageNode',
   );
 
   foreach ($classes as $class_name) {
@@ -418,17 +419,89 @@ function os_migrate_demo_get_term_id($term) {
   print(reset($result['taxonomy_term'])->tid);
 }
 
+function os_migrate_demo_get_term_vsite_purl($tid) {
+  // Get vid.
+  $term = taxonomy_term_load($tid);
+  $vid = $term->vid;
+
+  // Get og_vocab relation.
+  $relation = og_vocab_relation_get($vid);
+
+  if (empty($relation)) {
+    // Vocabulary is not related to a group.
+    print('');
+    return;
+  }
+
+  // Get vsite.
+  $vsite = node_load($relation->gid);
+
+  print($vsite->purl);
+}
+
 /**
  * Get the node ID.
  */
-function os_migrate_demo_get_node_id($title) {
+function os_migrate_demo_get_node_id($title, $return = FALSE) {
   $query = new entityFieldQuery();
   $result = $query
     ->entityCondition('entity_type', 'node')
     ->propertyCondition('title', $title)
     ->execute();
 
-  print(reset($result['node'])->nid);
+  $nid = reset($result['node'])->nid;
+
+  if ($return) {
+    return $nid;
+  }
+  else {
+    print($nid);
+  }
+}
+
+/**
+ * Get the role of a user in a group.
+ *
+ *  @return
+ *    0 - if user is not a member of the group.
+ *    1 - user has a role which is not the role given.
+ *    2 - user has the role given
+ */
+function os_migrate_demo_check_user_role_in_group($name, $role, $group) {
+  $gid = os_migrate_demo_get_node_id($group, TRUE);
+  $user = user_load_by_name($name);
+
+  if (!og_is_member('node', $gid, 'user', $user)) {
+     print(0);
+  }
+
+  $user_roles = og_get_user_roles('node', $gid, $user->uid);
+
+  if (!in_array($role, $user_roles)) {
+    print(1);
+  }
+
+  print(2);
+}
+
+/**
+ * Get a user id.
+ */
+function os_migrate_demo_get_user_by_name($name) {
+  $user = user_load_by_name($name);
+  print($user->uid);
+}
+
+/**
+ * Get a role id.
+ * 
+ * @param $name
+ * @param $gid
+ */
+function os_migrate_demo_get_role_by_name($name, $gid) {
+  $roles = og_roles('node', NULL, $gid);
+  $id = array_search($name, $roles);
+  print($id);
 }
 
 /**
@@ -447,7 +520,113 @@ function os_migrate_demo_delete_node($title) {
   if (!empty($result['node'])) {
     node_delete_multiple(array_keys($result['node']));
   }
+}
 
+/**
+ * Make a node sticky.
+ */
+function os_migrate_demo_make_node_sticky($nid) {
+  db_update('node')
+    ->fields(array(
+      'sticky' => 1,
+    ))
+    ->condition('nid', $nid)
+    ->execute();
+}
+
+/**
+ * Get the node alias.
+ */
+function os_migrate_demo_get_node_alias($nid) {
+  $result = db_select('url_alias')
+    ->fields('url_alias', array('alias'))
+    ->condition('source', 'node/' . $nid)
+    ->execute()
+    ->fetchAssoc();
+
+  print($result['alias']);
+}
+
+/**
+ * Get the node vsite purl.
+ */
+function os_migrate_demo_get_node_vsite_purl($nid) {
+  $wrapper = entity_metadata_wrapper('node', $nid);
+
+  if (empty($wrapper->{OG_AUDIENCE_FIELD})) {
+    // Not group content.
+    print('');
+    return;
+  }
+  $vsite = $wrapper->{OG_AUDIENCE_FIELD}->get(0)->value();
+
+  print($vsite->purl);
+}
+
+/**
+ * Get the term alias.
+ */
+function os_migrate_demo_get_term_alias($tid) {
+  $result = db_select('url_alias')
+    ->fields('url_alias', array('alias'))
+    ->condition('source', 'taxonomy/term/' . $tid)
+    ->execute()
+    ->fetchAssoc();
+
+  print($result['alias']);
+}
+
+/**
+ * Create a term in a given vocabulary.
+ *
+ * @param $term_name
+ *  The name for the new term.
+ *
+ * @param $vocab_name
+ *  The name of the vocabulary.
+ *
+ * @throws Exception
+ *  When vocab not found or not mapped correctly.
+ */
+function os_migrate_demo_create_term($term_name, $vocab_name) {
+  // A mapping for existing vocabularies.
+  $vocabs = array(
+    'authors' => 'authors_personal1',
+    'biology' => 'biology_personal1',
+    'math' => 'math_personal1',
+    'science' => 'science_personal1',
+  );
+
+  $params = array(
+    '@vocab-name' => $vocab_name,
+  );
+
+  if (!array_key_exists($vocab_name, $vocabs)) {
+    throw new Exception(t('The vocabulary "@vocab-name" is not mapped to any existing vocabularies.', $params));
+  }
+
+  // Load the vocabulary.
+  $machine_name = $vocabs[$vocab_name];
+  if (!$vocab = taxonomy_vocabulary_machine_name_load($machine_name)) {
+    throw new Exception(t('No vocabulary with the name "@vocab-name" was found.', $params));
+  }
+
+  // Create and save the new term.
+  $term = new stdClass();
+  $term->name = $term_name;
+  $term->vid = $vocab->vid;
+  taxonomy_term_save($term);
+}
+
+/**
+ * Delete a term in a given vocabulary.
+ *
+ * @param $term_name
+ *  The name of the term.
+ */
+function os_migrate_demo_delete_term($term_name) {
+  $term = reset(taxonomy_get_term_by_name($term_name));
+  taxonomy_term_delete($term->tid);
 }
 
 /**
@@ -544,18 +723,116 @@ function os_migrate_demo_import_csv($type) {
     'blog' => 'os_blog_csv',
     'news' => 'os_news',
     'event' => 'os_ical',
+    'page' => 'os_pages',
+    'class' => 'os_classes',
+    'faq' => 'os_faq',
+    'presentation' => 'os_presentation',
+    'software_project' => 'os_software',
+    'person' => 'os_people',
+    'link' => 'os_links',
+    'media_gallery' => 'os_gallery',
+  );
+
+  // Specify a specific encoding of importers files. This meant for testing the
+  // import of files in various encodings.
+  $encodes = array(
+    'blog' => 'WINDOWS-1255',
+    'news' => 'WINDOWS-1254',
   );
 
   $ending = $type == 'event' ? 'ics' : 'csv';
   $url = $base_url . '/' . drupal_get_path('module', 'os_migrate_demo') . '/includes/import_csv/' . $type . '.' . $ending;
+  // todo: Use system_retrieve_file().
   $file = system_retrieve_file($url, 'public://', TRUE);
 
   $source = feeds_source($importers[$type]);
   $fetcher_config = $source->getConfigFor($source->importer->fetcher);
   $fetcher_config['source'] = $file->uri;
   $fetcher_config['file'] = $file;
+
+  // Add encoding for specific files.
+  if (isset($encodes[$type])) {
+    $fetcher_config['encode'] = $encodes[$type];
+  }
   $source->setConfigFor($source->importer->fetcher, $fetcher_config);
   $source->save();
 
   feeds_source($importers[$type], 0)->import();
+}
+
+/**
+ * @param $bundle
+ *  The content type.
+ * @param $vocabulary
+ *  The vocabulary name.
+ */
+function os_migrate_demo_bind_content_to_vocab($bundle, $vocabulary) {
+  $query = new EntityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'taxonomy_vocabulary')
+    ->propertyCondition('name', $vocabulary)
+    ->execute();
+
+  if (empty($result['taxonomy_vocabulary'])) {
+    return;
+  }
+
+  $vid = reset($result['taxonomy_vocabulary'])->vid;
+  og_vocab_create_og_vocab($vid, 'node', $bundle)->save();
+}
+
+/**
+ * Remove the domain we added to a vsite.
+ *
+ * @param $vsite
+ *  The vsite name.
+ */
+function os_migrate_demo_remove_vsite_domain($vsite) {
+  $id = os_migrate_demo_get_node_id($vsite, TRUE);
+
+  print_r($vsite);
+
+  db_delete('spaces_overrides')
+    ->condition('id', $id)
+    ->condition('object_id', 'vsite_domain_name')
+    ->execute();
+}
+
+/**
+ * Set the display of field_event_registration to be Registration Form.
+ */
+function os_migrate_demo_event_registration_form() {
+  $instance = field_info_instance('node', 'field_event_registration', 'event');
+  $instance['display']['default']['type'] = 'registration_form';
+  field_update_instance($instance);
+}
+
+/**
+ * Set the display of field_event_registration to be Registration Link.
+ */
+function os_migrate_demo_event_registration_link() {
+  $instance = field_info_instance('node', 'field_event_registration', 'event');
+  $instance['display']['default']['type'] = 'registration_link';
+  $instance['display']['default']['settings']['label'] = 'Sign up for this event';
+  field_update_instance($instance);
+}
+
+/**
+ * Set the variable $name to $value for the site $vsite.
+ */
+function os_migrate_demo_vsite_set_variable($vsite, $name, $value) {
+  $query = new entityFieldQuery();
+  $result = $query
+    ->entityCondition('entity_type', 'node')
+    ->propertyCondition('title', $vsite)
+    ->range(0, 1)
+    ->execute();
+
+  if (empty($result['node'])) {
+    return;
+  }
+
+  $nid = array_keys($result['node']);
+  $vsite = vsite_get_vsite(reset($nid));
+  $vsite->controllers->variable->set($name, $value);
 }

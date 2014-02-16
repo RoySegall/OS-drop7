@@ -63,10 +63,12 @@ p {
     line-height: 20px;
 }
 
-p span {
-   color:#D16103;
-}
-
+/*
+.lt-ie9 p span[style*="TEXT-DECORATION: UNDERLINE;"],
+p span[style*="text-decoration: underline;"] {
+	color:#292929 !important;
+	}
+	*/
 
 #content-column a, 
 #content-column a:visited {

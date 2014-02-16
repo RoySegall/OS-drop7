@@ -28,6 +28,12 @@ class FeatureContext extends DrupalContext {
   private $box = '';
 
   /**
+   * Save for later the list of domain we need to remove after a scenario is
+   * completed.
+   */
+  private $domains = array();
+
+  /**
    * Hold the user name and password for the selenium tests for log in.
    */
   private $users;
@@ -79,6 +85,7 @@ class FeatureContext extends DrupalContext {
       // We are using a cli, log in with meta step.
 
       return array(
+        new Step\When('I am not logged in'),
         new Step\When('I visit "/user"'),
         new Step\When('I fill in "Username" with "' . $username . '"'),
         new Step\When('I fill in "Password" with "' . $password . '"'),
@@ -421,19 +428,24 @@ class FeatureContext extends DrupalContext {
    * @AfterScenario
    */
   public function afterScenario($event) {
-    if (empty($this->box)) {
-      return;
+    if (!empty($this->box)) {
+      // Loop over the box we collected in the scenario, hide them and delete
+      // them.
+      foreach ($this->box as $box_handler) {
+        $data = explode(',', $box_handler);
+        foreach ($data as &$value) {
+          $value = trim($value);
+        }
+        $code = "os_migrate_demo_hide_box({$this->nid}, '{$data[0]}', '{$data[1]}', '{$data[2]}');";
+        $this->getDriver()->drush("php-eval \"{$code}\"");
+      }
     }
 
-    // Loop over the box we collected in the scenario, hide them and delete
-    // them.
-    foreach ($this->box as $box_handler) {
-      $data = explode(',', $box_handler);
-      foreach ($data as &$value) {
-        $value = trim($value);
+    if (!empty($this->domains)) {
+      // Remove domain we added to vsite.
+      foreach ($this->domains as $domain) {
+        $this->invoke_code("os_migrate_demo_remove_vsite_domain", array("'{$domain}'"));
       }
-      $code = "os_migrate_demo_hide_box({$this->nid}, '{$data[0]}', '{$data[1]}', '{$data[2]}');";
-      $this->getDriver()->drush("php-eval \"{$code}\"");
     }
   }
 
@@ -452,6 +464,20 @@ class FeatureContext extends DrupalContext {
     if (empty($headers[$key]) || $headers[$key][0] !== $result) {
       throw new Exception(sprintf('The "%s" key in the response header is "%s" instead of the expected "%s".', $key, $headers[$key][0], $result));
     }
+  }
+
+  /**
+   * @Given /^I create the term "([^"]*)" in vocabulary "([^"]*)"$/
+   */
+  public function iCreateTheTermInVocab($term_name, $vocab_name) {
+    $this->invoke_code('os_migrate_demo_create_term', array("'$term_name'","'$vocab_name'"));
+  }
+
+  /**
+   * @Given /^I delete the term "([^"]*)"$/
+   */
+  public function iDeleteTheTermInVocab($term_name) {
+    $this->invoke_code('os_migrate_demo_delete_term', array("'$term_name'"));
   }
 
   /**
@@ -783,6 +809,17 @@ class FeatureContext extends DrupalContext {
   }
 
   /**
+   * @When /^I search for "([^"]*)"$/
+   */
+  public function iSearchFor($item) {
+    return array(
+      new Step\When('I visit "john"'),
+      new Step\When('I fill in "search_block_form" with "'. $item . '"'),
+      new Step\When('I press "Search"'),
+    );
+  }
+
+  /**
    * @Then /^I verify the "([^"]*)" term link redirect to the original page$/
    */
   public function iVerifyTheTermLinkRedirectToTheOriginalPage($term) {
@@ -861,7 +898,6 @@ class FeatureContext extends DrupalContext {
   private function searchForTextUnderElement($text, $container) {
     $page = $this->getSession()->getPage();
     $element = $page->find('xpath', "//*[contains(@class, '{$container}')]//*[contains(., '{$text}')]");
-
     return $element;
   }
 
@@ -884,13 +920,96 @@ class FeatureContext extends DrupalContext {
   }
 
   /**
-   * Searching text under an element with class
+   * Searching a link under an element with class
    */
   private function searchForLinkUnderElement($text, $container) {
     $page = $this->getSession()->getPage();
     $element = $page->find('xpath', "//*[contains(@class, '{$container}')]//a[.='{$text}']");
 
     return $element;
+  }
+
+  /**
+   * @Given /^I give the user "([^"]*)" the role "([^"]*)" in the group "([^"]*)"$/
+   */
+  public function iGiveTheUserTheRoleInTheGroup($name, $role, $group) {
+    $uid = $this->invoke_code('os_migrate_demo_get_user_by_name', array("'{$name}'"));
+
+    return array(
+      new Step\When('I visit "' . $group . '/cp/users/add"'),
+      new Step\When('I fill in "edit-name" with "' . $name . '"'),
+      new Step\When('I press "Add users"'),
+      new Step\When('I visit "' . $group . '/cp/users/edit_membership/' . $uid . '"'),
+      new Step\When('I select the radio button named "edit_role" with value "' . $role . '"'),
+      new Step\When('I press "Save"'),
+    );
+  }
+
+  /**
+   * @Given /^I give the role "([^"]*)" in the group "([^"]*)" the permission "([^"]*)"$/
+   */
+  public function iGiveTheRoleThePermissionInTheGroup($role, $group, $permission) {
+    $nid = $this->invoke_code('os_migrate_demo_get_node_id', array("'{$group}'"));
+    $rid = $this->invoke_code('os_migrate_demo_get_role_by_name', array("'{$role}'", "'{$nid}'"));
+
+    return array(
+      new Step\When('I visit "' . $group . '/group/node/' . $nid . '/admin/permission/' . $rid . '/edit"'),
+      new Step\When('I check the box "' . $permission . '"'),
+      new Step\When('I press "Save permissions"'),
+    );
+  }
+
+  /**
+   * @Given /^I remove the role "([^"]*)" in the group "([^"]*)" the permission "([^"]*)"$/
+   */
+  public function iRemoveTheRoleThePermissionInTheGroup($role, $group, $permission) {
+    $nid = $this->invoke_code('os_migrate_demo_get_node_id', array("'{$group}'"));
+    $rid = $this->invoke_code('os_migrate_demo_get_role_by_name', array("'{$role}'", "'{$nid}'"));
+
+    return array(
+      new Step\When('I visit "' . $group . '/group/node/' . $nid . '/admin/permission/' . $rid . '/edit"'),
+      new Step\When('I uncheck the box "' . $permission . '"'),
+      new Step\When('I press "Save permissions"'),
+    );
+  }
+  
+  /**
+   * @Then /^I should verify that the user "([^"]*)" has a role of "([^"]*)" in the group "([^"]*)"$/
+   */
+  public function iShouldVerifyThatTheUserHasRole($name, $role, $group) {
+    $user_has_role = $this->invoke_code('os_migrate_demo_check_user_role_in_group', array("'{$name}'", "'{$role}'","'{$group}'"));
+    if ($user_has_role == 0) {
+      throw new Exception("The user {$name} is not a member in the group {$group}");
+    }
+    elseif ($user_has_role == 1) {
+      throw new Exception("The user {$name} doesn't have the role {$role} in the group {$group}");
+    }
+  }
+
+  /**
+   * @When /^I select the radio button named "([^"]*)" with value "([^"]*)"$/
+   */
+  public function iSelectRadioNamedWithValue($name, $value) {
+    $page = $this->getSession()->getPage();
+    $radiobutton = $page->find('xpath', "//*[@name='{$name}'][@value='{$value}']");
+    if (!$radiobutton) {
+      throw new Exception("A radio button with the name {$name} and value {$value} was not found on the page");
+    }
+    $radiobutton->selectOption($value, FALSE);
+  }
+
+  /**
+   * @When /^I choose the radio button named "([^"]*)" with value "([^"]*)" for the vsite "([^"]*)"$/
+   */
+  public function iSelectRadioNamedWithValueForVsite($name, $value, $vsite) {
+    $page = $this->getSession()->getPage();
+    $radiobutton = $page->find('xpath', "//*[@name='{$name}'][@value='{$value}']");
+    if (!$radiobutton) {
+      throw new Exception("A radio button with the name {$name} and value {$value} was not found on the page");
+    }
+    $radiobutton->selectOption($value, FALSE);
+    $option = $radiobutton->getValue();
+    $this->invoke_code('os_migrate_demo_vsite_set_variable', array("'{$vsite}'", "'{$name}'", "'{$option}'"));
   }
 
   /**
@@ -942,13 +1061,27 @@ class FeatureContext extends DrupalContext {
   }
 
   /**
+   * @Given /^I click on "([^"]*)" under facet "([^"]*)"$/
+   */
+  public function iClickOnLinkInFacet($option, $facet) {
+    $page = $this->getSession()->getPage();
+    $element = $page->find('xpath', "//h2[contains(., '{$facet}')]/following-sibling::div//a[contains(., '{$option}')]");
+
+    if (!$element) {
+      throw new Exception(sprintf("'%s' was not found under the facet '%s'", $option, $facet));
+    }
+
+    $element->press();
+  }
+
+  /**
    * @Then /^I delete "([^"]*)" registration$/
    */
   public function iDeleteRegistration($arg1) {
     return array(
       new Step\When('I am not logged in'),
       new Step\When('I am logging in as "john"'),
-      new Step\When('I visit "john/halleys-comet"'),
+      new Step\When('I visit "john/event/halleys-comet"'),
       new Step\When('I click "Manage Registrations"'),
       new Step\When('I click "Delete"'),
       new Step\When('I press "Delete"'),
@@ -1002,8 +1135,35 @@ class FeatureContext extends DrupalContext {
   public function iEditTheNode($title) {
     $title = str_replace("'", "\'", $title);
     $nid = $this->invoke_code('os_migrate_demo_get_node_id', array("'{$title}'"));
+
+    $purl = $this->invoke_code('os_migrate_demo_get_node_vsite_purl', array("'$nid'"));
+    $purl = !empty($purl) ? $purl . '/' : '';
+
     return array(
-      new Step\When('I visit "node/' . $nid . '/edit"'),
+      new Step\When('I visit "' . $purl . 'node/' . $nid . '/edit"'),
+    );
+  }
+
+  /**
+   * @When /^I edit the node of type "([^"]*)" named "([^"]*)" using contextual link$/
+   */
+  public function iEditTheNodeOfTypeNamedUsingContextualLink($type, $title) {
+    $title = str_replace("'", "\'", $title);
+    $nid = $this->invoke_code('os_migrate_demo_get_node_id', array("'{$title}'"));
+    return array(
+      new Step\When('I visit "node/' . $nid . '/edit?destination=' . $type . '"'),
+    );
+  }
+
+  /**
+   * @When /^I delete the node of type "([^"]*)" named "([^"]*)"$/
+   */
+  public function iDeleteTheNodeOfTypeNamedUsingContextualLink($type, $title) {
+    $title = str_replace("'", "\'", $title);
+    $nid = $this->invoke_code('os_migrate_demo_get_node_id', array("'{$title}'"));
+    return array(
+      new Step\When('I visit "node/' . $nid . '/delete?destination=' . $type . '"'),
+      new Step\When('I press "Delete"'),
     );
   }
 
@@ -1012,7 +1172,7 @@ class FeatureContext extends DrupalContext {
    */
   public function iVerifyTheValueIs($label, $value) {
     $page = $this->getSession()->getPage();
-    $element = $page->find('xpath', "//label[contains(.,'{$label}')]/../input[@value='{$value}']");
+    $element = $page->find('xpath', "//label[contains(.,'{$label}')]/following-sibling::input[@value='{$value}']");
 
     if (empty($element)) {
       throw new Exception(sprintf("The element '%s' did not has the value: %s", $label, $value));
@@ -1107,6 +1267,15 @@ class FeatureContext extends DrupalContext {
   }
 
   /**
+   * @Given /^I go to the "([^"]*)" app settings in the vsite "([^"]*)"$/
+   */
+  public function iGoToTheAppSettingsInVsite($app_name, $vsite) {
+    return array(
+      new Step\When('I visit "' . $vsite . '/cp/build/features/' . $app_name . '"'),
+    );
+  }
+
+  /**
    * @Then /^I should see the feed item "([^"]*)" was imported$/
    */
   public function iShouldSeeTheFeedItemWasImported($feed_item) {
@@ -1189,16 +1358,176 @@ class FeatureContext extends DrupalContext {
   }
 
   /**
-   * @Then /^I search for "([^"]*)"$/
+   * @Then /^I look for "([^"]*)"$/
    *
    * Defining a new step because when using the step "I should see" for the iCal
    * page the test is failing.
    */
-  public function iSearchFor($string) {
+  public function iLookFor($string) {
     $element = $this->getSession()->getPage();
 
     if (strpos($element->getContent(), $string) === FALSE) {
       throw new Exception("the string '$string' was not found.");
     }
+  }
+
+  /**
+   * @When /^I edit the term "([^"]*)"$/
+   */
+  public function iEditTheTerm($name) {
+    $tid = $this->invoke_code('os_migrate_demo_get_term_id', array("'$name'"));
+
+    $purl = $this->invoke_code('os_migrate_demo_get_term_vsite_purl', array("'$tid'"));
+    $purl = !empty($purl) ? $purl . '/' : '';
+
+    return array(
+      new Step\When('I visit "' . $purl . 'taxonomy/term/' . $tid . '/edit"'),
+    );
+  }
+
+  /**
+   * @Then /^I verify the alias of node "([^"]*)" is "([^"]*)"$/
+   */
+  public function iVerifyTheAliasOfNodeIs($title, $alias) {
+    $nid = $this->invoke_code('os_migrate_demo_get_node_id', array("'$title'"));
+    $actual_alias = $this->invoke_code('os_migrate_demo_get_node_alias', array("'$nid'"));
+
+    if ($actual_alias != $alias) {
+      throw new Exception("The alias of the node '$title' should be '$alias', but is '$actual_alias' instead.");
+    }
+  }
+
+  /**
+   * @Then /^I verify the alias of term "([^"]*)" is "([^"]*)"$/
+   */
+  public function iVerifyTheAliasOfTermIs($name, $alias) {
+    $tid = $this->invoke_code('os_migrate_demo_get_term_id', array("'$name'"));
+    $actual_alias = $this->invoke_code('os_migrate_demo_get_term_alias', array("'$tid'"));
+
+    if ($actual_alias != $alias) {
+      throw new Exception("The alias of the term '$name' should be '$alias', but is '$actual_alias' instead.");
+    }
+  }
+
+  /**
+   * @Then /^I should see the publication "([^"]*)" comes before "([^"]*)"$/
+   */
+  public function iShouldSeeThePublicationComesBefore($first, $second) {
+    $page = $this->getSession()->getPage()->getContent();
+
+    $pattern = '/<div class="biblio-category-section">[\s\S]*' . $first . '[\s\S]*' . $second . '[\s\S]*<\/div><div class="biblio-category-section">/';
+    if (!preg_match($pattern, $page)) {
+      throw new Exception("The publication '$first' does not come before the publication '$second'.");
+    }
+  }
+
+  /**
+   * @Given /^I define "([^"]*)" domain to "([^"]*)"$/
+   */
+  public function iDefineDomainTo($vsite, $domain) {
+    $this->domains[] = $vsite;
+
+    return array(
+      new Step\When('I visit "' . $vsite . '/cp/settings"'),
+      new Step\When('I fill in "Custom domain name" with "' . $domain .'"'),
+      new Step\When('I check the box "Share domain name"'),
+      new Step\When('I press "edit-submit"'),
+    );
+  }
+
+
+  /**
+   * @Given /^I verify the url is "([^"]*)"$/
+   */
+  public function iVerifyTheUrlIs($url) {
+    if (strpos($this->getSession()->getCurrentUrl(), $url) === FALSE) {
+      throw new Exception(sprintf("Your are not in the url %s but in %s", $url, $this->getSession()->getCurrentUrl()));
+    }
+  }
+
+  /**
+   * @Given /^I make the node "([^"]*)" sticky$/
+   */
+  public function iMakeTheNodeSticky($title) {
+    $nid = $this->invoke_code('os_migrate_demo_get_node_id', array("'$title'"));
+    $this->invoke_code('os_migrate_demo_make_node_sticky', array("'$nid'"));
+  }
+
+  /**
+   * @Then /^I should see the button "([^"]*)"$/
+   */
+  public function iShouldSeeTheButton($button) {
+    $page = $this->getSession()->getPage();
+    $element = $page->find('xpath', "//input[@type='submit' or @type='button'][@value='$button' or @id='$button' or @name='$button']");
+
+    if (!$element) {
+      throw new Exception("Could not find a button with id|name|value equal to '$button'");
+    }
+  }
+
+  /**
+   * @Then /^I should not see the button "([^"]*)"$/
+   */
+  public function iShouldNotSeeTheButton($button) {
+    $page = $this->getSession()->getPage();
+    $element = $page->find('xpath', "//input[@type='submit' or @type='button'][@value='$button' or @id='$button' or @name='$button']");
+
+    if ($element) {
+      throw new Exception("A button with id|name|value equal to '$button' was found.");
+    }
+  }
+
+  /**
+   * @Given /^I set feature "([^"]*)" to "([^"]*)" on "([^"]*)"$/
+   */
+  public function iSetFeatureStatus ($feature, $status, $group) {
+    return array(
+      new Step\When('I visit "' . $group . '"'),
+      new Step\When('I click "Build"'),
+      new Step\When('I select "' . $status . '" from "' . $feature . '"'),
+      new Step\When('I press "edit-submit"'),
+    );
+  }
+
+  /**
+   * @Given /^I update the node "([^"]*)" field "([^"]*)" to "([^"]*)"$/
+   */
+  public function iUpdateTheNodeFieldTo($title, $field, $value) {
+    $title = str_replace("'", "\'", $title);
+    $nid = $this->invoke_code('os_migrate_demo_get_node_id', array("'{$title}'"));
+
+    $purl = $this->invoke_code('os_migrate_demo_get_node_vsite_purl', array("'$nid'"));
+    $purl = !empty($purl) ? $purl . '/' : '';
+
+    return array(
+      new Step\When('I visit "' . $purl . 'node/' . $nid . '/edit"'),
+      new Step\When('I fill in "' . $field . '" with "' . $value . '"'),
+      new Step\When('I press "Save"'),
+    );
+  }
+
+  /**
+   * @Given /^I make "([^"]*)" a member in vsite "([^"]*)"$/
+   */
+  public function iMakeAMemberInVsite($username, $group) {
+    return array(
+      new Step\When('I visit "' . $group . '/cp/users/add"'),
+      new Step\When('I fill in "User" with "' . $username . '"'),
+      new Step\When('I press "Add users"'),
+    );
+  }
+
+  /**
+   * @Given /^I make registration to event without javascript available$/
+   */
+  public function iMakeRegistrationToEventWithoutJavascriptAvailable() {
+    $this->invoke_code('os_migrate_demo_event_registration_form');
+  }
+
+  /**
+   * @Given /^I make registration to event without javascript unavailable$/
+   */
+  public function iMakeRegistrationToEventWithoutJavascriptUnavailable() {
+    $this->invoke_code('os_migrate_demo_event_registration_link');
   }
 }

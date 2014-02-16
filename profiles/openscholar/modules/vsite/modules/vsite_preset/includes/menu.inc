@@ -62,7 +62,9 @@ function _vsite_preset_menu_order_task($entity, $task, &$context) {
  *   Whether or not the vsite's menu object was modified.
  */
 function _vsite_preset_menu_order($menus, $gid) {
-  $vsite = vsite_get_vsite($gid);
+  // We must reset in case no menu-related tasks have been run prior to this.
+  // Otherwise, the loaded menu would be sitewide items, not the preset value.
+  $vsite = vsite_get_vsite($gid, TRUE);
   if (!$vsite) {
     return FALSE;
   }

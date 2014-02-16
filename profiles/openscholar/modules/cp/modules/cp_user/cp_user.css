@@ -1,6 +1,6 @@
 .cp-add-new-user {
-    margin-top: -2em;
-    margin-bottom: 1em;
+  margin: 1em 0;
+  clear: both;
 }
 
 .cp-user-float-right {
@@ -26,4 +26,9 @@
     -webkit-box-shadow: 0px 1px 1px rgba(50, 50, 50, 0.5);
     -moz-box-shadow:    0px 1px 1px rgba(50, 50, 50, 0.5);
     box-shadow:         0px 1px 1px rgba(50, 50, 50, 0.5);
+}
+
+.cp-user-top-buttons {
+  margin: 1em 0;
+  clear: both;
 }

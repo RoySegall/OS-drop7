@@ -86,10 +86,10 @@ iframe {
     margin-right: 0!important;
     width: 100%;
 }
-article.node-teaser.node-person .field-name-field-person-photo ~ .node-header, article.node-teaser.node-person .field-name-field-person-photo ~ .node-content {
-    margin-left: 0!important;
-    width: 100%;
+.person-teaser-wrapper {
+    display: inline;
 }
+
 .block-boxes-os_sv_list_box .node.node-news.node-promoted.article .field-type-image ~ .node-content, 
 .block-boxes-os_sv_list_box .node.node-person.article.with-person-photo .node-content {
     margin-left: 0!important;

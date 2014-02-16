@@ -41,6 +41,10 @@ function os_files_private_menu() {
   return $items;
 }
 
+function os_files_private_menu_alter(&$items) {
+  $items['file/add/private'] = $items['file/add'];
+}
+
 /**
  * Implements hook_form_FORM_ID_alter() for file_entity_add_upload.
  *
@@ -51,9 +55,11 @@ function os_files_private_menu() {
 function os_files_private_form_file_entity_add_upload_alter(&$form, $form_state) {
 
   $item = menu_get_item();
-  if (!($item['path'] == 'file/add' || $item['path'] == 'file/ajax') || !spaces_get_space()) {
+  if (!($item['path'] == 'file/add/private' || $item['path'] == 'file/ajax') || !spaces_get_space()) {
     return;
   }
+
+  drupal_set_title('Add Private File');
 
   // Alerts user if private file path has not been set.
   if (!variable_get('file_private_path')) {
@@ -133,7 +139,12 @@ function os_files_private_file_download($uri) {
   // Restricts all access if Private Files app is disabled.
   if ($vsite = vsite_get_vsite()) {
     $apps = variable_get('spaces_features');
-    if (isset($apps['os_files_private']) && (int) $apps['os_files_private'] !== 1) {
+
+    $wrapper = entity_metadata_wrapper('node', $vsite->group);
+    // Retrieve the site privacy. We don't want to check the feature settings if this is an intranet site.
+    $site_privacy = (module_exists('vsite_access') && !empty($wrapper->{VSITE_ACCESS_FIELD}))? $wrapper->{VSITE_ACCESS_FIELD}->value():0;
+
+    if ((module_exists('vsite_access') && $site_privacy < VSITE_ACCESS_INTRANET_PRIVATE) && isset($apps['os_files_private']) && (int) $apps['os_files_private'] !== 1) {
       return -1;
     }
   }
@@ -148,6 +159,25 @@ function os_files_private_file_download($uri) {
   // First: serves the file to site members.
   if (_os_files_private_site_member($file)) {
     return file_get_content_headers($file);
+  }
+
+  // If we are not in a vsite get site privacy from the file.
+  if(!$vsite){
+    $wrapper = entity_metadata_wrapper('file', $file);
+    // Restricts access if no OG audience is set.
+    if (isset($wrapper->{OG_AUDIENCE_FIELD}) && ($gid = $wrapper->{OG_AUDIENCE_FIELD}->value(array('identifier' => TRUE)))) {
+      // Load Group.
+      $group = node_load($gid[0]);
+      // Get the group privacy.
+      if($group && ($wrapper = entity_metadata_wrapper('node', $group)) && !empty($wrapper->{VSITE_ACCESS_FIELD})){
+        $site_privacy = $wrapper->{VSITE_ACCESS_FIELD}->value();
+      }
+    }
+  }
+
+  // This site is private, this is not a site member, and private file access is controlled by another module.
+  if (isset($site_privacy) && (module_exists('vsite_access') && $site_privacy > VSITE_ACCESS_INTRANET_PRIVATE)) {
+    return;
   }
 
   // Getting this far means the user is authenticated, but is both not a site
@@ -195,6 +225,23 @@ function _os_files_private_fid_from_uri($uri) {
 }
 
 /**
+ * Implements hook_form_FORM_ID_alter() for spaces_features_form.
+ *
+ * Alters the features form in the cp to remove un-needed componentes
+ */
+function os_files_private_form_spaces_features_form_alter(&$form, &$form_state, $form_id) {
+  // Only alters form if we are in the OpenScholar Control Panel context and this is an intranet install.
+  if (!context_isset('context', 'os_cp') || variable_get('file_default_scheme') != 'private') {
+    return;
+  }
+
+  //Remove this app from the features form, this is not optional for Intranet's
+  if(isset($form['spaces_features']['os_files_private'])){
+    unset($form['spaces_features']['os_files_private']);
+  }
+}
+
+/**
  * Implements hook_form_FORM_ID_alter().
  */
 function os_files_private_form_file_entity_delete_form_alter(&$form, $form_state) {
@@ -227,7 +274,7 @@ function os_files_private_menu_local_tasks_alter(&$tasks, $router, $root) {
  *
  * @param array $wrappers
  */
-function os_files_private_stream_wrappers_alter(&$wrappers){  
+function os_files_private_stream_wrappers_alter(&$wrappers){
   if (isset($wrappers['private']) && $wrappers['private']['class'] != 'OSPinserverPrivateStreamWrapper') {
     $wrappers['private']['class'] = 'OSFilesPrivateStreamWrapper';
   }

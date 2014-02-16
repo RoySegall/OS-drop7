@@ -62,4 +62,5 @@ function os_search_solr_install(){
  */
 function os_search_solr_uninstall(){
   variable_del('os_search_solr_reindex_by_bundles');
+  variable_del('os_search_og_vocabulary_operator');
 }

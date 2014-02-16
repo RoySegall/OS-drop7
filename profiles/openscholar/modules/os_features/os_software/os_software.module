@@ -23,6 +23,28 @@ function os_software_os_app_info() {
     'views tabs' => array(
       'os_software_projects' => array('page'),
     ),
+    'importers' => array(
+      'software_project' => array(
+        'csv' => 'os_software',
+      ),
+    ),
+    'require_parent_node' => array(
+      'software_release'=> TRUE,
+    ),
+    'browse_pages' => array(
+      'software_project' => array(
+        'url' => 'browse/projects',
+        'title' => t('Software'),
+        'display_mode' => 'teaser',
+        'menu_item' => 'software',
+      ),
+      'software_release' => array(
+        'url' => 'browse/releases',
+        'title' => t('Browse releases'),
+        'display_mode' => 'teaser',
+        'menu_item' => 'software',
+      ),
+    ),
   );
 
   return $apps;
@@ -163,24 +185,40 @@ function os_software_node_view($node, $view_mode, $langcode) {
  * Implements hook_process_HOOK for node.
  */
 function os_software_process_node(&$vars) {
-  if ($vars['type'] !== 'software_project') {
+  if (!in_array($vars['type'], array('software_project', 'software_release'))) {
     return;
   }
-  if ($vars['view_mode'] === 'full') {
-    // Orders the EVA fields so that "Recommended" is above "Recent".
-    if (isset($vars['content']['os_software_releases_entity_view_2']['#weight']) && isset($vars['content']['os_software_releases_entity_view_1'])) {
-      $weight = $vars['content']['os_software_releases_entity_view_2']['#weight'];
-      $vars['content']['os_software_releases_entity_view_1']['#weight'] = $weight + 1;
+  
+  if ($vars['type'] == 'software_release') {
+    if ($vars['view_mode'] == 'title') {
+      $vars['content'] = array_intersect_key($vars['content'], array('links' => TRUE));
     }
+    return;
   }
-  elseif ($vars['view_mode'] === 'teaser') {
-    // Hides EVA fields "Recommended Release" and "Recent Releases" on /software.
-    if (isset($vars['content']['os_software_releases_entity_view_1'])) {
-      unset($vars['content']['os_software_releases_entity_view_1']);
-    }
-    if (isset($vars['content']['os_software_releases_entity_view_2'])) {
-      unset($vars['content']['os_software_releases_entity_view_2']);
-    }
+  
+  switch ($vars['view_mode']) {
+    case 'full':
+      // Orders the EVA fields so that "Recommended" is above "Recent".
+      if (isset($vars['content']['os_software_releases_entity_view_2']['#weight']) && isset($vars['content']['os_software_releases_entity_view_1'])) {
+        $weight = $vars['content']['os_software_releases_entity_view_2']['#weight'];
+        $vars['content']['os_software_releases_entity_view_1']['#weight'] = $weight + 1;
+      }
+      break;
+      
+    case 'slide_teaser':
+    case 'teaser': 
+      // Hides EVA fields "Recommended Release" and "Recent Releases" on /software.
+      if (isset($vars['content']['os_software_releases_entity_view_1'])) {
+        unset($vars['content']['os_software_releases_entity_view_1']);
+      }
+      if (isset($vars['content']['os_software_releases_entity_view_2'])) {
+        unset($vars['content']['os_software_releases_entity_view_2']);
+      }
+      break;
+      
+    case 'title':
+      $vars['content'] = array_intersect_key($vars['content'], array('links' => TRUE));
+      break;
   }
 }
 
@@ -376,4 +414,3 @@ function _os_software_packaging_method_options() {
 function _os_software_form_redirect($form, &$form_state) {
   $form_state['redirect'] = 'software';
 }
-

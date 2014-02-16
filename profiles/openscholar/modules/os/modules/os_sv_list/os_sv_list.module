@@ -1,4 +1,10 @@
 <?php
+/**
+ * @file
+ * Code for the os sv list feature.
+ */
+
+include_once 'os_sv_list.features.inc';
 
 /**
  * Implements hook_menu()
@@ -25,7 +31,7 @@ function os_sv_list_pager_callback($box) {
   // Biblio doesn't use the EFQ's pager, so we have to initialize it ourselves.
   if ($box->options['content_type'] == 'biblio') {
     $page = isset($_GET['page']) ? $_GET['page'] : 0;
-    $total = count($box->get_nids(FALSE, $page));
+    $total = count($box->get_ids(FALSE, $page));
     $limit = $box->options['number_of_items'];
 
     if (!isset($ref)) {
@@ -41,14 +47,44 @@ function os_sv_list_pager_callback($box) {
 }
 
 /**
- * Implements hook_ctools_plugin_api
+ * Implements hook_ctools_plugin_type
+ * 
+ * Defines sv_list plugins that extend the basic sv list.
  */
-function os_sv_list_ctools_plugin_api($module, $api) {
-  if ($module == 'boxes' && $api == 'plugins') {
-    return array(
-      'version' => 1,
-    );
+function os_sv_list_ctools_plugin_type() {
+  return array('sv_list' => array('use hooks' => TRUE));
+}
+
+/**
+ * Implements hook_ctools_plugin_directory
+ * 
+ * Provides the sv_list plugins this module provides
+ */
+function os_sv_list_ctools_plugin_directory($module, $plugin) {
+  if (($module == 'os_sv_list') && ($plugin == 'sv_list')) {
+    require_once drupal_get_path('module', 'os_sv_list').'/plugins/sv_list/plugin.inc'; //base class must be present first.
+    return 'plugins/sv_list';
   }
+}
+
+/**
+ * @function os_sv_list_plugins
+ * 
+ * Get sv_list plugins.  Optionally filter by entity type or bundle.
+ */
+function os_sv_list_plugins($entity_type = NULL, $bundle = NULL) {
+  $plugins = ctools_get_plugins('os_sv_list', 'sv_list');
+  
+  foreach (array('entity_type', 'bundle') as $filter) {
+    $var = ${$filter}; 
+    if ($var) {
+      $plugins = array_filter($plugins, function($plugin) use ($var, $filter) {
+        return (in_array($var, $plugin[$filter]) || empty($plugin[$filter]));    
+      });
+    }
+
+  }
+  return $plugins;
 }
 
 /**
@@ -57,19 +93,62 @@ function os_sv_list_ctools_plugin_api($module, $api) {
 function os_sv_list_boxes_plugins() {
   $plugins = array();
 
+  //load the base class for node and file lists
+  $plugins['os_sv_list'] = array(
+    'tags' => array('Content'),
+    'handler' => array(
+      'class' => 'os_sv_list',
+      'file' => 'os_sv_list.inc',
+      'path' => drupal_get_path('module', 'os_sv_list') . '/plugins/',
+      'parent' => 'os_boxes_default',
+    ),
+    'factory' => FALSE,
+  );
+  
   $plugins['os_sv_list_box'] = array(
     'title' => 'List of Posts',
     'tags' => array('Content'),
     'handler' => array(
       'class' => 'os_sv_list_box',
-      'file' => 'os_sv_list.box.inc',
+      'file' => 'os_sv_list_node.inc',
       'path' => drupal_get_path('module', 'os_sv_list') . '/plugins/',
-      'parent' => 'os_boxes_default',
+      'parent' => 'os_sv_list',
+    ),
+    'factory' => TRUE,
+  );
+  
+  $plugins['os_sv_list_file'] = array(
+    'title' => 'List of Files',
+    'tags' => array('Content'),
+    'handler' => array(
+      'class' => 'os_sv_list_file',
+      'file' => 'os_sv_list_file.inc',
+      'path' => drupal_get_path('module', 'os_sv_list') . '/plugins/',
+      'parent' => 'os_sv_list',
     ),
     'factory' => TRUE,
   );
 
   return $plugins;
+}
+
+/**
+ * Implements hook_query_TAG_alter
+ * 
+ * EFQs tagged with random will be randomly sorted.  
+ * http://rupertj.tumblr.com/post/21641418129/randomly-sorting-an-entityfieldquery
+ */
+function os_sv_list_query_random_alter($query) {
+  $query->orderRandom();
+}
+
+/**
+ * Implements hook_query_TAG_alter
+ */
+function os_sv_list_query_sv_list_biblio_alter(&$query) {
+  $query->join('biblio', 'b', 'b.nid = ogm.etid');
+  $query->orderBy('b.biblio_year', 'DESC'); 
+  $query->orderBy('node.created', 'DESC');
 }
 
 /**
@@ -81,21 +160,17 @@ function os_sv_list_boxes_plugins() {
  * @return Array
  *  Array keyed with vocabulary id and valued with the vocabulary name.
  */
-function os_sv_list_get_content_type_vocabs($bundle) {
-  if ($bundle != 'all') {
-    $vocabs = og_vocab_get_accessible_vocabs('node', $bundle, OG_VOCAB_FIELD);
-  }
-  else {
-    $os_bundles = os_get_bundles(array(1));
-    $vocabs = array();
-    foreach (array_keys($os_bundles) as $os_bundle) {
-      if ($vocab = og_vocab_get_accessible_vocabs('node', $os_bundle, OG_VOCAB_FIELD)) {
-        foreach ($vocab as $vid) {
-          $vocabs[] = $vid;
-        }
+function os_sv_list_get_content_type_vocabs($bundle, $entity_type = 'node') {
+  $bundles = ($bundle == 'all') ? os_get_bundles(array(1)) + os_files_get_bundles() : array($bundle => $bundle);
+  $vocabs = array();
+  foreach (array_keys($bundles) as $os_bundle) {
+    if ($vocab = og_vocab_get_accessible_vocabs($entity_type, $os_bundle, OG_VOCAB_FIELD)) {
+      foreach ($vocab as $vid) {
+        $vocabs[] = $vid;
       }
     }
   }
+//os_taxonomy_og_vocabulary_bundles($vocabulary, $gid)
 
   if (empty($vocabs)) {
     return array();
@@ -103,7 +178,7 @@ function os_sv_list_get_content_type_vocabs($bundle) {
 
   $query = new EntityFieldQuery();
   $query->entityCondition('entity_type', 'og_vocab')
-    ->propertyCondition('entity_type', 'node')
+    ->propertyCondition('entity_type', $entity_type)
     ->propertyCondition('vid', $vocabs, is_array($vocabs) ? 'IN' : '=');
 
   if ($bundle != 'all') {
@@ -138,4 +213,14 @@ function os_sv_list_terms_element_validate($element, &$form_state) {
   // Set 'terms' value to be the selected vocab terms.
   $terms_element = array('#parents' => array('terms'));
   form_set_value($terms_element, $tids, $form_state);
+}
+
+
+/**
+ * @function os_sv_list_vocabs_content_type
+ * 
+ * AJAX callback for reload the vocabulary for the selected content type.
+ */
+function os_sv_list_vocabs_content_type($form, $form_state) {
+  return $form['options']['vocabs'];
 }

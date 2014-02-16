@@ -1,7 +1,4 @@
 <?php
-// $Id$
-
-
 /**
  * @file
  * os_faq.context.inc
@@ -14,8 +11,7 @@ function os_faq_context_default_contexts() {
   $export = array();
 
   $context = new stdClass();
-  /* Edit this to true to make a default context disabled initially */
-  $context->disabled = FALSE;
+  $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
   $context->api_version = 3;
   $context->name = 'faq_faq';
   $context->description = 'FAQ Site Section';
@@ -69,4 +65,3 @@ function os_faq_context_default_contexts() {
 
   return $export;
 }
-

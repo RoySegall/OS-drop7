@@ -6,9 +6,9 @@ dependencies[] = ctools
 dependencies[] = color
 
 
-; Information added by drush on 2013-12-02
+; Information added by drush on 2014-02-16
 version = "7.x-1.2+7-dev"
 core = "7.x"
 project = "ctools"
-datestamp = "1385971853"
+datestamp = "1392539988"
 

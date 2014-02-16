@@ -68,6 +68,12 @@ h4 {
 	margin-bottom: -4px;
 	}
 	
+.block-boxes-os_sv_list_box h1.node-title {
+line-height: 0;
+border-top: none;
+margin: 0px 0 16px 0;
+}	
+	
 .sub_title {
     font-size: 0.8em;
     margin-top: -5px;

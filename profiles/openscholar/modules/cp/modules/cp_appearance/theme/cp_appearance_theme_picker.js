@@ -3,7 +3,7 @@
  */
 (function ($) {
   Drupal.behaviors.cp_appearance_theme_picker = {
-    attach: function (context) {
+    attach: function (context, settings) {
 
       /**
        * Updates the checked status when a screenshot is clicked.
@@ -21,7 +21,7 @@
       /**
        * Updates the checked status when a flavor is selected from a dropdown.
        */
-      $('li.item-theme-picker').find('select').change(function(){
+      $('li.item-theme-picker').find('select').change(function() {
         // Removes the active class from every li first.
         $(".item-theme-picker").removeClass('checked');
         // Then adds the class to this one.
@@ -52,4 +52,15 @@
       });
     }
   };
+
+  /**
+   * The update of the branch is done via AJAX. We don't need to display the
+   * update button to the user.
+   */
+  Drupal.behaviors.CpHideUpdateButton = {
+    attach: function (context, settings) {
+      $(".page-cp-appearance-update-subtheme #edit-actions").hide();
+    }
+  };
+
 })(jQuery);

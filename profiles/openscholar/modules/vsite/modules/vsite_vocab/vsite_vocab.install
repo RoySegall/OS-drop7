@@ -23,4 +23,33 @@ function vsite_vocab_install(){
       og_create_field(OG_VOCAB_FIELD, 'node', $bundle, $og_field);
     }
   }
+
+  //Add og_vocab instance to file bundles
+  _vsite_vocab_files_add_vocab_field();
+}
+
+/**
+ * Adds og_vocab field to files
+ */
+function vsite_vocab_update_7001() {
+  _vsite_vocab_files_add_vocab_field();
+}
+
+/**
+ * @function _vsite_vocab_files_add_vocab_field()
+ *
+ * Add og_vocab instance to file bundles
+ */
+function _vsite_vocab_files_add_vocab_field() {
+  $bundles = og_get_all_group_content_bundle();
+  if (empty($bundles['file'])) {
+    return;
+  }
+
+  $og_field = og_fields_info(OG_VOCAB_FIELD);
+  $og_field['instance']['display']['default']['label'] = 'hidden';
+  $og_field['instance']['display']['default']['settings']['concatenate'] = TRUE;
+  foreach ($bundles['file'] as $bundle => $name) {
+    og_create_field(OG_VOCAB_FIELD, 'file', $bundle, $og_field);
+  }
 }

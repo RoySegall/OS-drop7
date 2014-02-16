@@ -13,6 +13,49 @@ function vsite_context_default_contexts() {
   $context = new stdClass();
   $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
   $context->api_version = 3;
+  $context->name = 'os_sitewide';
+  $context->description = 'Context that is active on all non-vsite pages except the frontpage.';
+  $context->tag = 'OpenScholar';
+  $context->conditions = array(
+    'context' => array(
+      'values' => array(
+        '~os_sitewide_front' => '~os_sitewide_front',
+        '~os_users' => '~os_users',
+        '~os_cp' => '~os_cp',
+      ),
+    ),
+    'path' => array(
+      'values' => array(
+        '~<front>' => '~<front>',
+        '~user' => '~user',
+        '~user/*' => '~user/*',
+        '~admin/*' => '~admin/*',
+        '~cp/*' => '~cp/*',
+        '~site/register' => '~site/register',
+      ),
+    ),
+    'os_site' => array(
+      'values' => array(
+        0 => '0',
+      ),
+    ),
+  );
+  $context->reactions = array(
+    'block' => array(
+      'blocks' => array(),
+    ),
+  );
+  $context->condition_mode = 1;
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  t('Context that is active on all non-vsite pages except the frontpage.');
+  t('OpenScholar');
+  $export['os_sitewide'] = $context;
+
+  $context = new stdClass();
+  $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
+  $context->api_version = 3;
   $context->name = 'os_sitewide_front';
   $context->description = 'Active on the frontpage in multi-tenant installs';
   $context->tag = 'OpenScholar';
@@ -67,10 +110,7 @@ function vsite_context_default_contexts() {
   $export['os_sitewide_front'] = $context;
 
   $context = new stdClass();
-  $context->disabled = FALSE; /*
-                               * Edit this to true to make a default context
-                               * disabled initially
-                               */
+  $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
   $context->api_version = 3;
   $context->name = 'os_users';
   $context->description = 'Context that is active when in a user area of an Openscholar site, like user profile or log in screen';
@@ -78,17 +118,16 @@ function vsite_context_default_contexts() {
   $context->conditions = array(
     'path' => array(
       'values' => array(
-      	'user' => 'user',
-		'users' => 'users',
+        'user' => 'user',
+        'users' => 'users',
         'user/*' => 'user/*',
-      )
-    )
+      ),
+    ),
   );
   $context->reactions = array(
-  	'block' => array(
-      'blocks' => array(
-      )
-    )
+    'block' => array(
+      'blocks' => array(),
+    ),
   );
   $context->condition_mode = 0;
 
@@ -97,51 +136,6 @@ function vsite_context_default_contexts() {
   t('Context that is active when in a user area of an Openscholar site, like user profile or log in screen');
   t('OpenScholar');
   $export['os_users'] = $context;
-
-  $context = new stdClass();
-  $context->disabled = FALSE; /* Edit this to true to make a default context disabled initially */
-  $context->api_version = 3;
-  $context->name = 'os_sitewide';
-  $context->description = 'Context that is active on all non-vsite pages except the frontpage.';
-  $context->tag = 'OpenScholar';
-  $context->conditions = array(
-    'context' => array(
-      'values' => array(
-        '~os_sitewide_front' => '~os_sitewide_front',
-  		'~os_users' => '~os_users',
-  		'~os_cp' => '~os_cp',
-      ),
-    ),
-    'path' => array(
-      'values' => array(
-        '~<front>' => '~<front>',
-        '~user' => '~user',
-        '~user/*' => '~user/*',
-        '~admin/*' => '~admin/*',
-        '~cp/*' => '~cp/*',
-        '~site/register' => '~site/register',
-      ),
-    ),
-    'os_site' => array(
-      'values' => array(
-        0 => '0',
-      ),
-    ),
-  );
-  $context->reactions = array(
-    'block' => array(
-      'blocks' => array(
-      ),
-    ),
-  );
-  $context->condition_mode = 1;
-
-  // Translatables
-  // Included for use with string extractors like potx.
-  t('Context that is active on all non-vsite pages except the frontpage.');
-  t('OpenScholar');
-  $export['os_sitewide'] = $context;
-
 
   return $export;
 }

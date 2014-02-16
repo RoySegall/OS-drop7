@@ -28,9 +28,26 @@ function os_news_os_app_info() {
         'rss' => 'feed_importer',
       ),
     ),
+    'browse_pages' => array(
+      'news' => array(
+        'url' => 'browse/news',
+        'title' => t('News'),
+        'display_mode' => 'teaser',
+        'menu_item' => 'news',
+      ),
+    ),
   );
 
   return $apps;
+}
+
+/**
+ * Implements hook_os_entity_view_modes()
+ */
+function os_news_os_entity_view_modes() {
+  return array('node' => array(
+    'news' => array('sidebar_teaser')
+  ));
 }
 
 /**

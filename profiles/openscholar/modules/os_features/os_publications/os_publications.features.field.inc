@@ -41,6 +41,12 @@ function os_publications_field_default_fields() {
           'type' => 'dyntextfield_default',
           'weight' => 4,
         ),
+        'sidebar_teaser' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => 0,
+        ),
         'teaser' => array(
           'label' => 'above',
           'settings' => array(),
@@ -110,6 +116,12 @@ function os_publications_field_default_fields() {
           'type' => 'image',
           'weight' => '1',
         ),
+        'sidebar_teaser' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => 0,
+        ),
         'teaser' => array(
           'label' => 'hidden',
           'module' => 'image',
@@ -124,12 +136,30 @@ function os_publications_field_default_fields() {
       'entity_type' => 'node',
       'field_name' => 'field_biblio_image',
       'label' => 'Publication Image',
-      'required' => FALSE,
+      'required' => 0,
       'settings' => array(
         'alt_field' => 0,
         'default_image' => 0,
         'file_directory' => '',
-        'file_extensions' => 'png gif jpg jpeg',
+        'file_extensions' => 'gif jpeg jpg png',
+        'filefield_paths' => array(
+          'active_updating' => 0,
+          'file_name' => array(
+            'options' => array(
+              'pathauto' => 0,
+              'transliterate' => 0,
+            ),
+            'value' => '[file:ffp-name-only-original].[file:ffp-extension-original]',
+          ),
+          'file_path' => array(
+            'options' => array(
+              'pathauto' => 0,
+              'transliterate' => 0,
+            ),
+            'value' => '',
+          ),
+          'retroactive_update' => 0,
+        ),
         'max_filesize' => '',
         'max_resolution' => '',
         'min_resolution' => '',
@@ -137,12 +167,32 @@ function os_publications_field_default_fields() {
         'user_register_form' => FALSE,
       ),
       'widget' => array(
-        'module' => 'image',
+        'active' => 1,
+        'module' => 'media',
         'settings' => array(
-          'preview_image_style' => 'thumbnail',
+          'allowed_schemes' => array(
+            'embed' => 0,
+            'oembed' => 0,
+            'public' => 'public',
+          ),
+          'allowed_types' => array(
+            'audio' => 0,
+            'document' => 0,
+            'executable' => 0,
+            'html' => 0,
+            'image' => 'image',
+            'undefined' => 0,
+            'video' => 0,
+          ),
+          'browser_plugins' => array(
+            'media_default--media_browser_1' => 'media_default--media_browser_1',
+            'media_default--media_browser_my_files' => 0,
+            'media_internet' => 0,
+            'upload' => 'upload',
+          ),
           'progress_indicator' => 'throbber',
         ),
-        'type' => 'image_image',
+        'type' => 'media_generic',
         'weight' => '31',
       ),
     ),
@@ -191,6 +241,12 @@ function os_publications_field_default_fields() {
           'type' => 'os_files_image_list',
           'weight' => '3',
         ),
+        'sidebar_teaser' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => 0,
+        ),
         'teaser' => array(
           'label' => 'hidden',
           'module' => 'file',
@@ -206,7 +262,7 @@ function os_publications_field_default_fields() {
       'settings' => array(
         'description_field' => 0,
         'file_directory' => '',
-        'file_extensions' => 'jpg jpeg gif png txt doc docx gz xls xlsx pdf ppt pptx pps odt ods odp tex tgz xml zip',
+        'file_extensions' => 'avi doc docx exe gif gz ico jpeg jpg m4a m4v mov mp3 mp4 mpeg odp ods odt oga ogg ogv pdf png pps ppsx tar tex tgz txt wmv wtml wtt wwtfig xls xlsx xml zip',
         'filefield_paths' => array(
           'active_updating' => 0,
           'file_name' => array(

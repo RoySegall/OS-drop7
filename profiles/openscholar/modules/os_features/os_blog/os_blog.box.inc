@@ -25,7 +25,7 @@ function os_blog_default_box() {
     'content' => array('blog'),
     'show_all' => TRUE,
   );
-  $export['os_blog-blog_rss_feed'] = $box;
+  $export['blog_rss_feed'] = $box;
 
   return $export;
 }

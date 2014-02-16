@@ -56,7 +56,7 @@ class os_boxes_booktoc extends os_boxes_default {
       '#default_value' => $this->options['toc_type'],
     );
 
-    $form['advanced']['as_nav'] = array(
+    $form['as_nav'] = array(
       '#type' => 'checkbox',
       '#default_value' => $this->options['as_nav'],
       '#title' => t('Display As Navigation'),

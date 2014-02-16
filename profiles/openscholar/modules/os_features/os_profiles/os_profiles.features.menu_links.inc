@@ -22,11 +22,12 @@ function os_profiles_menu_default_menu_links() {
       ),
     ),
     'module' => 'system',
-    'hidden' => '0',
-    'external' => '0',
-    'has_children' => '0',
-    'expanded' => '0',
-    'weight' => '0',
+    'hidden' => 0,
+    'external' => 0,
+    'has_children' => 1,
+    'expanded' => 0,
+    'weight' => 0,
+    'customized' => 0,
   );
   // Translatables
   // Included for use with string extractors like potx.

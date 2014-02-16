@@ -4,8 +4,15 @@
  * @file
  * Openscholar module file.
  */
+
 include_once ('os.features.inc');
 include_once ('includes/os.inc');
+
+
+/**
+ * Define a message to be used in site read-only mode.
+ */
+define('OS_READONLY_MODE_MESSAGE', 'Site is under maintenance, login and registration is currently disabled.');
 
 // Load the correct jQuery version. This is done before the call to os_init().
 global $conf;
@@ -95,6 +102,24 @@ function os_menu_alter(&$items) {
     $items['user']['file'] = 'os.pages.inc';
     $items['user']['file path'] = drupal_get_path('module', 'os');
   }
+
+  // Use custom callbacks for these menu items that will display a message
+  // if site is in read-only mode. Access callbacks are altered to TRUE to get
+  // to the page callback which will check the default access callback.
+  $items['user/login']['page callback'] = 'os_in_read_mode_login';
+  $items['user/register']['page callback'] = 'os_in_read_mode_register';
+  $items['user/register']['access callback'] = TRUE;
+  $items['user/password']['page callback'] = 'os_in_read_mode_password';
+
+  // Check if Pinserver should take over registration menu entries.
+  if (variable_get('os_pinserver_registration', FALSE)){
+    $items['site/register']['page callback'] = 'os_in_read_mode_site_register_pinserver';
+  }
+  else {
+    $items['site/register']['page callback'] = 'os_in_read_mode_site_register';
+  }
+  $items['site/register']['access callback'] = TRUE;
+
   // Displays 404 Not Found instead of default /node page.
   if (isset($items['node'])) {
     unset($items['node']);
@@ -110,13 +135,94 @@ function os_menu_alter(&$items) {
 }
 
 /**
+ * Page callback for user/login.
+ */
+function os_in_read_mode_login() {
+  if (variable_get('os_readonly_mode', FALSE)) {
+    return variable_get('os_readonly_mode_message', OS_READONLY_MODE_MESSAGE);
+  }
+
+  if (user_is_anonymous()) {
+    return drupal_get_form('user_login');
+  }
+
+  drupal_access_denied();
+}
+
+/**
+ * Page callback for user/register.
+ */
+function os_in_read_mode_register() {
+  if (variable_get('os_readonly_mode', FALSE)) {
+    return variable_get('os_readonly_mode_message', OS_READONLY_MODE_MESSAGE);
+  }
+
+  if (user_register_access()) {
+    return drupal_get_form('user_register_form');
+  }
+
+  drupal_access_denied();
+}
+
+/**
+ * Page callback for user/password.
+ */
+function os_in_read_mode_password() {
+  if (variable_get('os_readonly_mode', FALSE)) {
+    return variable_get('os_readonly_mode_message', OS_READONLY_MODE_MESSAGE);
+  }
+
+  return drupal_get_form('user_pass');
+}
+
+/**
+ * Page callback for site/register, pinserver authentication.
+ */
+function os_in_read_mode_site_register_pinserver() {
+  if (variable_get('os_readonly_mode', FALSE)) {
+    return variable_get('os_readonly_mode_message', OS_READONLY_MODE_MESSAGE);
+  }
+
+  if (module_exists('os_pinserver_auth') && os_pinserver_auth_register_access()) {
+    return os_pinserver_auth_vsite_register_form_page();
+  }
+
+  return drupal_get_form('vsite_register_form');
+}
+
+/**
+ * Page callback for site/register.
+ */
+function os_in_read_mode_site_register() {
+  if (variable_get('os_readonly_mode', FALSE)) {
+    return variable_get('os_readonly_mode_message', OS_READONLY_MODE_MESSAGE);
+  }
+
+  if (vsite_vsite_exists_access()) {
+    return drupal_get_form('vsite_register_form');
+  }
+}
+
+/**
  * Implements hook_entity_info_alter().
  *
  * Adds a view mode to nodes for use in sidebar widgets
  */
 function os_entity_info_alter(&$info) {
   $info['node']['view modes']['sidebar_teaser'] = array(
-    'label' => 'Sidebar Teaser',
+    'label' => t('Sidebar Teaser'),
+    'custom settings' => TRUE,
+  );
+  $info['node']['view modes']['title'] = array(
+    'label' => t('Title'),
+    'custom settings' => TRUE,
+  );
+  $info['node']['view modes']['slide_teaser'] = array(
+    'label' => t('Slide Teaser'),
+    'custom settings' => TRUE,
+  );
+  $info['node']['view modes']['no_image_teaser'] = array(
+    'label' => t('No image Teaser'),
     'custom settings' => TRUE,
   );
 }
@@ -179,6 +285,7 @@ function os_block_view($delta = '') {
       ctools_include('menu', 'os');
       $os_menus = os_get_menus();
       if (isset($os_menus[$delta])) {
+        $block['subject'] = NULL;
         $block['content'] = os_menu_tree($delta);
         return $block;
       }
@@ -195,7 +302,7 @@ function os_block_view($delta = '') {
 function os_block_view_alter(&$block, &$data) {
   ctools_include('menu', 'os');
 
-  if (array_key_exists($data->delta, os_get_menus()) && count($block['content'])) {
+  if (!empty($data->delta) && array_key_exists($data->delta, os_get_menus()) && count($block['content'])) {
   	// Remove nice menus from the sidebar and footer regions.
   	$theme = (in_array($data->region, array('footer', 'footer_first', 'footer_third', 'sidebar_first', 'sidebar_second'))) ? '' : 'os_nice_menus';
     $block['content'] += array(
@@ -484,13 +591,21 @@ function os_process_node(&$vars) {
     $trailing_break_tag = (bool) strlen($text_after_break) == 0;
   }
 
-  // Exits now if the body will be displayed shortened, this means there is
-  // more body content to read by clicking "Read more", so we display the link.
+  // Now we know whether the read more links needs to be displayed or not.
+  // With this information we can move the read more link so it can be displayed inline with the block
   if ($body_shortened && !$trailing_break_tag) {
-    return;
+    $link = $vars['content']['links']['node']['#links']['node-readmore'];
+    $link['attributes']['class'][] = 'node-readmore';
+    // Get last position of the last closing marker in teaser.
+    if (preg_match('!</?(?:p)[^>]*>\s*$!i', $vars['content']['body'][0]['#markup'], $match, PREG_OFFSET_CAPTURE)) {
+      $insert_point = $match[0][1];
+      // Insert the link.
+      $vars['content']['body'][0]['#markup'] = substr_replace($vars['content']['body'][0]['#markup'], ' '.l($link['title'], $link['href'], $link), $insert_point, 0);
+    }
+
   }
 
-  // Otherwise, hides the "Read more" link by removing it from the render array.
+  // Hide the original "Read more" link by removing it from the render array.
   unset($vars['content']['links']['node']['#links']['node-readmore']);
 }
 
@@ -581,7 +696,17 @@ function os_preprocess_page(&$vars) {
         }
       }
     }
-    if ($printed && node_access('create', $type)) {
+
+    // Determine node create access.
+    if (module_exists('vsite')) {
+      $vsite = vsite_get_vsite();
+      $create_access = $vsite ? og_user_access('node', $vsite->id, "create $type content") : FALSE;
+    }
+    else {
+      $create_access = node_access('create', $type);
+    }
+
+    if ($printed && $create_access) {
       $links[$type] = array(
         'href' => 'node/add/' . str_replace('_', '-', $type),
         'title' => $_node_types->names[$type],
@@ -747,9 +872,23 @@ function os_form_alter(&$form, &$form_state, $form_id) {
 
   // Add a cancel link to node forms.
   if (strpos($form_id, '_node_form')) {
-    $destination = !empty($_GET['destination']) ? $_GET['destination'] : '';
+    if (!empty($_GET['destination'])) {
+      // If available in the query, set destination of the button link.
+      $destination = $_GET['destination'];
+    }
+    else {
+      // Otherwise redirect the users to the app path (e.g. if users edit a
+      // node people object, they will be redirected to people).
+      $paths = os_get_app_path();
+      if (isset($paths[$form['#node']->type])) {
+        $destination = $paths[$form['#node']->type];
+      }
+      else {
+        $destination = '';
+      }
+    }
     $form['actions']['cancel'] = array(
-      '#markup'   => l(t('Cancel'), $destination, array('attributes' => array('class' => 'form-cancel' ))),
+      '#markup'   => l(t('Cancel'), $destination, array('attributes' => array('class' => 'form-cancel'))),
       '#weight' => 99,
     );
   }
@@ -786,7 +925,15 @@ function os_form_node_form_alter(&$form, $form_state) {
   if (isset($form['og_group_ref']['und'][0]['admin']['add_more']['#value'])) {
     $form['og_group_ref']['und'][0]['admin']['add_more']['#value'] = t('Add administrator');
   }
+
+  unset($form['additional_settings']);
+  foreach (element_children($form) as $c) {
+    unset($form[$c]['#group']);
+  }
+
+  $form['actions_top'] = $form['actions'];
 }
+
 
 /**
  * Page argument; passed to drupal_get_form in os_menu().
@@ -805,12 +952,43 @@ function os_settings_form($form_state) {
     '#collapsible' => TRUE,
     '#collapsed' => TRUE,
   );
+
   $form['os_general']['os_use_dropdowns'] = array(
     '#type' => 'checkbox',
     '#title' => t('Use dropdowns'),
     '#default_value' => variable_get('os_use_dropdowns', 1),
     '#description' => t('Enable dropdowns globally across your site. Unchecking will disable all custom menus from having dropdowns at all.'),
   );
+
+  $form['os_read_only'] = array(
+    '#type' => 'fieldset',
+    '#title' => t('Read-only mode'),
+    '#weight' => 99,
+    '#collapsible' => TRUE,
+    '#collapsed' => TRUE,
+  );
+
+  $form['os_read_only']['os_readonly_mode'] = array(
+    '#type' => 'checkbox',
+    '#title' => t('Enable Read-only mode'),
+    '#default_value' => variable_get('os_readonly_mode', FALSE),
+    '#description' => '<span class="warning">' . t('Notice that when Read-only mode is enabled all non-admin users will be logged out and user login will be disabled.') . '</span>',
+  );
+
+  $form['os_read_only']['os_readonly_mode_message'] = array(
+    '#type' => 'textarea',
+    '#title' => t('Message'),
+    '#required' => TRUE,
+    '#default_value' => variable_get('os_readonly_mode_message', OS_READONLY_MODE_MESSAGE),
+    '#description' => t('Message to be displayed to the users in the login page when site is in read-only mode.'),
+    '#states' => array(
+      'visible' => array(
+        ':input[name="os_readonly_mode"]' => array('checked' => TRUE),
+      ),
+    ),
+  );
+
+  $form['#submit'][] = 'os_settings_form_submit';
 
   return system_settings_form($form);
 }
@@ -1039,8 +1217,6 @@ function os_context_registry() {
   return $registry;
 }
 
-
-
 /**
  * Implements hook_cron().
  *
@@ -1088,6 +1264,8 @@ function _os_conditional_css_browsers($cond) {
 }
 
 /**
+ * Implements hook_system_info_alter().
+ *
  * Adds all our regions to every subtheme of os_basetheme.
  */
 function os_system_info_alter(&$info, $file, $type) {
@@ -1098,11 +1276,6 @@ function os_system_info_alter(&$info, $file, $type) {
   // If the base theme for this theme is 'os_basetheme' or if the is a 'vsite'
   // theme add the default regions.
   if ((isset($info['base theme']) && $info['base theme'] == 'os_basetheme') || (isset($info['os']['theme_type']) && $info['os']['theme_type'] == 'vsite')) {
-    if (!file_exists(dirname($file->filename) . '/favicon.ico')) {
-      $info['settings']['favicon_path'] = drupal_get_path('theme', 'os_basetheme').'/favicon.ico';
-      $info['settings']['default_favicon'] = 0;
-    }
-
     $info['regions'] += array(
       'branding_header' => 'Branding Header',
       'branding_footer' => 'Branding Footer',
@@ -1142,9 +1315,6 @@ function os_url_outbound_alter(&$path, &$options, $original) {
         // When accessing to any address the spaces module use purl_goto(). The
         // purl_goto() use url() for knowing the path of the URL we accessing.
         // url() will return eventually the path.
-        // This section alter the $path to the $_GET['q'] which is node/%.json
-        // which will convert by the url() to foo/bar.
-        // $path = $_GET['q'];
         return;
       }
     }
@@ -1205,11 +1375,11 @@ function os_url_outbound_alter(&$path, &$options, $original) {
 }
 
 /**
+ * Implements hook_context_block_info_alter().
+ *
  * Add defaults to blocks as required.
  *
  * Some of this was handled by the core block module which is no longer used.
- *
- * @param $blocks
  */
 function os_context_block_info_alter(&$blocks) {
 
@@ -1222,9 +1392,9 @@ function os_context_block_info_alter(&$blocks) {
 }
 
 /**
- * Allow altering of views before build but after the filters are attached.
+ * Implements hook_views_pre_build().
  *
- * @param view $view
+ * Allow altering of views before build but after the filters are attached.
  */
 function os_views_pre_build(&$view) {
   // Is this the RSS Feed View.
@@ -1237,6 +1407,7 @@ function os_views_pre_build(&$view) {
   }
 }
 
+// @TODO document why this is here or else remove.
 //function os_admin_paths_alter(&$paths) {
 //  foreach ($paths as $k => $p) {
 //    if (strpos($k, 'node/*/edit') !== FALSE/* || strpos($k, 'node/add') !== FALSE*/) {
@@ -1367,20 +1538,22 @@ function os_access_region($module, $delta) {
   $region = os_get_region($module, $delta);
 
   $locked = variable_get('os_locked_regions', array());
-  $spaces = spaces_access_admin();
+  if (!boxes_access_edit()) {
+    return;
+  }
 
-  // the region is locked
-  if (isset($locked[$region]) && $locked[$region]) {
+  // The region is locked
+  if (!empty($locked[$region]) && $locked[$region]) {
     // check the permission
-    return $spaces && (user_access('edit locked regions') || user_access('manage locked regions'));
+    return user_access('edit locked regions') || user_access('manage locked regions');
   }
-  else {
-    // the region is not locked, so just return whatever spaces says
-    return $spaces;
-  }
+
+  return TRUE;
 }
 
 /**
+ * Implements hook_js_alter().
+ *
  * Checks to see if the colorbox js has been loaded,
  * and loads a small script to fix an issue if its been found
  */
@@ -1459,6 +1632,56 @@ function _os_get_install_status() {
 }
 
 /**
+ * @function os_entity_view_modes
+ *
+ * Gets white list of view modes for entities by bundle
+ *
+ * @param string $entity_type
+ *   (Optional) Only return view modes for entities of this type.
+ *
+ * @param string $bundle
+ *   (Optional) Only return view modes for entities of this type and bundle (requires entity_type)
+ *
+ * @return array $info
+ *   Associative array, keyed by entity type, then bundle.  Lists view
+ *   modes available to that bundle.
+ */
+function os_entity_view_modes($entity_type = NULL, $bundle = NULL) {
+  $info = &drupal_static(__FUNCTION__, array());
+
+  if (empty($info)) {
+    foreach (module_implements(__FUNCTION__) as $module) {
+      if ($entity_view_modes = module_invoke($module, __FUNCTION__)) {
+        $info = array_merge_recursive($info, $entity_view_modes);
+      }
+    }
+    drupal_alter(__FUNCTION__, $info);
+  }
+
+  if (!$entity_type) {
+    return $info;
+  }
+
+  if (!$bundle) {
+    return $info[$entity_type];
+  }
+
+  return (isset($info[$entity_type][$bundle])) ? $info[$entity_type][$bundle] : NULL;
+}
+
+/**
+ * Implements os_entity_view_modes_alter
+ *
+ * Adds full and teaser display to all os content types, except feed_importer.
+ */
+function os_os_entity_view_modes_alter(&$info) {
+  $bundles = array_keys(os_get_bundles(TRUE));
+  $bundles = array_diff($bundles, array('feed_importer'));
+  $bundle_views = array_fill_keys($bundles, array('full', 'teaser', 'title', 'slide_teaser'));
+  $info['node'] = array_merge_recursive($info['node'], $bundle_views);
+}
+
+/**
  * Gets all app information from installed OpenScholar apps.
  *
  * An OpenScholar "app" is a features module that invokes hook_os_app_info().
@@ -1488,6 +1711,8 @@ function os_app_info($app_name = NULL) {
             // Determine if author should be indexed in Solr.
             'index author' => FALSE,
             'importers' => array(),
+            'require_parent_node' => FALSE,
+            'browse_pages' => FALSE,
           );
 
           // Adds the module information.
@@ -1532,10 +1757,13 @@ function os_user_login_validate($form, &$form_state) {
   }
 }
 
+/**
+ * Implements hook_library().
+ */
 function os_library() {
-  $l = array();
+  $libraries = array();
 
-  $l['os.ajax-fix'] = array(
+  $libraries['os.ajax-fix'] = array(
     'title' => 'Ajax Termination Fix',
     'version' => '1.0',
     'js' => array(
@@ -1543,26 +1771,14 @@ function os_library() {
     ),
   );
 
-  return $l;
-}
-
-function os_library_alter(&$l) {
-  $l['drupal.ajax']['dependencies'][] = array('os', 'os.ajax-fix');
+  return $libraries;
 }
 
 /**
- * Customize what resources will be avalible for RestWS to use
- **/
-function os_restws_resource_info_alter(&$info){
-
-//   //Remove entity types except those listed
-//   $enabled_entities = variable_get('os_restws_entities',array('node'));
-//   foreach (entity_get_info() as $entity_type => $info) {
-//     if(isset($info[$entity_type]) && !in_array($entity_type, $enabled_entities)){
-//       unset($info[$entity_type]);
-//     }
-//   }
-
+ * Implements hook_library_alter().
+ */
+function os_library_alter(&$libraries) {
+  $libraries['drupal.ajax']['dependencies'][] = array('os', 'os.ajax-fix');
 }
 
 /**
@@ -1638,11 +1854,14 @@ function os_views_query_alter(&$view, &$query) {
     $exclude = array_merge($exclude, $info['nodetypes']);
   }
 
-  $query->add_where(key($query->where), 'node.type', $exclude, 'not in');
+  // Alter the query only if there are node types to be excluded.
+  if (!empty($exclude)) {
+    $query->add_where(key($query->where), 'node.type', $exclude, 'NOT IN');
+  }
 }
 
 /**
- * Implements field_default_fields_alter() for altering field settings.
+ * Implements hook_field_default_fields_alter().
  *
  * If the default scheme is private change the file field exports to be
  * private.
@@ -1707,4 +1926,251 @@ function os_field_default_fields_alter(&$fields) {
       }
     }
   }
+}
+
+/**
+ * Implements hook_field_widget_WIDGET_TYPE_form_alter().
+ *
+ * Make all select fields use Select2.
+ */
+function os_field_widget_options_select_form_alter(&$element, &$form_state, $context) {
+  $element += array(
+    '#after_build' => array('os_select2_widget_after_build'),
+    '#cardinality' => $context['field']['cardinality'],
+    '#attached' => array(
+      'css' => array(
+        libraries_get_path('select2') . '/select2.css',
+        drupal_get_path('module', 'os') . '/css/select2-widget.css',
+      ),
+      'js' => array(
+        libraries_get_path('select2') . '/select2.min.js',
+        drupal_get_path('module', 'os') . '/js/select2-widget.js',
+      ),
+    ),
+  );
+
+  // Hide the select list if a vocabulary is empty.
+  if ($element['#field_name'] == 'og_vocabulary' && count($element['#options']) == 1) {
+    $element['#access'] = FALSE;
+  }
+
+  // Handle special characters correctly.
+  foreach ($element['#options'] as &$option) {
+    if (!is_array($option)) {
+      // Single option.
+      $option = html_entity_decode($option, ENT_QUOTES);
+      continue;
+    }
+
+    // Array of options.
+    foreach ($option as &$option_value) {
+      $option_value = html_entity_decode($option_value, ENT_QUOTES);
+    }
+  }
+
+  if ($element['#cardinality'] != 1) {
+    // Multiple select, remove the "None" option.
+    unset($element['#options']['_none']);
+  }
+
+  return $element;
+}
+
+/**
+ * After build callback; Add required JS settings to Select2 fields.
+ */
+function os_select2_widget_after_build($element, &$form_state) {
+  // There may be more than one Select2 field and each of them gets to this
+  // function separately and should be added to the existing array of elements
+  // saved in a drupal JS setting.
+  // The problem is we cannot modify an existing drupal JS setting, we can only
+  // override it. The solution is saving the array of elements as static, and
+  // then overriding the JS setting according to it.
+  $setting = drupal_static(__FUNCTION__, array());
+
+  $setting[] = array(
+    'selector' => '#' . $element['#id'],
+    'cardinality' => $element['#cardinality'],
+  );
+
+  drupal_add_js(array('select2_widget' => $setting), 'setting');
+
+  return $element;
+}
+
+/**
+ * Clear the internal page_cache when a cache clear is executed before any other external cache is cleared
+ *
+ * Implements hook_expire_cache().
+ */
+function os_expire_cache($urls, $wildcards, $object_type, $object) {
+
+	foreach ($urls as $internal_path => $absolute_url) {
+
+	  // Check if wildcard is enabled for this URL.
+	  $wildcard = !empty($wildcards[$internal_path]);
+
+	  // Clear cached page data.
+	  cache_clear_all($absolute_url, 'cache_page', $wildcard);
+  }
+}
+
+/**
+ * Logging out all non-admin logged-in users.
+ *
+ * Keep admin and all users with "administer site configuration" logged.
+ */
+function os_logout_logged_users() {
+  // Get all user ids for users with "administer site configuration"
+  // permission.
+  $query = db_select('users', 'u')->fields('u');
+  $query->join('users_roles', 'ur', 'u.uid = ur.uid');
+  $query->join('role_permission', 'rp', 'ur.rid = rp.rid');
+  $user_result = $query->condition('rp.permission','administer site configuration')
+    ->execute()
+    ->fetchAllAssoc('uid');
+
+  // Get a list of no-admin logged users with no "administer site configuration"
+  // permission.
+  $query = db_select('sessions', 's')
+    ->fields('s')
+    ->condition('uid', 1, '<>');
+
+  // If users with "administer site configuration" are logged, keep them logged.
+  if (!empty($user_result)) {
+    $query->condition('uid', array(array_keys($user_result)), 'NOT IN');
+  }
+
+  $result = $query->execute()
+    ->fetchAllAssoc('uid');
+
+  if (empty($result)) {
+    return;
+  }
+
+  // Logout all logged users.
+  db_delete('sessions')
+    ->condition('uid', array_keys($result), 'IN')
+    ->execute();
+}
+
+/**
+ * Submit handler; For os_settings_form.
+ */
+function os_settings_form_submit($form, &$form_state) {
+  if ($form_state['values']['os_readonly_mode']) {
+    os_logout_logged_users();
+    drupal_set_message(t('All non-admin users have been logged out.'));
+  }
+}
+
+/**
+ * Implements hook_requirements().
+ */
+function os_requirements($phase) {
+  $requirements = array();
+  if ($phase === 'runtime') {
+    $requirements['os_field_ui'] = array(
+      'title' => t('Field UI'),
+      'description' => t('The Field UI module is enabled, and will a cause a menu rebuild everytime a new vocabulary is created. It is recommened to disable it on production.'),
+    );
+
+    if (module_exists('field_ui')) {
+      $requirements['os_field_ui']['value'] = t('Enabled');
+      $requirements['os_field_ui']['severity'] = REQUIREMENT_WARNING;
+    }
+    else {
+      $requirements['os_field_ui']['value'] = t('Disabled');
+    }
+
+  }
+  return $requirements;
+}
+
+/**
+ * Implements of hook_context_default_contexts_alter
+ */
+function os_context_default_contexts_alter(&$contexts){
+  if (module_exists('olark') && isset($contexts['os_public'])) {
+    $contexts['os_public']->reactions['olark_add'] = array('add' => 1);
+  }
+}
+
+/**
+ * Implements hook_preprocess_node
+ */
+function os_preprocess_node(&$vars) {
+  if ($vars['view_mode'] == 'slide_teaser') {
+    $vars['header_attributes_array']['class'][] = 'toggle';
+    $vars['content_attributes_array']['class'][] = 'os-slider';
+    $vars['links_attributes_array']['class'][] = 'os-slider';
+    drupal_add_js(drupal_get_path('module', 'os').'/theme/os_toggle.js');
+  }
+}
+
+/**
+ * Implements hook_field_display_node_alter 
+ *
+ * Makes the slide_teaser display mode just like teaser.  
+ */
+function os_field_display_node_alter(&$display, $context) {
+  if ($context['view_mode'] == 'slide_teaser') {
+    $display = $context['instance']['display']['teaser'];
+  }
+}
+
+/**
+ * API function for copy a file from a URL and throw exception when needed.
+ *
+ * @param $url
+ *  The URL of the file.
+ * @param bool $exception
+ *  Determine if an exception need to be thrown when the copy of the file
+ *  failed. When set to false the reason for the failure will return as a text
+ *  in the returned array.
+ *
+ * @throws Exception
+ *  Throwing an error when the copy of the file failed and the $exception set to
+ *  TRUE.
+ * @return array
+ *  Return array of the file or error if occurred and the type of the return
+ *  data(file/text).
+ */
+function os_copy_file($url, $exception = FALSE) {
+  if (empty($url)) {
+    return os_file_copy_set_error(t('You need to pass a url of the file.'), $exception);
+  }
+
+  if (drupal_http_request($url)->code != 200) {
+    return os_file_copy_set_error(t("The file was not reachable."), $exception);
+  }
+
+  if (!is_writeable('public://')) {
+    return os_file_copy_set_error(t("The file directory is not wrietable. Please check her permission."), $exception);
+  }
+
+  if (!$file = system_retrieve_file($url, 'public://', TRUE)) {
+    return os_file_copy_set_error(t('An error occurred due unknown reason.'), $exception);
+  }
+
+  return array(
+    'type' => 'file',
+    'file' => $file,
+  );
+}
+
+/**
+ * Set error when trying to copy the file.
+ *
+ * @see os_copy_file().
+ */
+function os_file_copy_set_error($message, $exception) {
+  if ($exception) {
+    throw new Exception($message);
+  }
+
+  return array(
+    'type' => 'error',
+    'message' => $message,
+  );
 }

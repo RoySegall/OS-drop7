@@ -25,3 +25,13 @@ Feature: Testing the tagged items.
      | john/reader        | john/reader/science/air         | Engadget rss              | Feeds around the world      |
      | john/software      | john/software/science/air       | Mac OSX                   | Windows 7                   |
      #| john/galleries     | john/galleries/air              | Kittens gallery           | JFK                         |
+
+  @api
+  Scenario: Verify that terms which their vocab is not bind with the content
+            type will be display in the field.
+    Given I am logging in as "john"
+     When I visit "john/classes/john-f-kennedy"
+      And I should not see "Air"
+      And I bind the content type "class" with "science"
+      And I visit "john/classes/john-f-kennedy"
+     Then I should see "Air"

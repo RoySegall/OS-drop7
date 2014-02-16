@@ -23,10 +23,6 @@
 
 }
 
-#boxes-box-site_info p a {
-  display: none;
-}
-
 #boxes-box-site_info h1 {
   font-size: 30px;
 
@@ -313,7 +309,7 @@ table td.mini .mini-day-on a {
   padding: 25px 15px;
   text-transform: uppercase;
   outline: 0;
-  border-bottom: 1px solid #cacaca;
+
 }
 
 .ui-tabs ul.ui-tabs-nav li.ui-tabs-active a {
@@ -341,13 +337,6 @@ table td.mini .mini-day-on a {
 .ui-tabs .ui-widget-header .ui-state-active {
   border-color: #cacaca;
 }
-
-.ui-state-default,
-.ui-widget-content .ui-state-default,
-.lt-ie9 .ui-widget-header .ui-state-default {
-	 border: 1px solid #D3D3D3 !important;
-}
-
 
 
 .ui-tabs .ui-state-default a,

@@ -19,7 +19,7 @@ function os_presentations_default_box() {
   $box->description = 'Recent Presentations';
   $box->options = array(
     'content_type' => 'presentation',
-    'display' => 'display_title',
+    'display' => 'title',
     'more' => 1,
     'more_text' => 'More',
     'more_link' => 'presentations',

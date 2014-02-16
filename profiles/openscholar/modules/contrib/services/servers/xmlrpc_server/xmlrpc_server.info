@@ -8,9 +8,9 @@ dependencies[] = services
 
 core = 7.x
 
-; Information added by drush on 2013-12-02
+; Information added by drush on 2014-02-16
 version = "7.x-3.3+42-dev"
 core = "7.x"
 project = "services"
-datestamp = "1385971716"
+datestamp = "1392540130"
 

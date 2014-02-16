@@ -161,7 +161,7 @@
   	<?php if (isset($login_link)) {
     print render($login_link); 
   } ?>
-  	<div id="powered-by"><a href="http://openscholar.harvard.edu">OpenScholar</a></div>
+  	<div id="powered-by"><a href="http://theopenscholar.org">OpenScholar</a></div>
     </div>
   </footer>
   </div>

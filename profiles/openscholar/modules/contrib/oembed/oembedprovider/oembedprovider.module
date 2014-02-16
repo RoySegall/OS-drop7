@@ -6,116 +6,78 @@
  */
 
 /**
+ * Implements hook_help().
+ */
+function oembedprovider_help($path, $arg) {
+  switch ($path) {
+    case 'admin/config/media/oembed/endpoint':
+      $output = '<p>'. t('This site is an oEmbed provider with a public endpoint.') .'</p>';
+      return $output;
+  }
+}
+
+/**
+ * Implements hook_hook_info().
+ *
+ * @return string
+ */
+function oembedprovider_hook_info() {
+  $hooks['oembedprovider_formats_alter'] = array(
+    'group' => 'oembed',
+  );
+}
+
+/**
  * Implements hook_menu().
  */
 function oembedprovider_menu() {
   $menu = array();
 
-  $handler = array(
+  $menu['oembed/endpoint'] = array(
     'type' => MENU_CALLBACK,
     'file' => 'oembedprovider.inc',
     'page callback' => '_oembedprovider_handle_request',
-    'page arguments' => array(2),
     'access arguments' => array('access content'),
+    'delivery callback' => 'oembedprovider_deliver_response',
   );
 
-  $menu['oembed/endpoint'] = $menu['oembed/endpoint/%'] = $handler;
+  $menu['admin/config/media/oembed/endpoint'] = array(
+    'title' => 'Public endpoint',
+    'description' => 'Settings for oEmbed endpoint',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('oembedprovider_settings'),
+    'file' => 'oembedprovider.admin.inc',
+    'type' => MENU_LOCAL_TASK,
+    'access arguments' => array('administer site configuration'),
+  );
 
   return $menu;
 }
 
 /**
- * Implements hook_theme().
+ * Implement hook_ctools_plugin_directory().
  */
-function oembedprovider_theme() {
-  $themes = array();
-  $themes['oembed_node'] = array(
-    'arguments' => array(
-      'node' => NULL,
-    ),
-  );
-  return $themes;
-}
-
-/**
- * The default provider to handle nodes
- *
- * @param string $url
- * @param array $matches
- */
-function oembedprovider_node_provider($provider, $url, $matches) {
-  module_load_include('inc', 'oembedprovider');
-  return _oembedprovider_node_provider($provider, $url, $matches);
-}
-
-/**
- * Default theme implementation for oembed_node. We just mirror the node_view function
- * and pass everything on to the node template.
- *
- * @param object $node
- * @return string
- *  The html representation of the node
- */
-function theme_oembed_node($vars) {
-  $node = $vars['node'];
-  $build = node_view($node);
-  return drupal_render($build);
-}
-
-/**
- * Implements hook_oembedprovider().
- *
- * @return array
- */
-function oembedprovider_oembedprovider() {
-  $base_url = url('', array('absolute' => TRUE)) . 'node/*';
-  return array(
-    $base_url => array(
-      'callback' => 'oembedprovider_node_provider',
-    ),
-  );
-}
-
-/**
- * Returns all the registered response formats
- *
- * @return array
- */
-function oembedprovider_formats($reset = FALSE) {
-  $formats = &drupal_static(__FUNCTION__, array());
-
-  if (!$formats) {
-    $cache_key = 'oembedprovider:formats';
-
-    if (!$reset && ($cache = cache_get($cache_key)) && isset($cache->data)) {
-      $formats = $cache->data;
-    }
-    else {
-      $formats = array(
-        'json' => array(
-          'mime' => 'text/javascript',
-          'callback' => '_oembedprovider_formats_json',
-        ),
-        'xml' => array(
-          'mime' => 'text/xml',
-          'callback' => '_oembedprovider_formats_xml',
-        ),
-      );
-      drupal_alter('oembedprovider_formats', $formats);
-
-      cache_set($cache_key, $formats);
-    }
+function oembedprovider_ctools_plugin_directory($module, $plugin) {
+  if ($module == 'oembed' && $plugin == 'providers') {
+    return 'plugins/' . $plugin;
   }
-
-  return $formats;
 }
 
+
 /**
- * Implements hook_oembedprovider_formats_alter().
+ * Merges a result with some standard values.
+ *
+ * @param string $type
+ * @param array $result
  */
-function oembedprovider_oembedprovider_formats_alter(&$formats) {
-  $formats['jsonp'] = array(
-    'mime' => 'text/javascript',
-    'callback' => '_oembedprovider_formats_jsonp',
+function _oembedprovider_result($type, $props) {
+  $defaults = array(
+    'type' => $type,
+    'version' => '1.0',
+    'provider_name' => variable_get('site_name', ''),
+    'width' => 0,
+    'height' => 0,
   );
+  $result = array_merge($defaults, $props);
+  return $result;
 }

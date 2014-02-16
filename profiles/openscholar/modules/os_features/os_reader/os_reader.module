@@ -281,6 +281,11 @@ function os_reader_os_app_info() {
       'reader' => array('page'),
     ),
     'searchable' => FALSE,
+    'importers' => array(
+      'feed' => array(
+        'csv' => 'os_feed',
+      ),
+    ),
   );
 
   return $apps;
@@ -448,6 +453,7 @@ function os_reader_copy_feed_item_to_news($feed, $vsite) {
     $file = FALSE;
     $doc = new DOMDocument();
 
+    // todo: use os_copy_file();
     try {
       if ($feed->description) {
         $doc->loadHTML($feed->description);
@@ -614,4 +620,33 @@ function os_reader_get_feed_item_by_nid($nid) {
     ->execute();
 
   return !empty($result['os_feed_item']);
+}
+
+/**
+ * Implements hook_cron().
+ */
+function os_reader_cron() {
+  $id = variable_get('os_reader_last_feed_item', 0);
+
+  // Get all the orphans feed items which older then 1 month.
+  $query = db_select('os_feed_item', 'ofi');
+  $query->leftJoin('og_membership', 'ogm', 'ogm.etid = ofi.id');
+  $results = $query
+    ->fields('ofi', array('id'))
+    ->condition('ofi.id', 0, '>')
+    ->condition('ofi.created', strtotime("1 month ago"), '<')
+    ->condition('ofi.id', $id, '>=')
+    ->isNull('ogm.etid')
+    ->range(0, 500)
+    ->orderBy('ofi.created', 'DESC')
+    ->execute()
+    ->fetchAllAssoc('id');
+
+  if (empty($results)) {
+    return;
+  }
+
+  // Delete the feed items and save the last one we processed.
+  os_reader_feed_item_delete_multiple(array_keys($results));
+  variable_set('os_reader_last_feed_item', end($results)->id);
 }

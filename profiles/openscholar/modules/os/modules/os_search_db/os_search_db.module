@@ -25,9 +25,13 @@ function os_search_db_block_view($delta = ''){
   $block = array();
   switch ($delta) {
   	case 'site-search' :
-  	  $block['subject'] = NULL;
-  	  $block['content'] = drupal_get_form('search_block_form');
-  	  return $block;
+      // The db-search block will be displayed in the front page when Solr is
+      //  not running or on other pages as needed (e.g in widgets).
+      if (!module_exists('os_search_solr') && drupal_is_front_page() || !drupal_is_front_page()) {
+        $block['subject'] = NULL;
+        $block['content'] = drupal_get_form('search_block_form');
+      }
+      return $block;
 
   	default:
   	  break;

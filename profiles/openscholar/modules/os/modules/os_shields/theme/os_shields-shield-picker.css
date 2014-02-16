@@ -6,7 +6,6 @@
 .item-shield-picker {
   border: white solid 2px;
   padding: 18px;
-  height: 90px;
 }
 
 .item-shield-picker.active {

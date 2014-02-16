@@ -99,6 +99,130 @@ function os_news_strongarm() {
   $strongarm = new stdClass();
   $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
   $strongarm->api_version = 1;
+  $strongarm->name = 'nodeformscols_field_placements_news_default';
+  $strongarm->value = array(
+    'title' => array(
+      'region' => 'main',
+      'weight' => '0',
+      'has_required' => TRUE,
+      'title' => 'Title',
+    ),
+    'actions' => array(
+      'region' => 'footer',
+      'weight' => '14',
+      'has_required' => FALSE,
+      'title' => 'Save',
+      'hidden' => 0,
+    ),
+    'body' => array(
+      'region' => 'main',
+      'weight' => '2',
+      'has_required' => FALSE,
+      'title' => 'Body',
+      'hidden' => 0,
+    ),
+    'field_news_date' => array(
+      'region' => 'main',
+      'weight' => '1',
+      'has_required' => TRUE,
+      'title' => 'Date',
+    ),
+    'field_photo' => array(
+      'region' => 'main',
+      'weight' => '3',
+      'has_required' => FALSE,
+      'title' => 'Photo',
+      'hidden' => 0,
+    ),
+    'field_upload' => array(
+      'region' => 'main',
+      'weight' => '4',
+      'has_required' => FALSE,
+      'title' => 'Attach Files',
+      'hidden' => 0,
+    ),
+    'field_url' => array(
+      'region' => 'main',
+      'weight' => '5',
+      'has_required' => FALSE,
+      'title' => 'Redirect',
+      'hidden' => 0,
+    ),
+    'og_group_ref' => array(
+      'region' => 'main',
+      'weight' => '6',
+      'has_required' => FALSE,
+      'title' => NULL,
+      'hidden' => 0,
+    ),
+    'og_vocabulary' => array(
+      'region' => 'main',
+      'weight' => '7',
+      'has_required' => FALSE,
+      'title' => NULL,
+      'hidden' => 0,
+    ),
+    'revision_information' => array(
+      'region' => 'right',
+      'weight' => '5',
+      'has_required' => FALSE,
+      'title' => 'Revision information',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'author' => array(
+      'region' => 'right',
+      'weight' => '4',
+      'has_required' => FALSE,
+      'title' => 'Authoring information',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'options' => array(
+      'region' => 'right',
+      'weight' => '1',
+      'has_required' => FALSE,
+      'title' => 'Publishing options',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'comment_settings' => array(
+      'region' => 'right',
+      'weight' => '6',
+      'has_required' => FALSE,
+      'title' => 'Comment settings',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'path' => array(
+      'region' => 'right',
+      'weight' => '2',
+      'has_required' => FALSE,
+      'title' => 'URL path settings',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'os_menu' => array(
+      'region' => 'right',
+      'weight' => '3',
+      'has_required' => FALSE,
+      'title' => 'Menu settings',
+      'collapsed' => 1,
+      'hidden' => 0,
+    ),
+    'actions_top' => array(
+      'region' => 'right',
+      'weight' => '0',
+      'has_required' => FALSE,
+      'title' => 'Save',
+      'hidden' => 0,
+    ),
+  );
+  $export['nodeformscols_field_placements_news_default'] = $strongarm;
+
+  $strongarm = new stdClass();
+  $strongarm->disabled = FALSE; /* Edit this to true to make a default strongarm disabled initially */
+  $strongarm->api_version = 1;
   $strongarm->name = 'node_options_news';
   $strongarm->value = array(
     0 => 'status',

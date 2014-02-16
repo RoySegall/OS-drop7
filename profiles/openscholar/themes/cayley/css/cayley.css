@@ -11,6 +11,25 @@
 body {
   color:#37352B;
   }
+  
+/* MANAGE THE BACKGROUND */
+.two-sidebars #columns,
+.two-sidebars #footer {
+	background:url('../images/footer_2sdbars.gif') repeat-y;
+} 
+.one-sidebar.sidebar-first #columns,
+.one-sidebar.sidebar-first #footer {
+	background:url('../images/footer_1sdbar_left.gif') repeat-y;
+} 
+.one-sidebar.sidebar-second #columns,
+.one-sidebar.sidebar-second #footer {
+	background:url('../images/footer_1sdbar_right.gif') repeat-y;
+} 
+.no-sidebars #columns,
+.no-sidebars #footer {
+	background:#F8F7EE;
+}  
+
 
 /* TYPOGRAPHY*/
 .biblio-title a, .biblio-title-chicago a,
@@ -117,12 +136,6 @@ body.header-left-main-right #header-container {
 
 #columns {padding:0;}
 
-#content-column, .region-sidebar-first, .region-sidebar-second {
-margin-bottom: -3000px;
-padding-bottom: 3000px;
-}
-
-#columns {overflow:hidden;}
 
 /*SIDEBAR ELEMENTS */
 
@@ -266,23 +279,6 @@ body.one-sidebar .region-sidebar-first {
   padding-top: 0;
   }
   
- 
-.two-sidebars #footer {
-	background:url('../images/footer_2sdbars.gif') repeat-y;
-} 
-
-.one-sidebar.sidebar-first #footer {
-	background:url('../images/footer_1sdbar_left.gif') repeat-y;
-} 
-
-.one-sidebar.sidebar-second #footer {
-	background:url('../images/footer_1sdbar_right.gif') repeat-y;
-} 
-
-.no-sidebars #footer {
-	background:#F8F7EE;
-} 
-
 
 #footer .wrap {
   padding: 0 30px;

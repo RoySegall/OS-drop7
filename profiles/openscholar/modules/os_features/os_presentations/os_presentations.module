@@ -23,6 +23,19 @@ function os_presentations_os_app_info() {
     'views tabs' => array(
       'os_presentations' => array('page'),
     ),
+    'importers' => array(
+      'presentation' => array(
+        'csv' => 'os_presentation',
+      ),
+    ),
+    'browse_pages' => array(
+      'presentation' => array(
+        'url' => 'browse/presentations',
+        'title' => t('Presentations'),
+        'display_mode' => 'teaser',
+        'menu_item' => 'presentations',
+      ),
+    ),
   );
 
   return $apps;
@@ -74,4 +87,14 @@ function os_presentations_form_node_form_alter(&$form, &$form_state, $form_id) {
   );
   // Unsets the original field item to avoid duplicate form items.
   unset($form['field_upload']);
+}
+
+
+/**
+ * Implements hook_os_entity_view_modes_alter
+ *
+ * Presentation teaser is one line long.  Sliding teaser makes no sense.
+ **/
+function os_presentations_os_entity_view_modes_alter(&$info) {
+  $info['node']['presentation'] = array_diff($info['node']['presentation'], array('slide_teaser'));
 }

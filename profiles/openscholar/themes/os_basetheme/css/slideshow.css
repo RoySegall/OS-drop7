@@ -205,7 +205,14 @@ a.rslides_nav.prev {
  #layout_3_1_overlay .rslides_tabs li {
     background: #000;
 }
+ 
+#layout_3_1_overlay .slide-copy h2 {
+margin-bottom: 0;
+}
 
+#layout_3_1_overlay .slide-copy h2 + p {
+    margin-top: 3%;
+}
 
 .one-sidebar #layout_3_1_overlay .slide-copy h2 {
     font-size: 24px;
@@ -271,10 +278,6 @@ line-height:24px;
 
 /** 16.9 OVERLAY **/
 	
-#layout_16_9_overlay {
-	margin-bottom:-40px;
-}
-
 #layout_16_9_overlay .slide {
     padding: 0 !important;
     z-index: 1;

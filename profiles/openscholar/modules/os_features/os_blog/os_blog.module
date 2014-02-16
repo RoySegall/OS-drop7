@@ -31,6 +31,14 @@ function os_blog_os_app_info() {
         'rss' => 'blog_import',
       ),
     ),
+    'browse_pages' => array(
+      'blog' => array(
+        'url' => 'browse/blogs',
+        'title' => t('Blog'),
+        'display_mode' => 'teaser',
+        'menu_item' => 'blog',
+      ),
+    ),
   );
 
   return $apps;
@@ -45,6 +53,12 @@ function os_blog_process_node(&$vars) {
   if ($vars['type'] !== 'blog') {
     return;
   }
+  
+  if ($vars['view_mode'] == 'title') {
+    unset($vars['submitted']);
+    return;
+  }
+  
   // Builds the submitted variable used by default in node templates
   $pubdate = format_date($vars['created'], 'custom', 'F j, Y');
   // Publication date, formatted with time element

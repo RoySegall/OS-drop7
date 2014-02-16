@@ -54,7 +54,7 @@ function harvard_activity_reports_query_user_by_id($hash_id)  {
  */
 function harvard_activity_reports_query_user_by_site($site_url) {
   // Make sure the site URL is with http.
-  $site_url = str_replace('https://', 'http://', $site_url);
+  $site_url = rtrim(str_replace('https://', 'http://', $site_url), '/');
   $parse_url = parse_url($site_url);
 
   if (empty($parse_url['host'])) {

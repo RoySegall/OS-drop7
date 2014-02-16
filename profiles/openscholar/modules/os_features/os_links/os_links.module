@@ -22,6 +22,19 @@ function os_links_os_app_info() {
     'views tabs' => array(
       'os_links' => array('page'),
     ),
+    'importers' => array(
+      'link' => array(
+        'csv' => 'os_links',
+      ),
+    ),
+    'browse_pages' => array(
+      'link' => array(
+        'url' => 'browse/links',
+        'title' => t('Links'),
+        'display_mode' => 'teaser',
+        'menu_item' => 'links',
+      ),
+    ),
   );
 
   return $apps;
@@ -33,18 +46,38 @@ function os_links_os_app_info() {
  * Removes the username from $submitted info on blog type nodes.
  */
 function os_links_process_node(&$vars) {
-  if ($vars['type'] !== 'link' || (int)$vars['teaser'] !== 1) {
+  if ($vars['type'] !== 'link' || (!in_array($vars['view_mode'], array('links', 'full')) && !$vars['teaser'])) {
     return;
   }
 
   // Changes the title URL destination from node alias to link field URL.
-  $field_name = 'field_links_link';
-  $items = field_get_items('node', $vars['node'], $field_name);
+  $items = field_get_items('node', $vars['node'], 'field_links_link');
   // Build the URL, including any url queries & fragments.
   $vars['node_url'] = url($items[0]['url'], array('query' => isset($items[0]['query']) ? $items[0]['query'] : NULL,
     'fragment' => isset($items[0]['fragment']) ? $items[0]['fragment'] : NULL
     )
   );
+}
+
+/**
+ * Implements hook_entity_info_alter().
+ *
+ * Adds a view mode that shows links as links rather than links to pages containing links
+ */
+function os_links_entity_info_alter(&$info) {
+  $info['node']['view modes']['links'] = array(
+    'label' => t('Links'),
+    'custom settings' => TRUE,
+  );
+}
+
+/**
+ * Implements hook_os_entity_view_modes()
+ */
+function os_links_os_entity_view_modes() {
+  return array('node' =>
+    array('link' => array('links')
+  ));
 }
 
 /**

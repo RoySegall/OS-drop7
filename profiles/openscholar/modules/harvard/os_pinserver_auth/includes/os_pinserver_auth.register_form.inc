@@ -54,7 +54,7 @@ function os_pinserver_auth_vsite_register_form_page() {
 function os_pinserver_auth_register_access() {
   // Just override vsite_vsite_exists_access() -- handle actual access check in
   // os_pinserver_auth_vsite_register_form_page().
-  return TRUE;
+  return variable_get('os_pinserver_registration', FALSE);
 }
 
 /**

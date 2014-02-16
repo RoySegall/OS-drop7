@@ -2,7 +2,7 @@ name = OpenScholar
 description = A full-featured site-creation package designed for the academic community. A single OpenScholar installation can host thousands of personal or project sites.
 version = VERSION
 core = 7.x
-os_version = 7.x-3.9
+os_version = 7.x-3.10
 
 files[] = openscholar.profile
 files[] = openscholar.install
@@ -40,11 +40,14 @@ dependencies[] = date
 dependencies[] = date_ical
 dependencies[] = entity
 dependencies[] = feeds
+dependencies[] = html_title
+dependencies[] = title
 dependencies[] = token
 dependencies[] = pathauto
 dependencies[] = biblio
 dependencies[] = advanced_help
 dependencies[] = jquery_update
+dependencies[] = redirect
 
 ; media / files / wysiwyg
 dependencies[] = imagefield_crop
@@ -56,6 +59,8 @@ dependencies[] = wysiwyg
 dependencies[] = wysiwyg_filter
 dependencies[] = media_internet
 dependencies[] = media_oembed
+dependencies[] = media_draggable
+dependencies[] = oembedprovider
 
 ; media custom
 dependencies[] = media_embed
@@ -70,6 +75,7 @@ dependencies[] = restws
 ; boxes
 dependencies[] = views_slideshow_cycle
 dependencies[] = os_mailchimp
+dependencies[] = os_slideshow
 
 ; OS
 dependencies[] = os
@@ -87,6 +93,11 @@ dependencies[] = os_ga
 dependencies[] = os_wysiwyg_link
 dependencies[] = os_tour
 dependencies[] = os_importer
+dependencies[] = os_front
+dependencies[] = citation_distribute
+dependencies[] = os_slideshow
+dependencies[] = os_breadcrumbs
+dependencies[] = os_front
 
 ; Control Panel
 dependencies[] = cp
@@ -125,6 +136,11 @@ dependencies[] = password_policy
 dependencies[] = shorten
 dependencies[] = respondjs
 dependencies[] = views_infinite_scroll
+dependencies[] = web_widgets
+dependencies[] = metatag
+dependencies[] = metatag_opengraph
+dependencies[] = metatag_twitter_cards
+dependencies[] = nodeformcols
 
 files[] = openscholar.profile
 

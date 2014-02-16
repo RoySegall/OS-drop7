@@ -146,6 +146,6 @@ function os_wysiwyg_link_filter($text) {
  */
 function _os_wysiwyg_link_find_links($str) {
   $matches = array();
-  preg_match_all('~<a[^>]+href="([^"]+)"[^>]+data-(fid|url)="([^"]*)">[^<]*<\/a>~', $str, $matches, PREG_SET_ORDER);
+  preg_match_all('~<a[^>]+href="([^"]+)"[^>]+data-(fid|url)="([^"]*)">~', $str, $matches, PREG_SET_ORDER);
   return $matches;
 }

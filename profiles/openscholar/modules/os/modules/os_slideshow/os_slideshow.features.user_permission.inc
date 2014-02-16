@@ -10,61 +10,52 @@
 function os_slideshow_user_default_permissions() {
   $permissions = array();
 
-  // Exported permission: create slideshow_slide content.
+  // Exported permission: 'create slideshow_slide content'.
   $permissions['create slideshow_slide content'] = array(
     'name' => 'create slideshow_slide content',
     'roles' => array(
-      0 => 'administrator',
-      1 => 'manager',
-      2 => 'vsite admin',
-      3 => 'vsite user',
-      4 => 'content editor',
+      'administrator' => 'administrator',
+      'manager' => 'manager',
     ),
     'module' => 'node',
   );
 
-  // Exported permission: delete any slideshow_slide content.
+  // Exported permission: 'delete any slideshow_slide content'.
   $permissions['delete any slideshow_slide content'] = array(
     'name' => 'delete any slideshow_slide content',
     'roles' => array(
-      0 => 'administrator',
-      1 => 'manager',
+      'administrator' => 'administrator',
+      'manager' => 'manager',
     ),
     'module' => 'node',
   );
 
-  // Exported permission: delete own slideshow_slide content.
+  // Exported permission: 'delete own slideshow_slide content'.
   $permissions['delete own slideshow_slide content'] = array(
     'name' => 'delete own slideshow_slide content',
     'roles' => array(
-      0 => 'administrator',
-      1 => 'manager',
-      2 => 'vsite admin',
-      3 => 'vsite user',
-      4 => 'content editor',
+      'administrator' => 'administrator',
+      'manager' => 'manager',
     ),
     'module' => 'node',
   );
 
-  // Exported permission: edit any slideshow_slide content.
+  // Exported permission: 'edit any slideshow_slide content'.
   $permissions['edit any slideshow_slide content'] = array(
     'name' => 'edit any slideshow_slide content',
     'roles' => array(
-      0 => 'administrator',
-      1 => 'manager',
+      'administrator' => 'administrator',
+      'manager' => 'manager',
     ),
     'module' => 'node',
   );
 
-  // Exported permission: edit own slideshow_slide content.
+  // Exported permission: 'edit own slideshow_slide content'.
   $permissions['edit own slideshow_slide content'] = array(
     'name' => 'edit own slideshow_slide content',
     'roles' => array(
-      0 => 'administrator',
-      1 => 'manager',
-      2 => 'vsite admin',
-      3 => 'vsite user',
-      4 => 'content editor',
+      'administrator' => 'administrator',
+      'manager' => 'manager',
     ),
     'module' => 'node',
   );

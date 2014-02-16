@@ -234,6 +234,29 @@ div.ctools-modal-content .modal-content .modal-throbber-wrapper img {
   margin-top: 160px;
 }
 
+.helper {
+	margin-top: 10px;
+	display: block;
+		}
+		
+		
+
+.downarrow {
+	padding-right: 12px;
+	background: url('../../../themes/os_basetheme/images/scholarbase-sprite.png') 0 -553px no-repeat;
+}
+
+.helper.columns {
+	width: 968px !important;
+		}
+		
+.helper.columns .downarrow {
+	background-position: 51px -553px;
+		}
+	
+.formlabel {color: #444;
+font-size: 12px;
+font-weight: bold;}
 
 /** OVERLAY MODAL OVERRIDES **/
 	
@@ -309,11 +332,19 @@ table.spaces td.option, table.spaces td.storage {
     border-top: 2px solid #C4C2C2;
     height: 25px;
     text-transform:uppercase;
-    }
-    
+}
+
+#edit-menu-table .section-heading a {
+    text-transform: none;
+    margin-left: 1em;
+}
+
+#edit-menu-table .section-heading .add-new-link {
+    margin-left: 0;
+}
 
 #edit-menu-table td:first-child {
-    width: 70%;
+    width: 40%;
 }
  
  
@@ -487,3 +518,113 @@ fieldset#edit-biblio-authors .fieldset-legend {
 	margin-top: 0;
 	text-transform: none;
 }
+
+/**
+ * Media Browser tweaks
+ */
+.ui-front {
+  z-index: 1000;
+}
+
+/** STYLE IMPROVEMENTS BASED ON MOCKUP https://d2r1vs3d9006ap.cloudfront.net/s3_images/1010882/pubform_expanded.png **/
+
+.node-form .form-region-right {
+     border-left: 1px dotted #777777;
+     padding-left: 15px;
+     width: 27%;
+}
+
+
+form.node-form .form-region-main input a,
+.node-form .form-region-right .node-form-options a {
+     color:#0074BD;
+}
+
+form.node-form .form-region-right input.form-text{
+    width: 85% !important;
+   
+}
+
+form.node-form .form-region-main input.form-text {
+   max-width: 85%;
+   }
+
+form.node-form.overlay-processed .form-region-right fieldset {
+     background: none repeat scroll 0% 0% transparent;
+     border: medium none;
+     margin: 1em 0px;
+     padding: 2.7em 0px 0.1em;
+     width: 100%;
+}
+
+form.node-form.overlay-processed .form-region-right fieldset legend {
+     background: none repeat scroll 0% 0% #F1F1F1;
+}
+
+form.node-form.overlay-processed .form-region-right .fieldset-legend span.summary {
+     color: #777;
+     display: block;
+     font-size: 0.8em;
+     margin-left: 0px;
+}
+
+
+html.js .form-region-right  fieldset.collapsible .fieldset-legend,
+form.node-form.overlay-processed .form-region-right  fieldset.collapsed .fieldset-legend {
+     background: url("../../../../../misc/menu-collapsed.png") no-repeat scroll 5px 8px #F5F5F5;
+     display: block;
+     font-weight: normal;
+     line-height: 13px;
+     min-height: 25px;
+     padding: 6px 15px 4px;
+     text-transform: none;
+     width: 89%;
+}
+
+html.js .form-region-right  fieldset.collapsible .fieldset-legend {
+    background: url("../../../../../misc/menu-expanded.png") no-repeat scroll 5px 9px #F5F5F5;
+ 
+}
+
+
+form.node-form.overlay-processed .form-region-right .fieldset-title {
+     font-size: 1.08em;
+}
+
+form.node-form.overlay-processed {
+     border: medium none;
+}
+
+form.node-form.overlay-processed .form-region-right .fieldset-wrapper {
+     border-bottom: 1px solid #CCCCCC;
+     border-left: 1px solid #CCCCCC;
+     border-right: 1px solid #CCCCCC;
+     padding-top: 15px;
+     width: 89%;
+}
+
+
+.form-region-right .field-prefix {
+line-height: 15px;
+display: block;
+max-width: 85%;
+word-wrap: break-word;
+font-size: 11px;
+}
+
+.delete-subtheme a {
+  background: url('../../os_basetheme/images/scholarbase-sprite.png') 0 -606px no-repeat;
+  padding-left: 17px;
+}
+
+.zip-pull-button a {
+  background: url('../../os_basetheme/images/scholarbase-sprite.png') 0 -620px no-repeat #0a4476;
+  padding: 15px 7px 8px 22px;
+
+}
+
+.git-pull-button a {
+  background: url('../../os_basetheme/images/scholarbase-sprite.png') 0 -651px no-repeat #0a4476;
+  padding: 15px 7px 8px 22px;
+}
+

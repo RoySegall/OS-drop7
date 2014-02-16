@@ -82,17 +82,37 @@ class os_boxes_media extends os_boxes_default {
     if ($file = file_load($this->options['fid'])) {
       if (!empty($this->options['maxwidth'])) {
         if (isset($file->image_dimensions)) {
+          // this is an image, so we have the dimensions for it and need to scale it down
           $ratio = $file->image_dimensions['height'] / $file->image_dimensions['width'];
           $file->image_dimensions['height'] = $ratio * $this->options['maxwidth'];
           $file->image_dimensions['width'] = $this->options['maxwidth'];
         }
         else {
-          $file->override['width'] = $this->options['maxwidth'];
-          $file->override['height'] = 0;
+          // override both maxwidth and width just in case
+          $file->override['maxwidth'] = $file->override['width'] = $this->options['maxwidth'];
+          // setting this to 0 enforces the aspect ratio for oembed
+          // without it, the oembed would be taller than normal
+          // it's ignored for iframe-type embeds.
+          $file->override['maxheight'] = $file->override['height'] = 0;
         }
       }
 
       $render = file_view($file, 'full');
+      if (isset($render['file']['file-info'])) {
+        $render['file'] = $render['file']['file-info']['file'];
+      }
+      
+      if (isset($file->oembed) && $file->oembed['provider'] == 'box') {
+        $render['file']['#attached']['js'][] = drupal_get_path('module', 'os_boxes').'/plugins/os_boxes_media/os_boxes_media.box_oembed.js';
+        $render['file']['#attached']['js'][] = array(
+          'type' => 'setting',
+          'data' => array(
+            'osBoxesOembedMedia' => array(
+              $this->delta => $file->oembed['widget_type']
+            )
+          )
+        );
+      }
       $block['content'] = drupal_render($render);
     }
     else {

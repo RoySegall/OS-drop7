@@ -10,9 +10,9 @@ files[] = plugins/views/fb_social_handler_field.inc
 files[] = plugins/export_ui/fb_social_presets_ui.inc
 
 
-; Information added by drush on 2013-12-02
+; Information added by drush on 2014-02-16
 version = "7.x-2.0-beta4+1-dev"
 core = "7.x"
 project = "fb_social"
-datestamp = "1385971804"
+datestamp = "1392540019"
 

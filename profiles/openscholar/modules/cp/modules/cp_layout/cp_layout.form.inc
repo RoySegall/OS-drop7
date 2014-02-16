@@ -29,7 +29,7 @@ function cp_layout_full_form($form, $form_state){
   if (isset($contexts[$current])) {
     $form['context_selection'] = array(
       '#type' => 'select',
-      '#title' => t('Site Section'),
+      '#title' => t('Site section:'),
       '#options' => $contexts,
       '#default_value' => $current,
       '#multiple' => false
@@ -49,7 +49,7 @@ function cp_layout_full_form($form, $form_state){
   if (!file_exists($layout_css)) {
     $form['layout_selection'] = array(
       '#type' => 'markup',
-      '#markup' => ctools_modal_text_button(t('Change Layout'), 'cp/build/layout/nojs/select', t('Change your layout'), 'cp-layout-change')
+      '#markup' => ctools_modal_text_button(t('Change layout'), 'cp/build/layout/nojs/select', t('Change your layout'), 'cp-layout-change')
     );
 
     include_once(drupal_get_path('theme', 'adaptivetheme') . '/inc/get.inc');

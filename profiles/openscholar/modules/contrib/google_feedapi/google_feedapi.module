@@ -15,6 +15,7 @@ function google_feedapi_field_formatter_info() {
       'settings' => array(
         'num_to_show' => 10,
         'show_content' => TRUE,
+        'time_display' => 'relative',
         'content_summary' => FALSE,
       ),
     ),
@@ -63,6 +64,15 @@ function google_feedapi_field_formatter_settings_form($field, $instance, $view_m
     '#default_value' => $settings['show_content'],
   );
 
+  $element['time_display'] = array(
+    '#type' => 'select',
+    '#title' => t('Feed item date/time display'),
+    '#options' => array('0' => "--None--", 'relative' => t("Relative (5 minutes ago)"), 'formal' => "Date (August 21, 2013)"),
+    '#required' => FALSE,
+    '#default_value' => $settings['time_display'],
+    '#description' => t('Select the way you wish the feeds time to be displayed.')
+  );
+
   $element['content_summary'] = array(
     '#title' => t('Show Content Summary'),
     '#description' => t('Show a short summary of the feed content if avalible.'),
@@ -98,6 +108,7 @@ function google_feedapi_field_formatter_view($entity_type, $entity, $field, $ins
           'num_to_show' => $display['settings']['num_to_show'],
           'content_summary' => $display['settings']['content_summary'],
           'show_content' => $display['settings']['show_content'],
+          'time_display' => $display['settings']['time_display'],
         )),
     );
   }
@@ -120,6 +131,7 @@ function google_feedapi_theme() {
         'num_to_show' => NULL,
         'content_summary' => NULL,
         'show_content' => NULL,
+        'time_display' => NULL,
       ),
     ),
   );

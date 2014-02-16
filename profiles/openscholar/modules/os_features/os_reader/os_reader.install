@@ -93,5 +93,149 @@ function os_reader_update_7000() {
  */
 function os_reader_update_7001() {
   $schema = os_reader_schema();
-  db_add_field('os_feed_item', 'importer_type', $schema['os_feed_item']['fields']['importer_type']);
+  if(!db_field_exists('os_feed_item', 'importer_type')){
+    db_add_field('os_feed_item', 'importer_type', $schema['os_feed_item']['fields']['importer_type']);
+  }
+}
+
+/**
+ * Adding field group reference to the feed importer entity.
+ */
+function os_reader_update_7002() {
+  $og_field = og_fields_info(OG_AUDIENCE_FIELD);
+  // Enable Entity reference prepopulate.
+  $og_field['instance']['settings']['behaviors']['prepopulate'] = array(
+    'status' => TRUE,
+    'action' => 'hide',
+    'fallback' => 'hide',
+    'skip_perm' => FALSE,
+    'og_context' => TRUE,
+    'action_on_edit' => TRUE
+  );
+  og_create_field(OG_AUDIENCE_FIELD, 'os_feed_item', 'feed_item', $og_field);
+}
+
+/**
+ * Remove duplicate feed importers items.
+ */
+function os_reader_update_7003(&$sandbox) {
+  if (!isset($sandbox['total'])) {
+    // count all the importers.
+    $sandbox['progress'] = 0;
+
+    $query = new EntityFieldQuery();
+    $sandbox['total'] = $query
+      ->entityCondition('entity_type', 'os_feed_item')
+      ->count()
+      ->execute();
+  }
+  $batch = 750;
+
+  $last_feed = isset($sandbox['feed_id']) ? $sandbox['feed_id'] : 0;
+
+  // Get only the feed items which not yet imported.
+  $query = new EntityFieldQuery();
+  $results = $query
+    ->entityCondition('entity_type', 'os_feed_item')
+    ->propertyOrderBy('id')
+    ->propertyOrderBy('title')
+    ->propertyCondition('id', $last_feed, '>=')
+    ->range(0, $batch)
+    ->execute();
+
+  if (!empty($results['os_feed_item'])) {
+    // We found items to process.
+    $feed_items = os_reader_feed_item_load_multiple(array_keys($results['os_feed_item']));
+    _os_reader_update_7003($feed_items, $sandbox['unique'], $sandbox['feed_id']);
+
+    if (drupal_is_cli()) {
+      // Display message when running the update via drush.
+      $params = array(
+        '@start' => $last_feed,
+        '@end' => $sandbox['feed_id'],
+      );
+      drush_log(dt('Delete feed items between @start to @end', $params), 'success');
+    }
+  }
+
+  // Increase the progress.
+  $sandbox['progress'] += $batch;
+
+  if ($sandbox['progress'] > $sandbox['total']) {
+    // The total results amount is smaller then the amount we processed in a
+    // single batch. After a single batch we can set the finished to true.
+    $sandbox['#finished'] = 1;
+  }
+  else {
+    // Save the last node, increase the node and check if the import finished.
+    $sandbox['#finished'] = ($sandbox['progress'] / $sandbox['total']);
+  }
+}
+
+/**
+ * Helper function; Delete duplicate feeds items and set the unique items as a
+ * group content.
+ *
+ * @param $feed_items
+ *  The loaded feed items objects to process in the current batch.
+ * @param $unique
+ *  The sandbox variable of the current batch.
+ * @param $feed_item_id
+ *  The last feed item id we processed.
+ */
+function _os_reader_update_7003($feed_items, &$unique, &$feed_item_id) {
+  $delete = array();
+
+  foreach ($feed_items as $feed_item) {
+    $wrapper = entity_metadata_wrapper('os_feed_item', $feed_item);
+
+    if (!isset($unique[$feed_item->importer_nid])) {
+      $unique[$feed_item->importer_nid] = array();
+    }
+
+    if (in_array($feed_item->title, $unique[$feed_item->importer_nid])) {
+      // Delete only feed item which are duplicate and not imported.
+      $delete[] = $feed_item->id;
+    }
+    else {
+      // Set the OG group ref field of this feed to the group which the node
+      // importer belong to.
+      $unique[$feed_item->importer_nid][] = $feed_item->title;
+
+      try {
+        $gid = $wrapper->importer_nid->{OG_AUDIENCE_FIELD}->get(0)->getIdentifier();
+        $wrapper->{OG_AUDIENCE_FIELD}->set(array($gid));
+        $wrapper->save();
+      } catch (Exception $e) {
+        $text = 'Group the feed item ' . $feed_item->title . '( ' . $feed_item->id . ') failed due to: ' . $e->getMessage();
+        watchdog('OS importer', $text);
+      }
+    }
+
+    $feed_item_id = $feed_item->id;
+  }
+
+  // Delete all the feeds importers.
+  if ($delete) {
+    // Delete the entities.
+    db_delete('os_feed_item')
+      ->condition('id', $delete, 'IN')
+      ->execute();
+
+    foreach (array('field_vsites_reference', 'field_nodes_reference') as $field) {
+      $field_info = field_info_field($field);
+      $table_name = _field_sql_storage_tablename($field_info);
+      $revision_name = _field_sql_storage_revision_tablename($field_info);
+
+      db_delete($table_name)
+        ->condition('entity_id', $delete, 'IN')
+        ->condition('entity_type', 'os_feed_item')
+        ->execute();
+
+      db_delete($revision_name)
+        ->condition('entity_id', $delete, 'IN')
+        ->condition('entity_type', 'os_feed_item')
+        ->execute();
+    }
+  }
 }

@@ -21,29 +21,31 @@ class os_shields_box extends os_boxes_default {
    * Implementation of boxes_content::options_form().
    */
   public function options_form(&$form_state){
-
-    //The shield List
-    $a_shields = variable_get('os_shields_shield_info', array());
-
-    if (count($a_shields)) {
+    $default_shield = FALSE;
+    if ($all_shields = variable_get('os_shields_shield_info', array())) {
       $shield_options = array();
-      $path_prefix = 'public://os_shields/';
-      foreach ($a_shields as $fname => $shield)  {
-        if (!$shield['hidden']) {
-          $shield = file_load($shield['fid']);
-          if (file_exists($shield->uri)) {
-            $shield_options[$shield->filename] = theme('os_shields_theme_shieldpicker', array('file' => $shield));
-          }
+      foreach ($all_shields as $file_name => $shield)  {
+        if ($shield['hidden']) {
+          // Shield should be hidden.
+          continue;
+        }
+
+        $shield_file = file_load($shield['fid']);
+        $shield_options[$shield_file->filename] = theme('os_shields_theme_shieldpicker', array('file' => $shield_file));
+
+        if (!empty($shield['default'])) {
+          $default_shield = $file_name;
         }
       }
+
+      $selected_shield = !empty($this->options['shield']) ? $this->options['shield'] : $default_shield;
 
       $form['shield'] = array(
         '#prefix' => '<div class="shield_wrapper clear-block">',
         '#title' => t('Shield'),
         '#type' => 'radios',
         '#options' => $shield_options,
-        '#default_value' => $this->options['shield'],
-        // use the spaces original value, which should always be set as long as a shield has been uploaded
+        '#default_value' => $this->get_shield(),
         '#suffix' => '</div>',
         '#attached' => array(
           'css' => array(
@@ -63,35 +65,66 @@ class os_shields_box extends os_boxes_default {
         '#suffix' => '</div>',
       );
     }
-  //END Shield List
 
     $form += parent::options_form($form_state);
     return $form;
   }
 
   /**
-   * Implementation of boxes_content::render().
+   * Implements boxes_content::render().
    */
   public function render() {
     if (module_exists('vsite') && !vsite_get_vsite()) {
       return;
     }
-    
-    //@todo
-    $block = parent::render();
-    $block['subject'] = $block['title'] = '';
 
-    $filename = isset($this->options['shield'])?$this->options['shield']:variable_get('os_shields_shield', '');
-    if ($filename && file_exists('public://os_shields/'.$filename)) {
-      $block['content'] = '<div id="scholar-shield"><img src="'.file_create_url('public://os_shields/'.$filename).'" alt="Shield" title="Shield" /> </div>';
+    $block = parent::render();
+    $block['title'] = $block['content'] = '';
+
+    $filename = $this->get_shield();
+
+    if ($filename && file_exists('public://os_shields/' . $filename)) {
+      $params = array(
+        'path' => 'public://os_shields/' . $filename,
+        'alt' => t('Shield'),
+      );
+      $image = theme('image', $params);
+      $block['content'] = '<div id="scholar-shield">' . $image . '</div>';
     }
-    else if (spaces_access_admin() && count(variable_get('os_shields_shield_info', array())) == 0) {
+    elseif (spaces_access_admin() && !variable_get('os_shields_shield_info', array())) {
       $block['content'] = t('No shields have been added to your install. Contact your site administrator or remove this widget to hide this message.');
     }
-    else {
-      $block ['content'] = ' ';
-    }
+
     return $block;
   }
 
+  /**
+   * Retruns the selected shield or a default one if exists.
+   */
+  protected function get_shield() {
+    if (!empty($this->options['shield']) && file_exists('public://os_shields/' . $this->options['shield'])) {
+      // Return the selected shield.
+      return $this->options['shield'];
+    }
+
+    if (($file_name = variable_get('os_shields_shield', '')) && file_exists('public://os_shields/' . $file_name)) {
+      // Return the default shield.
+      return $file_name;
+    }
+
+    // No selected shield, so select the one marked as "default".
+    foreach (variable_get('os_shields_shield_info', array()) as $file_name => $shield)  {
+      if ($shield['hidden']) {
+        // Shield should be hidden.
+        continue;
+      }
+
+      $shield_file = file_load($shield['fid']);
+      $shield_options[$shield_file->filename] = theme('os_shields_theme_shieldpicker', array('file' => $shield_file));
+
+      if (!empty($shield['default'])) {
+        return $file_name;
+      }
+    }
+  }
 }
